@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   User,
@@ -18,6 +18,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { useRegisterUserMutation, useSendOtpMutation, useVerifyOtpMutation } from '../../../services/userApi';
 
 const RegistrationForm = () => {
   const navigate = useNavigate();
@@ -40,6 +41,33 @@ const RegistrationForm = () => {
 
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
+
+  // OTP Verification States
+  const [phoneOtpStep, setPhoneOtpStep] = useState('idle'); // idle, sent, verified
+  const [emailOtpStep, setEmailOtpStep] = useState('idle'); // idle, sent, verified
+  const [phoneOtp, setPhoneOtp] = useState('');
+  const [emailOtp, setEmailOtp] = useState('');
+  const [phoneTimer, setPhoneTimer] = useState(0);
+  const [emailTimer, setEmailTimer] = useState(0);
+
+  const isMobileValid = formData.mobile.length === 10 && !errors.mobile;
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) && !errors.email;
+
+  // RTK Query Mutations
+  const [registerUser, { isLoading: isRegistering }] = useRegisterUserMutation();
+  const [sendOtp] = useSendOtpMutation();
+  const [verifyOtp] = useVerifyOtpMutation();
+
+  // Timers
+  useEffect(() => {
+    let pInterval, eInterval;
+    if (phoneTimer > 0) pInterval = setInterval(() => setPhoneTimer(t => t - 1), 1000);
+    if (emailTimer > 0) eInterval = setInterval(() => setEmailTimer(t => t - 1), 1000);
+    return () => {
+      clearInterval(pInterval);
+      clearInterval(eInterval);
+    };
+  }, [phoneTimer, emailTimer]);
 
   // Complete Country-State-City Data
   const locationData = {
@@ -156,10 +184,42 @@ const RegistrationForm = () => {
 
   const isFormValid = () => {
     const requiredFields = ['fullName', 'mobile', 'email', 'password', 'confirmPassword', 'terms'];
-    return requiredFields.every(field => {
+    const fieldsTouched = requiredFields.every(field => {
       if (field === 'terms') return formData[field] === true;
       return formData[field] && !errors[field];
     });
+    return fieldsTouched && phoneOtpStep === 'verified' && emailOtpStep === 'verified';
+  };
+
+  const handleSendVerification = async (identifier, type) => {
+    try {
+      const response = await sendOtp({ identifier, type }).unwrap();
+      if (type === 'mobile') {
+        setPhoneOtpStep('sent');
+        setPhoneTimer(30);
+      } else {
+        setEmailOtpStep('sent');
+        setEmailTimer(30);
+      }
+      if (response.debugOtp) toast.info(`OTP: ${response.debugOtp}`);
+      toast.success(response.message || `OTP sent to ${type}`);
+    } catch (err) {
+      toast.error(err.data?.message || `Failed to send OTP to ${type}`);
+    }
+  };
+
+  const handleVerifyOTP = async (identifier, otp, type) => {
+    try {
+      await verifyOtp({ identifier, otp }).unwrap();
+      if (type === 'mobile') {
+        setPhoneOtpStep('verified');
+      } else {
+        setEmailOtpStep('verified');
+      }
+      toast.success(`${type === 'mobile' ? 'Mobile' : 'Email'} verified successfully!`);
+    } catch (err) {
+      toast.error(err.data?.message || "Invalid OTP");
+    }
   };
 
   const handleSubmit = (e) => {
@@ -181,22 +241,32 @@ const RegistrationForm = () => {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0 && formData.terms) {
-      // Submit form
-      toast.success('Registration successful! Please login.', {
-        position: "top-center",
-        className: "bg-white shadow-xl border border-gray-100"
-      });
-      console.log("Form has been submitted successfully !!",formData);
-      // Store user data (in production, this would be an API call)
-      const userData = {
-        ...formData,
-        id: 'USR-' + Date.now(),
-        registeredAt: new Date().toISOString()
-      };
-      localStorage.setItem('userData', JSON.stringify(userData));
-      
-      // Redirect to login
-      setTimeout(() => navigate('/user_login'), 2000);
+      if (phoneOtpStep !== 'verified' || emailOtpStep !== 'verified') {
+        return toast.warning('Please verify both Mobile and Email first');
+      }
+
+      // Submit form using RTK Mutation
+      toast.promise(
+        registerUser({
+          name: formData.fullName,
+          email: formData.email,
+          phone: formData.mobile,
+          password: formData.password,
+          location: `${formData.city}, ${formData.state}, ${formData.country}`
+        }).unwrap(),
+        {
+          pending: 'Creating your account...',
+          success: {
+            render: ({ data }) => {
+              setTimeout(() => navigate('/user_login'), 2000);
+              return 'Registration successful! Please login.';
+            }
+          },
+          error: {
+            render: ({ data }) => data?.message || 'Registration failed'
+          }
+        }
+      );
     }
   };
 
@@ -321,14 +391,55 @@ const RegistrationForm = () => {
                             : focusedField === 'mobile'
                             ? 'border-amber-300 shadow-lg shadow-amber-100'
                             : 'border-gray-200 hover:border-gray-300'
-                        } rounded-xl px-4 py-2.5 pl-16 text-sm text-gray-700 placeholder-gray-400 focus:outline-none transition-all duration-300`}
+                        } rounded-xl px-4 py-2.5 pl-16 text-sm text-gray-700 placeholder-gray-400 focus:outline-none transition-all duration-300 ${phoneOtpStep === 'verified' ? 'bg-green-50/30' : ''}`}
                       />
-                      {touched.mobile && errors.mobile && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                        {phoneOtpStep === 'idle' && isMobileValid && (
+                          <button
+                            type="button"
+                            onClick={() => handleSendVerification(formData.mobile, 'mobile')}
+                            className="text-[10px] bg-amber-500 text-white px-2 py-1 rounded-lg font-bold hover:bg-amber-600"
+                          >
+                            Verify
+                          </button>
+                        )}
+                        {phoneOtpStep === 'verified' && (
+                          <CheckCircle size={18} className="text-green-500" />
+                        )}
+                        {touched.mobile && errors.mobile && phoneOtpStep !== 'verified' && (
                           <AlertCircle size={16} className="text-red-400" />
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
+                    {phoneOtpStep === 'sent' && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="Enter OTP"
+                          value={phoneOtp}
+                          onChange={(e) => setPhoneOtp(e.target.value)}
+                          className="w-24 px-2 py-1 text-xs border rounded-lg focus:outline-amber-400"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleVerifyOTP(formData.mobile, phoneOtp, 'mobile')}
+                          className="text-[10px] bg-green-500 text-white px-2 py-1 rounded-lg font-bold"
+                        >
+                          Verify
+                        </button>
+                        {phoneTimer > 0 ? (
+                          <span className="text-[10px] text-gray-400">{phoneTimer}s</span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleSendVerification(formData.mobile, 'mobile')}
+                            className="text-[10px] text-amber-600 font-bold"
+                          >
+                            Resend
+                          </button>
+                        )}
+                      </div>
+                    )}
                     {touched.mobile && errors.mobile && (
                       <p className="text-xs text-red-500 mt-1 ml-1">{errors.mobile}</p>
                     )}
@@ -358,14 +469,55 @@ const RegistrationForm = () => {
                             : focusedField === 'email'
                             ? 'border-amber-300 shadow-lg shadow-amber-100'
                             : 'border-gray-200 hover:border-gray-300'
-                        } rounded-xl px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 focus:outline-none transition-all duration-300`}
+                        } rounded-xl px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 focus:outline-none transition-all duration-300 ${emailOtpStep === 'verified' ? 'bg-green-50/30' : ''}`}
                       />
-                      {touched.email && errors.email && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                        {emailOtpStep === 'idle' && isEmailValid && (
+                          <button
+                            type="button"
+                            onClick={() => handleSendVerification(formData.email, 'email')}
+                            className="text-[10px] bg-amber-500 text-white px-2 py-1 rounded-lg font-bold hover:bg-amber-600"
+                          >
+                            Verify
+                          </button>
+                        )}
+                        {emailOtpStep === 'verified' && (
+                          <CheckCircle size={18} className="text-green-500" />
+                        )}
+                        {touched.email && errors.email && emailOtpStep !== 'verified' && (
                           <AlertCircle size={16} className="text-red-400" />
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
+                    {emailOtpStep === 'sent' && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="Enter OTP"
+                          value={emailOtp}
+                          onChange={(e) => setEmailOtp(e.target.value)}
+                          className="w-24 px-2 py-1 text-xs border rounded-lg focus:outline-amber-400"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleVerifyOTP(formData.email, emailOtp, 'email')}
+                          className="text-[10px] bg-green-500 text-white px-2 py-1 rounded-lg font-bold"
+                        >
+                          Verify
+                        </button>
+                        {emailTimer > 0 ? (
+                          <span className="text-[10px] text-gray-400">{emailTimer}s</span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleSendVerification(formData.email, 'email')}
+                            className="text-[10px] text-amber-600 font-bold"
+                          >
+                            Resend
+                          </button>
+                        )}
+                      </div>
+                    )}
                     {touched.email && errors.email && (
                       <p className="text-xs text-red-500 mt-1 ml-1">{errors.email}</p>
                     )}

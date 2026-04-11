@@ -447,7 +447,7 @@ const Sidebar = ({
               ${isMobile ? 'gap-3' : (isCollapsed ? 'justify-center' : 'gap-3')}
               px-3 py-2.5 text-sm rounded-xl
               text-gray-700 hover:text-red-500
-              hover:bg-linear-to-r hover:from-rose-500 hover:to-pink-500
+              hover:bg-gradient-to-r hover:from-rose-500 hover:to-pink-500
               transition-all duration-200 hover:shadow-md bg-red-100/50
               group
             `}

@@ -115,7 +115,9 @@ const BlockedUsers = () => {
 
   // ========== FORMATTING FUNCTIONS ==========
   const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'N/A';
     return date.toLocaleDateString('en-IN', {
       day: 'numeric',
       month: 'short',
@@ -488,7 +490,7 @@ const BlockedUsers = () => {
                 <thead className="bg-[#959190]/10">
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">User</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Block Reason</th>
+                    <th className="px-1 py-3 text-left text-sm font-medium text-gray-900">Block Reason</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Block Date</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Blocked By</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Type</th>
@@ -498,8 +500,8 @@ const BlockedUsers = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {paginatedUsers.map((user) => (
-                    <tr key={user.id} className="table-row-hover">
+                  {paginatedUsers.map((user, index) => (
+                    <tr key={user._id || index} className="table-row-hover">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-semibold text-sm">
@@ -664,7 +666,7 @@ const BlockedUsers = () => {
         </div>
 
         {/* Block Reasons Summary */}
-        <div className="bg-linear-to-r from-red-50 to-orange-50 rounded-xl border border-red-200 p-6">
+        <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-xl border border-red-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
             <FiAlertCircle className="text-red-500" />
             Block Reasons Summary
@@ -722,7 +724,7 @@ const BlockedUsers = () => {
             style={{ animation: 'slideUp 0.3s ease-out' }}
           >
             {/* Modal Header */}
-            <div className="bg-linear-to-r from-red-500 to-orange-500 px-6 py-5 text-white flex justify-between items-center rounded-t-2xl">
+            <div className="bg-gradient-to-r from-red-500 to-orange-500 px-6 py-5 text-white flex justify-between items-center rounded-t-2xl">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white/20 rounded-lg">
                   <FiEye size={20} />
@@ -743,7 +745,7 @@ const BlockedUsers = () => {
             {/* Modal Content */}
             <div className="p-6 max-h-[70vh] overflow-y-auto">
               {/* User Info Card */}
-              <div className="bg-linear-to-br from-gray-50 to-white p-5 rounded-xl border border-gray-200 mb-4">
+              <div className="bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl border border-gray-200 mb-4">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-bold text-xl">
                     {selectedUser.avatar}
@@ -849,7 +851,7 @@ const BlockedUsers = () => {
                     setShowViewModal(false);
                     handleUnblockClick(selectedUser);
                   }}
-                  className="px-5 py-2.5 text-sm font-medium text-white bg-linear-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2 cursor-pointer"
+                  className="px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2 cursor-pointer"
                 >
                   <FiUnlock size={16} />
                   Unblock User
@@ -873,7 +875,7 @@ const BlockedUsers = () => {
             style={{ animation: 'slideUp 0.3s ease-out' }}
           >
             {/* Modal Header */}
-            <div className="bg-linear-to-r from-red-500 to-orange-500 px-6 py-5 text-white flex justify-between items-center rounded-t-2xl">
+            <div className="bg-gradient-to-r from-red-500 to-orange-500 px-6 py-5 text-white flex justify-between items-center rounded-t-2xl">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white/20 rounded-lg">
                   <FiUnlock size={20} />
@@ -939,11 +941,11 @@ const BlockedUsers = () => {
                 onClick={() => setShowUnblockModal(false)}
                 className="px-5 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2 cursor-pointer"
               >
-                <FiX size={16} /> Cancel
+                <FiXCircle size={16} /> Cancel
               </button>
               <button
                 onClick={confirmUnblock}
-                className="px-5 py-2.5 text-sm font-medium text-white bg-linear-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2 cursor-pointer"
+                className="px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2 cursor-pointer"
               >
                 <FiUnlock size={16} />
                 Unblock User

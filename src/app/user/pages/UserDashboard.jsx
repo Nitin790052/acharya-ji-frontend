@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Calendar,
   Star,
@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from "react-toastify";
+import { useGetUserDashboardQuery } from '../../../services/userApi';
 
 const DashboardMain = () => {
   // ========== STATE MANAGEMENT ==========
@@ -51,13 +52,16 @@ const DashboardMain = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('razorpay');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Mock User Data
-  const userData = {
-    name: 'Rahul Sharma',
-    email: 'rahul.sharma@example.com',
+  // ========== DATA FETCHING ==========
+  const { data: dashboardData, isLoading, isError, error } = useGetUserDashboardQuery();
+
+  // Mock User Data (Fallback)
+  const userData = dashboardData?.data?.user || {
+    name: 'Loading...',
+    email: '...',
     memberSince: '2023',
     membershipType: 'Gold Member',
-    walletBalance: '2,450',
+    walletBalance: '0',
     lastLogin: 'Today, 9:30 AM'
   };
 
@@ -71,76 +75,40 @@ const DashboardMain = () => {
   });
 
   // ========== B) SUMMARY CARDS (Important Metrics) ==========
-  const summaryCards = [
-    { 
-      icon: <ShoppingBag className="text-amber-600" size={20} />,
-      label: 'Total Orders',
-      value: '24',
-      bgColor: 'bg-amber-50',
-      growth: '+12%',
-      growthColor: 'text-green-600'
-    },
-    { 
-      icon: <PaymentIcon className="text-amber-600" size={20} />,
-      label: 'Pending Payments',
-      value: '₹1,200',
-      bgColor: 'bg-amber-50',
-      growth: '2 items',
-      growthColor: 'text-orange-600'
-    },
-    { 
-      icon: <History className="text-amber-600" size={20} />,
-      label: 'History Records',
-      value: '18',
-      bgColor: 'bg-amber-50',
-      growth: '+5',
-      growthColor: 'text-green-600'
-    },
-    { 
-      icon: <Wallet className="text-amber-600" size={20} />,
-      label: 'Wallet Balance',
-      value: '₹2,450',
-      bgColor: 'bg-amber-50',
-      growth: '+₹500',
-      growthColor: 'text-green-600'
-    },
-    { 
-      icon: <Award className="text-amber-600" size={20} />,
-      label: 'Membership Status',
-      value: 'Gold',
-      bgColor: 'bg-amber-50',
-      growth: 'Premium',
-      growthColor: 'text-amber-600'
+  const getIcon = (type) => {
+    switch (type) {
+      case 'order': return <ShoppingBag className="text-amber-600" size={20} />;
+      case 'payment': return <PaymentIcon className="text-amber-600" size={20} />;
+      case 'history': return <History className="text-amber-600" size={20} />;
+      case 'wallet': return <Wallet className="text-amber-600" size={20} />;
+      case 'membership': return <Award className="text-amber-600" size={20} />;
+      default: return <Sparkles className="text-amber-600" size={20} />;
     }
-  ];
+  };
+
+  const summaryCards = dashboardData?.data?.summary.map(s => ({
+    ...s,
+    icon: getIcon(s.type),
+    bgColor: 'bg-amber-50',
+    growthColor: s.growth.startsWith('+') ? 'text-green-600' : 'text-orange-600'
+  })) || [];
 
   // ========== C) RECENT ACTIVITY SECTION ==========
 
   // Last 5 Orders
-  const recentOrders = [
-    { id: 'ORD001', service: 'Satyanarayan Puja', date: '25 June 2024', status: 'completed', amount: '₹3,500' },
-    { id: 'ORD002', service: 'Kundli Report', date: '22 June 2024', status: 'pending', amount: '₹599' },
-    { id: 'ORD003', service: 'Gemstone', date: '23 June 2024', status: 'confirmed', amount: '₹2,499' },
-    { id: 'ORD004', service: 'Consultation', date: '24 June 2024', status: 'completed', amount: '₹299' },
-    { id: 'ORD005', service: 'Ganesh Abhishek', date: '20 June 2024', status: 'cancelled', amount: '₹2,500' }
-  ];
+  const recentOrders = dashboardData?.data?.recentOrders || [];
 
   // Latest Payment Status
-  const latestPayment = {
+  const latestPayment = dashboardData?.data?.latestPayment || {
     status: 'success',
-    amount: '₹3,500',
-    method: 'Razorpay',
-    date: '25 June 2024',
-    time: '10:00 AM'
+    amount: '₹0',
+    method: 'N/A',
+    date: '...',
+    time: '...'
   };
 
   // Notifications
-  const notifications = [
-    { id: 1, message: 'Your Satyanarayan Puja is tomorrow at 10 AM', time: '1 hour ago', unread: true, type: 'reminder' },
-    { id: 2, message: 'Payment of ₹3,500 received successfully', time: '2 hours ago', unread: true, type: 'payment' },
-    { id: 3, message: 'Special discount on Rudrabhishek - 20% off', time: '5 hours ago', unread: false, type: 'offer' },
-    { id: 4, message: 'Your order #ORD002 is pending payment', time: '1 day ago', unread: false, type: 'alert' }
-  ];
+  const notifications = dashboardData?.data?.notifications || [];
 
   // ========== D) QUICK ACTIONS ==========
   const quickActions = [
@@ -284,6 +252,38 @@ const DashboardMain = () => {
       <Loader className="w-4 h-4" />
     </div>
   );
+
+  // ========== EFFECTS ==========
+  useEffect(() => {
+    if (isError) {
+      toast.error(error?.data?.message || "Failed to load dashboard data");
+    }
+  }, [isError, error]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+        <Loader className="w-10 h-10 text-amber-500 animate-spin mb-4" />
+        <p className="text-gray-600 font-medium">Loading your spiritual dashboard...</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6 text-center">
+        <XCircle className="w-12 h-12 text-red-500 mb-4" />
+        <h2 className="text-xl font-bold text-gray-800">Connection Error</h2>
+        <p className="text-gray-600 mt-2 max-w-sm">{error?.data?.message || "Could not connect to the server."}</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="mt-6 px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

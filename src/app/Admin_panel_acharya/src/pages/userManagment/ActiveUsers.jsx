@@ -101,80 +101,7 @@ const ActiveUsers = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Global Styles */}
-      <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-        
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 10px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-          background: #959190/20;
-          border-radius: 10px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-          background: #c0e0d0;
-        }
-        
-        /* Online Status Pulse */
-        .status-pulse {
-          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        
-        /* Card Hover Effect */
-        .stats-card {
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .stats-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-        
-        /* Table Row Hover */
-        .table-row-hover {
-          transition: all 0.2s ease;
-        }
-        
-        .table-row-hover:hover {
-          background-color: #f9fafb;
-          transform: scale(1.01);
-          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        
-        @media (max-width: 640px) {
-          .stats-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
+
 
       {/* Header Section */}
       <div className="bg-white border-b border-blue-900/20 sticky top-0 z-10 ">
@@ -364,11 +291,11 @@ const ActiveUsers = () => {
               <table className="w-full">
                 <thead className="bg-[#959190]/10">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">User</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Last Active</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Login Count</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Avg Session</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Total Spend</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">User</th>
+                    <th className="px-1 py-3 text-left text-sm font-medium text-gray-900">Last Active</th>
+                    <th className="px-1 py-3 text-left text-sm font-medium text-gray-900">Login Count</th>
+                    <th className="px-1 py-3 text-left text-sm font-medium text-gray-900">Avg Session</th>
+                    <th className="px-1 py-3 text-left text-sm font-medium text-gray-900">Total Spend</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Bookings</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Orders</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Status</th>
@@ -377,7 +304,7 @@ const ActiveUsers = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {paginatedUsers.map((user) => (
-                    <tr key={user.id} className="table-row-hover">
+                    <tr key={user.id} className="table-row-hover even:bg-orange-50/20 hover:bg-orange-50/50">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="relative">
@@ -420,8 +347,8 @@ const ActiveUsers = () => {
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{user.totalBookings}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{user.totalOrders}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600 text-center">{user.totalBookings}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600 text-center">{user.totalOrders}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border
                           ${user.status === 'online'
@@ -586,7 +513,7 @@ const ActiveUsers = () => {
         </div>
 
         {/* Activity Insights */}
-        <div className="bg-linear-to-r from-[#daf1e5] to-white rounded-xl border border-lime-200 p-6">
+        <div className="bg-gradient-to-r from-[#daf1e5] to-white rounded-xl border border-lime-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
             <FiTrendingUp className="text-orange-500" />
             Activity Insights

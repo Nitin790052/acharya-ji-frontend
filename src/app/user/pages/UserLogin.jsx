@@ -9,8 +9,13 @@ import {
   Shield,
 } from "lucide-react";
 
-import { useUserAuth } from "../auth/AuthContext";  
+import { useUserAuth } from "../auth/AuthContext";
 import { toast } from "react-toastify";
+import { 
+  useLoginUserMutation, 
+  useSendOtpMutation, 
+  useVerifyOtpMutation 
+} from "../../../services/userApi";
 
 const UserLogin = () => {
   const [loginType, setLoginType] = useState("mobile");
@@ -25,6 +30,9 @@ const UserLogin = () => {
   const navigate = useNavigate();
 
   const { login } = useUserAuth();
+  const [loginUser, { isLoading: isLoginLoading }] = useLoginUserMutation();
+  const [sendOtp, { isLoading: isOtpSending }] = useSendOtpMutation();
+  const [verifyOtp, { isLoading: isOtpVerifying }] = useVerifyOtpMutation();
 
   useEffect(() => {
     if (otpTimer === 0) return;
@@ -41,92 +49,76 @@ const UserLogin = () => {
     (loginType === "mobile" && isMobileValid && otpVerified) ||
     (loginType === "email" && isEmailValid && isPasswordValid);
 
-// OTP send logic
- const handleSendOtp = () => {
-  if (!isMobileValid) return;
+  // OTP send logic
+  const handleSendOtp = async () => {
+    if (!isMobileValid) return;
 
-  const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-  localStorage.setItem("demoOtp", generatedOtp);
+    try {
+      const response = await sendOtp({ identifier: mobile, type: 'mobile' }).unwrap();
+      setOtpSent(true);
+      setOtpVerified(false);
+      setOtp("");
+      setOtpTimer(30);
 
-  setOtpSent(true);
-  setOtpVerified(false);
-  setOtp("");
-  setOtpTimer(30);
-
-  toast.info(`Demo OTP: ${generatedOtp}`);
-  
-};
-
-// OTP verify logic
-const handleVerifyOtp = () => {
-  const storedOtp = localStorage.getItem("demoOtp");
-
-  if (otp === storedOtp) {
-    toast.success("OTP verified successfully!");
-
-    // Check if mobile number exists
-    if (mobile === "9876543210" || mobile === "7900520501") {
-      const userData = {
-        id: mobile === "9876543210" ? 1 : 2,
-        name: mobile === "9876543210" ? "John Doe" : "Rahul sharma",
-        mobile: mobile,
-        email:
-          mobile === "9876543210"
-            ? "user@example.com"
-            : "test@example.com",
-        role: "user",
-        memberType: "free",
-      };
-
-      login(userData);
-      toast.success(`Welcome, ${userData.name}!`);
-
-      navigate("/user/dashboard");
-    } else {
-      toast.error("This mobile number is not registered.");
+      if (response.debugOtp) {
+        toast.info(`OTP (Debug): ${response.debugOtp}`);
+      }
+      toast.success(response.message || "OTP sent successfully!");
+    } catch (err) {
+      toast.error(err.data?.message || "Failed to send OTP");
     }
-  } else {
-    toast.error("Invalid OTP. Please try again.");
-  }
-};
+  };
+
+  // OTP verify logic
+  const handleVerifyOtp = async () => {
+    try {
+      const response = await verifyOtp({ identifier: mobile, otp }).unwrap();
+      setOtpVerified(true);
+      toast.success(response.message || "OTP verified successfully!");
+      
+      // Auto-login after OTP verification for mobile
+      const loginResponse = await loginUser({ phone: mobile, loginType: 'mobile' }).unwrap();
+      handleLoginSuccess(loginResponse);
+    } catch (err) {
+      toast.error(err.data?.message || "Invalid OTP");
+    }
+  };
+
+  const handleLoginSuccess = (response) => {
+    const { token, data } = response;
+    localStorage.setItem("token", token);
+    login(data);
+    toast.success(`Welcome back, ${data.name}!`);
+    navigate("/user/dashboard");
+  };
 
 
   const shouldShowLoginButton =
-    loginType === "email" ;
+    loginType === "email";
 
-  // USER LOGIN HANDLER - FIXED VERSION
-  const handleUserLogin = () => {
-  if (loginType !== "email") return;
+  // USER LOGIN HANDLER
+  const handleUserLogin = async () => {
+    if (loginType !== "email") return;
 
-  if (email === "user@example.com" && password === "password123") {
-    const userData = {
-      id: 1,
-      name: "John Doe",
-      mobile: "9876543210",
-      email: email,
-      role: "authUser",
-      memberType: "free",
-    };
-
-    login(userData);
-    toast.success(`Welcome back, ${userData.name}!`);
-    navigate("/user/dashboard");
-  } else {
-    toast.error("Invalid email or password.");
-  }
-};
+    try {
+      const response = await loginUser({ email, password, loginType: 'email' }).unwrap();
+      handleLoginSuccess(response);
+    } catch (err) {
+      toast.error(err.data?.message || "Invalid email or password.");
+    }
+  };
 
 
   return (
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
       {/* Background Image */}
-      <div className="absolute inset-0 z-0 bg-[#F8F9FB]"></div>
+      <div className="absolute inset-0 z-0 bg-[#FBF6F6]"></div>
 
       {/* Centered Card */}
       <div className="relative z-10 w-full max-w-[400px]">
         {/* Main Card */}
         <div className="bg-white/95 backdrop-blur-2xl rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.06)] border border-gray-100 p-5 hover:shadow-3xl transition-all duration-300">
-          
+
           {/* Header - WITH LOGO */}
           <div className="text-center mb-5">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-amber-300 to-orange-300 rounded-xl shadow-xl mb-3 relative overflow-hidden group">
@@ -162,11 +154,10 @@ const handleVerifyOtp = () => {
                     setOtpSent(false);
                     setOtpVerified(false);
                   }}
-                  className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-md text-xs font-semibold transition-all ${
-                    loginType === type
-                      ? "bg-white shadow-sm text-orange-600"
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
+                  className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-md text-xs font-semibold transition-all ${loginType === type
+                    ? "bg-white shadow-sm text-orange-600"
+                    : "text-gray-600 hover:text-gray-900"
+                    }`}
                 >
                   {type === "mobile" ? (
                     <>
@@ -208,9 +199,8 @@ const handleVerifyOtp = () => {
                     ? "Enter your mobile number"
                     : "Enter your email"
                 }
-                className={`w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-xs placeholder-gray-400 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-200 ${
-                  loginType === "mobile" ? "pl-10" : ""
-                }`}
+                className={`w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-xs placeholder-gray-400 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-200 ${loginType === "mobile" ? "pl-10" : ""
+                  }`}
               />
             </div>
           </div>
@@ -247,13 +237,12 @@ const handleVerifyOtp = () => {
                 <button
                   onClick={handleSendOtp}
                   disabled={!isMobileValid}
-                  className={`w-full py-2.5 rounded-lg text-xs font-semibold transition-all ${
-                    isMobileValid
-                      ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:shadow-md"
-                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  }`}
+                  className={`w-full py-2.5 rounded-lg text-xs font-semibold transition-all ${isMobileValid
+                    ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:shadow-md"
+                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    }`}
                 >
-                  Send OTP
+                  {isOtpSending ? "Sending..." : "Send OTP"}
                 </button>
               )}
 
@@ -286,14 +275,13 @@ const handleVerifyOtp = () => {
                   </div>
                   <button
                     onClick={handleVerifyOtp}
-                    disabled={!isOtpValid}
-                    className={`w-full py-2.5 rounded-lg text-xs font-semibold transition-all ${
-                      isOtpValid
-                        ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:shadow-md"
-                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    }`}
+                    disabled={!isOtpValid || isOtpVerifying}
+                    className={`w-full py-2.5 rounded-lg text-xs font-semibold transition-all ${isOtpValid
+                      ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:shadow-md"
+                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      }`}
                   >
-                    Verify OTP
+                    {isOtpVerifying ? "Verifying..." : "Verify OTP"}
                   </button>
                 </div>
               )}
@@ -312,13 +300,12 @@ const handleVerifyOtp = () => {
             <button
               onClick={handleUserLogin}
               disabled={!canLogin}
-              className={`w-full py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                canLogin
-                  ? "bg-gradient-to-r from-orange-600 to-amber-500 text-white shadow-md hover:shadow-lg"
-                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
-              }`}
+              className={`w-full py-2.5 rounded-lg text-sm font-semibold transition-all ${canLogin
+                ? "bg-gradient-to-r from-orange-600 to-amber-500 text-white shadow-md hover:shadow-lg"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                }`}
             >
-              Login as User
+              {isLoginLoading ? "Logging in..." : "Login as User"}
             </button>
           )}
 

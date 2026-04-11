@@ -50,6 +50,44 @@ export const userApi = createApi({
       }),
       invalidatesTags: ['User'],
     }),
+    
+    // DASHBOARD ENDPOINT
+    getUserDashboard: builder.query({
+      query: () => '/dashboard',
+      providesTags: ['User'],
+    }),
+    
+    // AUTH ENDPOINTS
+    registerUser: builder.mutation({
+      query: (userData) => ({
+        url: '/register',
+        method: 'POST',
+        body: userData,
+      }),
+      invalidatesTags: ['User'],
+    }),
+    loginUser: builder.mutation({
+      query: (credentials) => ({
+        url: '/login',
+        method: 'POST',
+        body: credentials,
+      }),
+      invalidatesTags: ['User'],
+    }),
+    sendOtp: builder.mutation({
+      query: ({ identifier, type }) => ({
+        url: '/send-otp',
+        method: 'POST',
+        body: { identifier, type },
+      }),
+    }),
+    verifyOtp: builder.mutation({
+      query: ({ identifier, otp }) => ({
+        url: '/verify-otp',
+        method: 'POST',
+        body: { identifier, otp },
+      }),
+    }),
   }),
 });
 
@@ -59,4 +97,13 @@ export const {
   useGetUserByIdQuery,
   useUpdateUserStatusMutation,
   useDeleteUserMutation,
+  
+  // Dashboard hook
+  useGetUserDashboardQuery,
+  
+  // Auth hooks
+  useRegisterUserMutation,
+  useLoginUserMutation,
+  useSendOtpMutation,
+  useVerifyOtpMutation,
 } = userApi;
