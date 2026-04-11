@@ -1,0 +1,908 @@
+import React, { useState } from 'react';
+import { 
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Camera,
+  Lock,
+  Shield,
+  LogIn,
+  Bell,
+  Globe,
+  Sun,
+  Moon,
+  ChevronRight,
+  Save,
+  X,
+  CheckCircle,
+  AlertCircle,
+  Edit2,
+  Eye,
+  EyeOff,
+  Smartphone,
+  Monitor,
+  Clock
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { toast } from "react-toastify";
+
+const UserProfile = () => {
+  // ========== STATE MANAGEMENT ==========
+  const [isEditing, setIsEditing] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [show2FAModal, setShow2FAModal] = useState(false);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // ========== PROFILE DATA ==========
+  const [profile, setProfile] = useState({
+    photo: null,
+    fullName: 'Rahul Sharma',
+    email: 'rahul.sharma@example.com',
+    phone: '+91 98765 43210',
+    address: 'Sector 45, Noida, Uttar Pradesh - 201301',
+    memberSince: '2023',
+    lastLogin: 'Today, 9:30 AM'
+  });
+
+  // ========== EDIT FORM STATE ==========
+  const [editForm, setEditForm] = useState({
+    fullName: profile.fullName,
+    email: profile.email,
+    phone: profile.phone,
+    address: profile.address
+  });
+
+  // ========== PASSWORD CHANGE STATE ==========
+  const [passwordData, setPasswordData] = useState({
+    current: '',
+    new: '',
+    confirm: ''
+  });
+
+  // ========== 2FA STATE ==========
+  const [twoFA, setTwoFA] = useState({
+    enabled: false,
+    method: 'app', // app, sms, email
+    verified: false
+  });
+
+  // ========== LOGIN ACTIVITY ==========
+  const loginActivity = [
+    { id: 1, device: 'Chrome on Windows', location: 'Noida, India', time: 'Today, 9:30 AM', current: true },
+    { id: 2, device: 'Safari on iPhone', location: 'Noida, India', time: 'Yesterday, 8:15 PM', current: false },
+    { id: 3, device: 'Firefox on Mac', location: 'Delhi, India', time: '20 Jun 2024, 10:30 AM', current: false }
+  ];
+
+  // ========== NOTIFICATION SETTINGS ==========
+  const [notificationSettings, setNotificationSettings] = useState({
+    emailNotifications: true,
+    smsNotifications: true,
+    whatsAppUpdates: false,
+    promotionalEmails: true,
+    bookingReminders: true,
+    paymentAlerts: true,
+    newsletter: false
+  });
+
+  // ========== LANGUAGE ==========
+  const [language, setLanguage] = useState('English (India)');
+  const languages = [
+    { id: 1, name: 'English (India)', native: 'English' },
+    { id: 2, name: 'हिन्दी (Hindi)', native: 'हिन्दी' },
+    { id: 3, name: 'தமிழ் (Tamil)', native: 'தமிழ்' },
+    { id: 4, name: 'తెలుగు (Telugu)', native: 'తెలుగు' },
+    { id: 5, name: 'বাংলা (Bengali)', native: 'বাংলা' },
+    { id: 6, name: 'मराठी (Marathi)', native: 'मराठी' }
+  ];
+
+  // ========== THEME ==========
+  const [theme, setTheme] = useState('light'); // light, dark, system
+
+  // ========== HANDLER FUNCTIONS ==========
+  const handleEditToggle = () => {
+    if (isEditing) {
+      setEditForm({
+        fullName: profile.fullName,
+        email: profile.email,
+        phone: profile.phone,
+        address: profile.address
+      });
+    }
+    setIsEditing(!isEditing);
+  };
+
+  const handleSaveProfile = () => {
+    setProfile({
+      ...profile,
+      fullName: editForm.fullName,
+      email: editForm.email,
+      phone: editForm.phone,
+      address: editForm.address
+    });
+    setIsEditing(false);
+    toast.success('✅ Profile updated successfully!');
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm({ ...editForm, [name]: value });
+  };
+
+  const handlePhotoUpload = () => {
+    toast.info('Photo upload feature coming soon!');
+  };
+
+  const handlePasswordChange = () => {
+    if (!passwordData.current || !passwordData.new || !passwordData.confirm) {
+      toast.info('Please fill all fields');
+      return;
+    }
+    if (passwordData.new !== passwordData.confirm) {
+      toast.error('New password and confirm password do not match');
+      return;
+    }
+    if (passwordData.new.length < 6) {
+      toast.info('Password must be at least 6 characters');
+      return;
+    }
+    
+    toast.success('✅ Password changed successfully!');
+    setShowPasswordModal(false);
+    setPasswordData({ current: '', new: '', confirm: '' });
+  };
+
+  const handle2FAToggle = () => {
+    setTwoFA({ ...twoFA, enabled: !twoFA.enabled });
+    toast.success(twoFA.enabled ? '✅ 2FA disabled' : '✅ 2FA enabled');
+  };
+
+  const handleNotificationToggle = (key) => {
+    setNotificationSettings({ ...notificationSettings, [key]: !notificationSettings[key] });
+    toast.success('✅ Preference updated');
+  };
+
+  const handleLanguageChange = (lang) => {
+    setLanguage(lang.name);
+    setShowLanguageModal(false);
+    toast.success(`✅ Language changed to ${lang.name}`);
+  };
+
+  const handleThemeChange = (newTheme) => {
+    setTheme(newTheme);
+    toast.success(`✅ Theme changed to ${newTheme}`);
+  };
+
+  const handleLogoutAll = () => {
+    toast.info('Logging out from all devices...');
+  };
+
+  // ========== STATUS STYLING ==========
+  const getStatusStyle = (isActive) => {
+    const base = "px-2 py-0.5 rounded-full text-xs font-medium w-fit";
+    return isActive ? `${base} bg-green-100 text-green-700` : `${base} bg-gray-100 text-gray-600`;
+  };
+
+  // Loading Spinner
+  const LoadingSpinner = () => (
+    <div className="animate-spin">
+      <Loader className="w-4 h-4" />
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* ========== HEADER ========== */}
+      <div className="bg-gradient-to-r from-amber-100/50 via-amber-200/30 to-amber-300/40 px-3 py-1.5 border border-amber-200 mb-4">
+        <div className="flex flex-row sm:flex-row sm:justify-between sm:items-center gap-12 sm:gap-2">
+          <div className="text-left sm:text-left flex items-end gap-2">
+            <div>
+              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[25px] font-semibold text-amber-900 uppercase leading-tight flex items-center gap-2">
+                <User className="w-[23px] h-[23px] text-amber-600" />
+                Profile
+              </h1>
+              <p className="sm:hidden text-sm text-gray-600 mt-0.5">
+                Manage your account
+              </p>
+            </div>
+            <p className="hidden sm:block text-sm text-gray-600 mb-0.5">
+              Personal information • Security • Preferences
+            </p>
+          </div>
+
+          {/* Edit/Save Button */}
+          <div className="flex gap-1">
+            <button
+              onClick={isEditing ? handleSaveProfile : handleEditToggle}
+              className={`
+                px-4 py-1.5 text-sm font-medium rounded-md transition-all capitalize cursor-pointer
+                ${isEditing 
+                  ? 'bg-green-500 text-white hover:bg-green-600' 
+                  : 'bg-amber-500 text-white hover:bg-amber-600'
+                }
+              `}
+            >
+              {isEditing ? (
+                <span className="flex items-center gap-1">
+                  <Save className="w-4 h-4" />
+                  Save Changes
+                </span>
+              ) : (
+                <span className="flex items-center gap-1">
+                  <Edit2 className="w-4 h-4" />
+                  Edit Profile
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ========== MAIN CONTENT ========== */}
+      <div className="space-y-4 px-6 pb-6 pt-2">
+
+        {/* ========== A) PERSONAL INFORMATION ========== */}
+        <div className="bg-white rounded-lg border border-gray-200 hover:border-amber-300 transition-colors p-4">
+          <h3 className="text-[15px] font-bold text-gray-800 mb-3 flex items-center gap-2">
+            <User className="w-4 h-4 text-amber-600" />
+            Personal Information
+          </h3>
+
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Profile Photo */}
+            <div className="flex flex-col items-center">
+              <div className="relative">
+                <div className="w-24 h-24 bg-amber-50 rounded-lg flex items-center justify-center border-2 border-amber-200">
+                  {profile.photo ? (
+                    <img src={profile.photo} alt="Profile" className="w-full h-full rounded-lg object-cover" />
+                  ) : (
+                    <User className="w-12 h-12 text-amber-600" />
+                  )}
+                </div>
+                <button
+                  onClick={handlePhotoUpload}
+                  className="absolute -bottom-1 -right-1 p-1.5 bg-amber-500 rounded-lg text-white hover:bg-amber-600 transition-colors"
+                >
+                  <Camera className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">Member since {profile.memberSince}</p>
+            </div>
+
+            {/* Personal Details */}
+            <div className="flex-1">
+              {isEditing ? (
+                // EDIT MODE
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      name="fullName"
+                      value={editForm.fullName}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-amber-300 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Email Address</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={editForm.email}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-amber-300 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Phone Number</label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={editForm.phone}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-amber-300 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Address</label>
+                    <textarea
+                      name="address"
+                      value={editForm.address}
+                      onChange={handleInputChange}
+                      rows="2"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-amber-300 text-sm resize-none"
+                    />
+                  </div>
+                </div>
+              ) : (
+                // VIEW MODE
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-amber-500" />
+                    <span className="text-sm text-gray-800">{profile.fullName}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-amber-500" />
+                    <span className="text-sm text-gray-600">{profile.email}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-amber-500" />
+                    <span className="text-sm text-gray-600">{profile.phone}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-amber-500" />
+                    <span className="text-sm text-gray-600">{profile.address}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Stats */}
+            <div className="bg-amber-50 rounded-lg p-3 min-w-[120px]">
+              <Clock className="w-4 h-4 text-amber-600 mb-1" />
+              <p className="text-xs text-amber-600">Last Login</p>
+              <p className="text-sm font-bold text-amber-700 mt-1">{profile.lastLogin}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ========== B) SECURITY SETTINGS ========== */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Change Password */}
+          <div className="bg-white rounded-lg border border-gray-200 hover:border-amber-300 transition-colors p-3">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-[15px] font-bold text-gray-800 flex items-center gap-2">
+                <Lock className="w-4 h-4 text-amber-600" />
+                Change Password
+              </h3>
+              <button
+                onClick={() => setShowPasswordModal(true)}
+                className="text-xs text-amber-600 hover:text-amber-700 font-medium"
+              >
+                Update
+              </button>
+            </div>
+            <p className="text-xs text-gray-500">Last changed: 3 months ago</p>
+            <div className="mt-2 h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-1 w-3/4 bg-amber-400 rounded-full"></div>
+            </div>
+          </div>
+
+          {/* Two-factor Authentication */}
+          <div className="bg-white rounded-lg border border-gray-200 hover:border-amber-300 transition-colors p-3">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-[15px] font-bold text-gray-800 flex items-center gap-2">
+                <Shield className="w-4 h-4 text-amber-600" />
+                2FA
+              </h3>
+              <button
+                onClick={() => setShow2FAModal(true)}
+                className="text-xs text-amber-600 hover:text-amber-700 font-medium"
+              >
+                Configure
+              </button>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-600">Status</span>
+              <span className={twoFA.enabled ? 'text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full' : 'text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full'}>
+                {twoFA.enabled ? 'Enabled' : 'Disabled'}
+              </span>
+            </div>
+          </div>
+
+          {/* Login Activity */}
+          <div className="bg-white rounded-lg border border-gray-200 hover:border-amber-300 transition-colors p-3">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-[15px] font-bold text-gray-800 flex items-center gap-2">
+                <LogIn className="w-4 h-4 text-amber-600" />
+                Login Activity
+              </h3>
+              <button
+                onClick={() => toast.info('Viewing all login activity')}
+                className="text-xs text-amber-600 hover:text-amber-700 font-medium"
+              >
+                View All
+              </button>
+            </div>
+            <p className="text-xs text-gray-600">Current session: {loginActivity[0].device}</p>
+          </div>
+        </div>
+
+        {/* Login Activity List */}
+        <div className="bg-white rounded-lg border border-gray-200 hover:border-amber-300 transition-colors p-3">
+          <h3 className="text-[15px] font-bold text-gray-800 mb-2 flex items-center gap-2">
+            <LogIn className="w-4 h-4 text-amber-600" />
+            Recent Login Activity
+          </h3>
+          <div className="space-y-2">
+            {loginActivity.map((activity) => (
+              <div key={activity.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  {activity.device.includes('iPhone') ? (
+                    <Smartphone className="w-3 h-3 text-gray-500" />
+                  ) : (
+                    <Monitor className="w-3 h-3 text-gray-500" />
+                  )}
+                  <div>
+                    <p className="text-xs font-medium text-gray-800">{activity.device}</p>
+                    <p className="text-xs text-gray-500">{activity.location}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500">{activity.time}</span>
+                  {activity.current && (
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Current</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          <button 
+            onClick={handleLogoutAll}
+            className="mt-2 text-xs text-red-600 hover:text-red-700 font-medium"
+          >
+            Logout from all devices
+          </button>
+        </div>
+
+        {/* ========== C) PREFERENCES ========== */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Notification Settings */}
+          <div className="bg-white rounded-lg border border-gray-200 hover:border-amber-300 transition-colors p-3">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-[15px] font-bold text-gray-800 flex items-center gap-2">
+                <Bell className="w-4 h-4 text-amber-600" />
+                Notifications
+              </h3>
+              <button
+                onClick={() => setShowNotificationModal(true)}
+                className="text-xs text-amber-600 hover:text-amber-700 font-medium"
+              >
+                Manage
+              </button>
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-600">Email</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${notificationSettings.emailNotifications ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                  {notificationSettings.emailNotifications ? 'On' : 'Off'}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-600">SMS</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${notificationSettings.smsNotifications ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                  {notificationSettings.smsNotifications ? 'On' : 'Off'}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-600">WhatsApp</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${notificationSettings.whatsAppUpdates ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                  {notificationSettings.whatsAppUpdates ? 'On' : 'Off'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Language */}
+          <div className="bg-white rounded-lg border border-gray-200 hover:border-amber-300 transition-colors p-3">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-[15px] font-bold text-gray-800 flex items-center gap-2">
+                <Globe className="w-4 h-4 text-amber-600" />
+                Language
+              </h3>
+              <button
+                onClick={() => setShowLanguageModal(true)}
+                className="text-xs text-amber-600 hover:text-amber-700 font-medium"
+              >
+                Change
+              </button>
+            </div>
+            <p className="text-sm text-gray-800">{language}</p>
+          </div>
+
+          {/* Theme */}
+          <div className="bg-white rounded-lg border border-gray-200 hover:border-amber-300 transition-colors p-3">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-[15px] font-bold text-gray-800 flex items-center gap-2">
+                {theme === 'light' ? <Sun className="w-4 h-4 text-amber-600" /> : <Moon className="w-4 h-4 text-amber-600" />}
+                Theme
+              </h3>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleThemeChange('light')}
+                className={`flex-1 px-2 py-1 text-xs rounded-lg flex items-center justify-center gap-1 ${
+                  theme === 'light' ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <Sun className="w-3 h-3" />
+                Light
+              </button>
+              <button
+                onClick={() => handleThemeChange('dark')}
+                className={`flex-1 px-2 py-1 text-xs rounded-lg flex items-center justify-center gap-1 ${
+                  theme === 'dark' ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <Moon className="w-3 h-3" />
+                Dark
+              </button>
+              <button
+                onClick={() => handleThemeChange('system')}
+                className={`flex-1 px-2 py-1 text-xs rounded-lg flex items-center justify-center gap-1 ${
+                  theme === 'system' ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                System
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ========== PROFILE SUMMARY FOOTER ========== */}
+        <div className="bg-gradient-to-r from-amber-100/50 via-amber-200/30 to-amber-300/40 rounded-lg border border-amber-200 p-3">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <User className="w-4 h-4 text-amber-600" />
+              <div>
+                <h4 className="text-xs font-semibold text-gray-800">Profile Summary</h4>
+                <p className="text-xs text-gray-600">
+                  Member since {profile.memberSince} • Last login: {profile.lastLogin}
+                </p>
+              </div>
+            </div>
+            
+            <button 
+              className="px-3 py-1.5 text-xs bg-white text-gray-800 rounded-lg border border-gray-300 hover:bg-gray-50 flex items-center gap-1 cursor-pointer transition-colors"
+              onClick={() => toast.info('Downloading profile data...')}
+            >
+              <Save className="w-3 h-3" />
+              Export Data
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ========== CHANGE PASSWORD MODAL ========== */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-xl max-w-md w-full p-5">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-800">Change Password</h3>
+              <button
+                onClick={() => setShowPasswordModal(false)}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 mb-4">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Current Password</label>
+                <div className="relative">
+                  <input
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    value={passwordData.current}
+                    onChange={(e) => setPasswordData({...passwordData, current: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-amber-300 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-2 top-2 text-gray-400"
+                  >
+                    {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={passwordData.new}
+                    onChange={(e) => setPasswordData({...passwordData, new: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-amber-300 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-2 top-2 text-gray-400"
+                  >
+                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Confirm New Password</label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={passwordData.confirm}
+                    onChange={(e) => setPasswordData({...passwordData, confirm: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-amber-300 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-2 top-2 text-gray-400"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handlePasswordChange}
+                className="flex-1 bg-amber-500 text-white py-2 rounded-lg hover:bg-amber-600"
+              >
+                Update Password
+              </button>
+              <button
+                onClick={() => setShowPasswordModal(false)}
+                className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== 2FA MODAL ========== */}
+      {show2FAModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-xl max-w-md w-full p-5">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-800">Two-Factor Authentication</h3>
+              <button
+                onClick={() => setShow2FAModal(false)}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-amber-600" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">Enable 2FA</p>
+                    <p className="text-xs text-gray-500">Protect your account with extra security</p>
+                  </div>
+                </div>
+                <button
+                  onClick={handle2FAToggle}
+                  className={`px-3 py-1 text-xs rounded-full ${
+                    twoFA.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
+                  }`}
+                >
+                  {twoFA.enabled ? 'Enabled' : 'Disabled'}
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-600 mb-2">Authentication Method</label>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => setTwoFA({...twoFA, method: 'app'})}
+                    className={`w-full p-2 text-left rounded-lg flex items-center gap-2 ${
+                      twoFA.method === 'app' ? 'bg-amber-50 border border-amber-200' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <Smartphone className="w-4 h-4 text-amber-600" />
+                    <span className="text-sm text-gray-800">Authenticator App</span>
+                  </button>
+                  <button
+                    onClick={() => setTwoFA({...twoFA, method: 'sms'})}
+                    className={`w-full p-2 text-left rounded-lg flex items-center gap-2 ${
+                      twoFA.method === 'sms' ? 'bg-amber-50 border border-amber-200' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <Phone className="w-4 h-4 text-amber-600" />
+                    <span className="text-sm text-gray-800">SMS Authentication</span>
+                  </button>
+                  <button
+                    onClick={() => setTwoFA({...twoFA, method: 'email'})}
+                    className={`w-full p-2 text-left rounded-lg flex items-center gap-2 ${
+                      twoFA.method === 'email' ? 'bg-amber-50 border border-amber-200' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <Mail className="w-4 h-4 text-amber-600" />
+                    <span className="text-sm text-gray-800">Email Authentication</span>
+                  </button>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShow2FAModal(false)}
+                className="w-full bg-amber-500 text-white py-2 rounded-lg hover:bg-amber-600"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== NOTIFICATION SETTINGS MODAL ========== */}
+      {showNotificationModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-xl max-w-md w-full p-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-800">Notification Settings</h3>
+              <button
+                onClick={() => setShowNotificationModal(false)}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium text-gray-800">Email Notifications</p>
+                  <p className="text-xs text-gray-500">Receive updates via email</p>
+                </div>
+                <button
+                  onClick={() => handleNotificationToggle('emailNotifications')}
+                  className={`px-3 py-1 text-xs rounded-full ${
+                    notificationSettings.emailNotifications ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  {notificationSettings.emailNotifications ? 'On' : 'Off'}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium text-gray-800">SMS Notifications</p>
+                  <p className="text-xs text-gray-500">Receive updates via SMS</p>
+                </div>
+                <button
+                  onClick={() => handleNotificationToggle('smsNotifications')}
+                  className={`px-3 py-1 text-xs rounded-full ${
+                    notificationSettings.smsNotifications ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  {notificationSettings.smsNotifications ? 'On' : 'Off'}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium text-gray-800">WhatsApp Updates</p>
+                  <p className="text-xs text-gray-500">Receive updates on WhatsApp</p>
+                </div>
+                <button
+                  onClick={() => handleNotificationToggle('whatsAppUpdates')}
+                  className={`px-3 py-1 text-xs rounded-full ${
+                    notificationSettings.whatsAppUpdates ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  {notificationSettings.whatsAppUpdates ? 'On' : 'Off'}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium text-gray-800">Promotional Emails</p>
+                  <p className="text-xs text-gray-500">Receive offers and discounts</p>
+                </div>
+                <button
+                  onClick={() => handleNotificationToggle('promotionalEmails')}
+                  className={`px-3 py-1 text-xs rounded-full ${
+                    notificationSettings.promotionalEmails ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  {notificationSettings.promotionalEmails ? 'On' : 'Off'}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium text-gray-800">Booking Reminders</p>
+                  <p className="text-xs text-gray-500">Get reminders for upcoming bookings</p>
+                </div>
+                <button
+                  onClick={() => handleNotificationToggle('bookingReminders')}
+                  className={`px-3 py-1 text-xs rounded-full ${
+                    notificationSettings.bookingReminders ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  {notificationSettings.bookingReminders ? 'On' : 'Off'}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium text-gray-800">Payment Alerts</p>
+                  <p className="text-xs text-gray-500">Get alerts for payment status</p>
+                </div>
+                <button
+                  onClick={() => handleNotificationToggle('paymentAlerts')}
+                  className={`px-3 py-1 text-xs rounded-full ${
+                    notificationSettings.paymentAlerts ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  {notificationSettings.paymentAlerts ? 'On' : 'Off'}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium text-gray-800">Newsletter</p>
+                  <p className="text-xs text-gray-500">Weekly spiritual newsletter</p>
+                </div>
+                <button
+                  onClick={() => handleNotificationToggle('newsletter')}
+                  className={`px-3 py-1 text-xs rounded-full ${
+                    notificationSettings.newsletter ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  {notificationSettings.newsletter ? 'On' : 'Off'}
+                </button>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowNotificationModal(false)}
+              className="w-full bg-amber-500 text-white py-2 rounded-lg hover:bg-amber-600 mt-4"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========== LANGUAGE MODAL ========== */}
+      {showLanguageModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-xl max-w-md w-full p-5">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-800">Select Language</h3>
+              <button
+                onClick={() => setShowLanguageModal(false)}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {languages.map((lang) => (
+                <button
+                  key={lang.id}
+                  onClick={() => handleLanguageChange(lang)}
+                  className={`w-full p-3 text-left rounded-lg hover:bg-amber-50 transition-colors flex items-center justify-between ${
+                    language === lang.name ? 'bg-amber-50 border border-amber-200' : ''
+                  }`}
+                >
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">{lang.name}</p>
+                    <p className="text-xs text-gray-500">{lang.native}</p>
+                  </div>
+                  {language === lang.name && (
+                    <CheckCircle className="w-4 h-4 text-amber-600" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default UserProfile;
