@@ -36,6 +36,7 @@ import {
 import { Link } from 'react-router-dom';
 import { toast } from "react-toastify";
 import html2pdf from 'html2pdf.js';
+import { useGetUserHistoryQuery } from '../../../services/userApi';
 
 const UserHistory = () => {
   // ========== STATE MANAGEMENT ==========
@@ -46,344 +47,29 @@ const UserHistory = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const printRef = useRef();
 
-  // ========== HISTORY DATA (Complete Activity Log) ==========
-  const historyData = [
-    // ===== PAST ORDERS =====
-    {
-      id: 'HIST001',
-      type: 'order',
-      action: 'Order Completed',
-      description: 'Satyanarayan Puja',
-      date: '25 June 2024',
-      time: '10:00 AM',
-      status: 'completed',
-      amount: 3500,
-      details: {
-        orderId: 'ORD001',
-        priest: 'Pandit Rajesh Sharma',
-        location: 'Sector 45, Noida',
-        paymentMethod: 'Razorpay'
-      },
-      icon: <ShoppingBag className="w-4 h-4" />,
-      iconBg: 'bg-green-100',
-      iconColor: 'text-green-600'
-    },
-    {
-      id: 'HIST002',
-      type: 'order',
-      action: 'Order Cancelled',
-      description: 'Ganesh Abhishek',
-      date: '22 June 2024',
-      time: '3:30 PM',
-      status: 'cancelled',
-      amount: 2500,
-      details: {
-        orderId: 'ORD005',
-        priest: 'Pandit Suresh Tiwari',
-        reason: 'Inclement weather',
-        refundStatus: 'Processed'
-      },
-      icon: <ShoppingBag className="w-4 h-4" />,
-      iconBg: 'bg-red-100',
-      iconColor: 'text-red-600'
-    },
-    {
-      id: 'HIST003',
-      type: 'order',
-      action: 'Order Delivered',
-      description: 'Gemstone - Yellow Sapphire',
-      date: '23 June 2024',
-      time: '2:15 PM',
-      status: 'completed',
-      amount: 2499,
-      details: {
-        orderId: 'ORD003',
-        deliveryDate: '23 June 2024',
-        trackingId: 'TRK123456'
-      },
-      icon: <ShoppingBag className="w-4 h-4" />,
-      iconBg: 'bg-green-100',
-      iconColor: 'text-green-600'
-    },
-    {
-      id: 'HIST004',
-      type: 'order',
-      action: 'Order Processing',
-      description: 'Vastu Consultation',
-      date: '28 June 2024',
-      time: '11:00 AM',
-      status: 'processing',
-      amount: 3999,
-      details: {
-        orderId: 'ORD007',
-        priest: 'Pandit Rajesh Sharma',
-        estimatedCompletion: '30 June 2024'
-      },
-      icon: <ShoppingBag className="w-4 h-4" />,
-      iconBg: 'bg-blue-100',
-      iconColor: 'text-blue-600'
-    },
+  // ========== RTK QUERY ==========
+  const { data: historyResponse, isLoading, isError, refetch } = useGetUserHistoryQuery();
+  const historyData = historyResponse?.data || [];
 
-    // ===== PAYMENT HISTORY =====
-    {
-      id: 'HIST005',
-      type: 'payment',
-      action: 'Payment Received',
-      description: 'Wallet Recharge',
-      date: '19 June 2024',
-      time: '2:15 PM',
-      status: 'success',
-      amount: 1000,
-      details: {
-        transactionId: 'TXN123456789',
-        method: 'Razorpay',
-        balance: '₹2,450'
-      },
-      icon: <CreditCard className="w-4 h-4" />,
-      iconBg: 'bg-green-100',
-      iconColor: 'text-green-600'
-    },
-    {
-      id: 'HIST006',
-      type: 'payment',
-      action: 'Payment Sent',
-      description: 'Satyanarayan Puja',
-      date: '25 June 2024',
-      time: '9:45 AM',
-      status: 'success',
-      amount: 3500,
-      details: {
-        transactionId: 'TXN987654321',
-        method: 'Wallet',
-        orderId: 'ORD001'
-      },
-      icon: <CreditCard className="w-4 h-4" />,
-      iconBg: 'bg-green-100',
-      iconColor: 'text-green-600'
-    },
-    {
-      id: 'HIST007',
-      type: 'payment',
-      action: 'Refund Processed',
-      description: 'Ganesh Abhishek',
-      date: '23 June 2024',
-      time: '11:30 AM',
-      status: 'refunded',
-      amount: 2500,
-      details: {
-        transactionId: 'REF123456',
-        method: 'Original Payment Method',
-        orderId: 'ORD005'
-      },
-      icon: <RotateCcw className="w-4 h-4" />,
-      iconBg: 'bg-purple-100',
-      iconColor: 'text-purple-600'
-    },
-    {
-      id: 'HIST008',
-      type: 'payment',
-      action: 'Payment Failed',
-      description: 'Ganesh Abhishek',
-      date: '20 June 2024',
-      time: '5:30 PM',
-      status: 'failed',
-      amount: 2500,
-      details: {
-        transactionId: 'TXN456789123',
-        method: 'Credit Card',
-        reason: 'Insufficient funds'
-      },
-      icon: <CreditCard className="w-4 h-4" />,
-      iconBg: 'bg-red-100',
-      iconColor: 'text-red-600'
-    },
-
-    // ===== PROFILE UPDATES =====
-    {
-      id: 'HIST009',
-      type: 'profile',
-      action: 'Profile Updated',
-      description: 'Personal Information',
-      date: '18 June 2024',
-      time: '10:30 AM',
-      status: 'completed',
-      details: {
-        changes: ['Phone number updated', 'Address updated'],
-        previous: '+91 98765 43210 → +91 98765 43211'
-      },
-      icon: <User className="w-4 h-4" />,
-      iconBg: 'bg-amber-100',
-      iconColor: 'text-amber-600'
-    },
-    {
-      id: 'HIST010',
-      type: 'profile',
-      action: 'Password Changed',
-      description: 'Security Update',
-      date: '15 June 2024',
-      time: '9:15 AM',
-      status: 'completed',
-      details: {
-        message: 'Password was successfully changed'
-      },
-      icon: <Settings className="w-4 h-4" />,
-      iconBg: 'bg-amber-100',
-      iconColor: 'text-amber-600'
-    },
-    {
-      id: 'HIST011',
-      type: 'profile',
-      action: 'Email Verified',
-      description: 'rahul.sharma@example.com',
-      date: '10 June 2024',
-      time: '2:00 PM',
-      status: 'completed',
-      details: {
-        message: 'Email address has been verified'
-      },
-      icon: <Mail className="w-4 h-4" />,
-      iconBg: 'bg-green-100',
-      iconColor: 'text-green-600'
-    },
-    {
-      id: 'HIST012',
-      type: 'profile',
-      action: 'Phone Verified',
-      description: '+91 98765 43210',
-      date: '9 June 2024',
-      time: '11:45 AM',
-      status: 'completed',
-      details: {
-        message: 'Phone number has been verified'
-      },
-      icon: <Phone className="w-4 h-4" />,
-      iconBg: 'bg-green-100',
-      iconColor: 'text-green-600'
-    },
-
-    // ===== LOGIN HISTORY =====
-    {
-      id: 'HIST013',
-      type: 'login',
-      action: 'New Login',
-      description: 'Chrome on Windows',
-      date: 'Today',
-      time: '9:30 AM',
-      status: 'current',
-      details: {
-        device: 'Chrome on Windows',
-        location: 'Noida, India',
-        ip: '192.168.1.1',
-        browser: 'Chrome 120.0'
-      },
-      icon: <LogIn className="w-4 h-4" />,
-      iconBg: 'bg-blue-100',
-      iconColor: 'text-blue-600'
-    },
-    {
-      id: 'HIST014',
-      type: 'login',
-      action: 'Login',
-      description: 'Safari on iPhone',
-      date: 'Yesterday',
-      time: '8:15 PM',
-      status: 'completed',
-      details: {
-        device: 'Safari on iPhone',
-        location: 'Noida, India',
-        ip: '192.168.1.2'
-      },
-      icon: <Smartphone className="w-4 h-4" />,
-      iconBg: 'bg-gray-100',
-      iconColor: 'text-gray-600'
-    },
-    {
-      id: 'HIST015',
-      type: 'login',
-      action: 'Login',
-      description: 'Firefox on Mac',
-      date: '20 June 2024',
-      time: '10:30 AM',
-      status: 'completed',
-      details: {
-        device: 'Firefox on Mac',
-        location: 'Delhi, India',
-        ip: '192.168.1.3'
-      },
-      icon: <Monitor className="w-4 h-4" />,
-      iconBg: 'bg-gray-100',
-      iconColor: 'text-gray-600'
-    },
-    {
-      id: 'HIST016',
-      type: 'login',
-      action: 'Failed Login Attempt',
-      description: 'Chrome on Windows',
-      date: '19 June 2024',
-      time: '11:20 PM',
-      status: 'failed',
-      details: {
-        device: 'Chrome on Windows',
-        location: 'Unknown',
-        reason: 'Incorrect password'
-      },
-      icon: <AlertCircle className="w-4 h-4" />,
-      iconBg: 'bg-red-100',
-      iconColor: 'text-red-600'
-    },
-
-    // ===== ADDITIONAL ACTIVITIES =====
-    {
-      id: 'HIST017',
-      type: 'other',
-      action: 'Promo Code Applied',
-      description: 'WELCOME100',
-      date: '17 June 2024',
-      time: '3:45 PM',
-      status: 'success',
-      amount: 100,
-      details: {
-        promoCode: 'WELCOME100',
-        discount: '₹100 off',
-        expiry: '30 June 2024'
-      },
-      icon: <Gift className="w-4 h-4" />,
-      iconBg: 'bg-purple-100',
-      iconColor: 'text-purple-600'
-    },
-    {
-      id: 'HIST018',
-      type: 'other',
-      action: 'Membership Upgraded',
-      description: 'Silver → Gold',
-      date: '16 June 2024',
-      time: '12:00 PM',
-      status: 'completed',
-      details: {
-        previous: 'Silver Member',
-        current: 'Gold Member',
-        benefits: '5% extra discount'
-      },
-      icon: <Award className="w-4 h-4" />,
-      iconBg: 'bg-amber-100',
-      iconColor: 'text-amber-600'
-    },
-    {
-      id: 'HIST019',
-      type: 'other',
-      action: 'Notification Settings Updated',
-      description: 'Preferences Changed',
-      date: '14 June 2024',
-      time: '4:30 PM',
-      status: 'completed',
-      details: {
-        changes: ['Email notifications enabled', 'SMS notifications disabled']
-      },
-      icon: <Bell className="w-4 h-4" />,
-      iconBg: 'bg-amber-100',
-      iconColor: 'text-amber-600'
+  const getIcon = (type) => {
+    switch(type) {
+      case 'order': return <ShoppingBag className="w-4 h-4" />;
+      case 'payment': return <CreditCard className="w-4 h-4" />;
+      case 'profile': return <User className="w-4 h-4" />;
+      case 'login': return <LogIn className="w-4 h-4" />;
+      default: return <Clock className="w-4 h-4" />;
     }
-  ];
+  };
+
+  const getIconStyles = (type) => {
+    switch(type) {
+      case 'order': return { bg: 'bg-amber-100', color: 'text-amber-600' };
+      case 'payment': return { bg: 'bg-green-100', color: 'text-green-600' };
+      case 'profile': return { bg: 'bg-blue-100', color: 'text-blue-600' };
+      case 'login': return { bg: 'bg-gray-100', color: 'text-gray-600' };
+      default: return { bg: 'bg-gray-100', color: 'text-gray-600' };
+    }
+  };
 
   // ========== FILTER OPTIONS ==========
   const filterOptions = [
@@ -437,11 +123,7 @@ const UserHistory = () => {
   });
 
   // Sort by date (newest first)
-  const sortedHistory = [...filteredHistory].sort((a, b) => {
-    const dateA = new Date(a.date.split(' ').reverse().join('-'));
-    const dateB = new Date(b.date.split(' ').reverse().join('-'));
-    return dateB - dateA;
-  });
+  const sortedHistory = [...filteredHistory];
 
   // ========== STATUS STYLING FUNCTIONS ==========
   const getStatusStyle = (status) => {
@@ -673,7 +355,12 @@ const UserHistory = () => {
     <span>Activity Timeline</span>
   </h3>
 
-  {sortedHistory.length === 0 ? (
+  {isLoading ? (
+    <div className="py-20 text-center">
+      <Loader className="w-10 h-10 text-amber-500 animate-spin mx-auto mb-4" />
+      <p className="text-gray-600">Loading your activity history...</p>
+    </div>
+  ) : sortedHistory.length === 0 ? (
     <div className="py-6 sm:py-8 text-center">
       <Clock className="w-8 h-8 sm:w-12 sm:h-12 text-gray-300 mx-auto mb-2 sm:mb-3" />
       <p className="text-xs sm:text-sm text-gray-600 font-medium">No history found</p>
@@ -700,9 +387,9 @@ const UserHistory = () => {
             >
               <div className="flex items-start gap-2 sm:gap-3">
                 {/* Icon - Smaller on mobile */}
-                <div className={`p-1.5 sm:p-2 ${item.iconBg} rounded-lg shrink-0`}>
-                  <div className={`${item.iconColor} [&>svg]:w-3 [&>svg]:h-3 sm:[&>svg]:w-4 sm:[&>svg]:h-4`}>
-                    {item.icon}
+                <div className={`p-1.5 sm:p-2 ${getIconStyles(item.type).bg} rounded-lg shrink-0`}>
+                  <div className={`${getIconStyles(item.type).color} [&>svg]:w-3 [&>svg]:h-3 sm:[&>svg]:w-4 sm:[&>svg]:h-4`}>
+                    {getIcon(item.type)}
                   </div>
                 </div>
 

@@ -30,6 +30,7 @@ import {
 import { toast } from "react-toastify";
 import { useReactToPrint } from 'react-to-print';
 import html2pdf from 'html2pdf.js';
+import { useGetUserOrdersQuery } from '../../../../services/userApi';
 
 const ProcessingOrders = () => {
   // ========== STATE MANAGEMENT ==========
@@ -46,54 +47,14 @@ const ProcessingOrders = () => {
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     documentTitle: "Order Detail PDF"
-  });
+  })
+
+  // ========== RTK QUERY ==========
+  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('processing');
+  const processingOrders = ordersResponse?.data || [];
 
   // ========== PROCESSING ORDERS DATA ==========
-  const processingOrders = [
-    {
-      id: 'ORD003',
-      date: '23 June 2024',
-      time: '2:15 PM',
-      serviceName: 'Gemstone - Yellow Sapphire',
-      customerName: 'Rahul Sharma',
-      status: 'processing',
-      paymentStatus: 'paid',
-      amount: 2499,
-      paymentMethod: 'Credit Card',
-      priest: 'Pandit Suresh Tiwari',
-      location: 'Sector 62, Noida',
-      type: 'offline',
-      items: [
-        { name: 'Yellow Sapphire', quantity: 1, price: 2499 }
-      ]
-    },
-    {
-      id: 'ORD007',
-      date: '28 June 2024',
-      time: '11:00 AM',
-      serviceName: 'Vastu Consultation',
-      customerName: 'Rahul Sharma',
-      status: 'processing',
-      paymentStatus: 'pending',
-      amount: 3999,
-      paymentMethod: 'Net Banking',
-      priest: 'Pandit Rajesh Sharma',
-      type: 'online'
-    },
-    {
-      id: 'ORD010',
-      date: '27 June 2024',
-      time: '9:30 AM',
-      serviceName: 'Numerology Report',
-      customerName: 'Rahul Sharma',
-      status: 'processing',
-      paymentStatus: 'paid',
-      amount: 699,
-      paymentMethod: 'Wallet',
-      priest: 'Dr. Priya Singh',
-      type: 'online'
-    }
-  ];
+  // Mock data removed for dynamic RTK Query data
 
   // ========== FILTER OPTIONS ==========
   const paymentOptions = ['all', 'paid', 'pending', 'refunded'];
@@ -462,16 +423,23 @@ const ProcessingOrders = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredOrders.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
-                      <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-sm font-medium text-gray-600">No processing orders found</p>
-                      <p className="text-xs text-gray-500 mt-1">Try changing your filters</p>
-                    </td>
-                  </tr>
-                ) : (
-                  currentOrders.map((order) => ( // Changed from filteredOrders to currentOrders
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
+                        <div className="w-10 h-10 border-4 border-amber-200 border-t-amber-600 rounded-full animate-spin mx-auto mb-3"></div>
+                        <p className="text-sm font-medium text-gray-600">Loading processing orders...</p>
+                      </td>
+                    </tr>
+                  ) : filteredOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
+                        <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-sm font-medium text-gray-600">No processing orders found</p>
+                        <p className="text-xs text-gray-500 mt-1">Try changing your filters</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    currentOrders.map((order) => ( // Changed from filteredOrders to currentOrders
                     <tr 
                       key={order.id} 
                       className="hover:bg-amber-50/30 transition-colors "

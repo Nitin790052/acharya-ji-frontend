@@ -51,9 +51,26 @@ export const userApi = createApi({
       invalidatesTags: ['User'],
     }),
     
-    // DASHBOARD ENDPOINT
     getUserDashboard: builder.query({
       query: () => '/dashboard',
+      providesTags: ['User'],
+    }),
+    getUserOrders: builder.query({
+      query: (status) => ({
+        url: '/orders',
+        params: { status: status !== 'all' ? status : undefined }
+      }),
+      providesTags: ['User'],
+    }),
+    cancelOrder: builder.mutation({
+      query: (orderId) => ({
+        url: `/orders/${orderId}/cancel`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['User'],
+    }),
+    getUserHistory: builder.query({
+      query: () => '/history',
       providesTags: ['User'],
     }),
     
@@ -88,6 +105,36 @@ export const userApi = createApi({
         body: { identifier, otp },
       }),
     }),
+
+    // PROFILE ENDPOINTS
+    getProfile: builder.query({
+      query: () => '/profile',
+      providesTags: ['User'],
+    }),
+    updateProfile: builder.mutation({
+      query: (profileData) => ({
+        url: '/profile',
+        method: 'PUT',
+        body: profileData,
+      }),
+      invalidatesTags: ['User'],
+    }),
+    changePassword: builder.mutation({
+      query: (passwordData) => ({
+        url: '/change-password',
+        method: 'PUT',
+        body: passwordData,
+      }),
+      invalidatesTags: ['User'],
+    }),
+    uploadAvatar: builder.mutation({
+      query: (formData) => ({
+        url: '/upload-avatar',
+        method: 'POST',
+        body: formData,
+      }),
+      invalidatesTags: ['User'],
+    }),
   }),
 });
 
@@ -100,10 +147,19 @@ export const {
   
   // Dashboard hook
   useGetUserDashboardQuery,
+  useGetUserOrdersQuery,
+  useCancelOrderMutation,
+  useGetUserHistoryQuery,
   
   // Auth hooks
   useRegisterUserMutation,
   useLoginUserMutation,
   useSendOtpMutation,
   useVerifyOtpMutation,
+
+  // Profile hooks
+  useGetProfileQuery,
+  useUpdateProfileMutation,
+  useChangePasswordMutation,
+  useUploadAvatarMutation,
 } = userApi;

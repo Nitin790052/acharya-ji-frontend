@@ -23,6 +23,7 @@ import { toast } from "react-toastify";
 import { useReactToPrint } from 'react-to-print';
 import html2pdf from 'html2pdf.js';
 import { useNavigate } from 'react-router-dom';
+import { useGetUserOrdersQuery } from '../../../../services/userApi';
 
 const CancelledOrders = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -43,7 +44,11 @@ const CancelledOrders = () => {
     documentTitle: "Order Detail PDF"
   });
 
-  const cancelledOrders = [
+  // ========== RTK QUERY ==========
+  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('cancelled');
+  const cancelledOrders = ordersResponse?.data || [];
+
+  const cancelledOrdersMock = [
   {
     id: 'ORD005',
     date: '20 June 2024',
@@ -566,16 +571,23 @@ const CancelledOrders = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredOrders.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
-                      <XCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-sm font-medium text-gray-600">No cancelled orders found</p>
-                      <p className="text-xs text-gray-500 mt-1">Try changing your filters</p>
-                    </td>
-                  </tr>
-                ) : (
-                  currentOrders.map((order) => ( // Changed from filteredOrders to currentOrders
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
+                        <div className="w-10 h-10 border-4 border-amber-200 border-t-amber-600 rounded-full animate-spin mx-auto mb-3"></div>
+                        <p className="text-sm font-medium text-gray-600">Loading cancelled orders...</p>
+                      </td>
+                    </tr>
+                  ) : filteredOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
+                        <XCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-sm font-medium text-gray-600">No cancelled orders found</p>
+                        <p className="text-xs text-gray-500 mt-1">Try changing your filters</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    currentOrders.map((order) => ( // Changed from filteredOrders to currentOrders
                     <tr 
                       key={order.id} 
                       className="hover:bg-amber-50/30 transition-colors "

@@ -37,6 +37,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from "react-toastify";
 import { useGetUserDashboardQuery } from '../../../services/userApi';
+import { getTranslation } from '../../../utils/translations';
 
 const DashboardMain = () => {
   // ========== STATE MANAGEMENT ==========
@@ -55,8 +56,38 @@ const DashboardMain = () => {
   // ========== DATA FETCHING ==========
   const { data: dashboardData, isLoading, isError, error } = useGetUserDashboardQuery();
 
+  // Format Last Login
+  const formatLastLogin = (lastLogin) => {
+    if (!lastLogin || lastLogin === 'Just now') return 'Just now';
+    
+    // If it's the new object format from backend
+    if (typeof lastLogin === 'object' && lastLogin.timestamp) {
+      const { device, location, timestamp } = lastLogin;
+      const date = new Date(timestamp);
+      const timeStr = date.toLocaleString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+      return `${device || 'Unknown'} from ${location || 'Unknown'} at ${timeStr}`;
+    }
+
+    try {
+      const date = new Date(lastLogin);
+      return isNaN(date.getTime()) ? lastLogin : date.toLocaleString('en-GB');
+    } catch (e) {
+      return lastLogin;
+    }
+  };
+
   // Mock User Data (Fallback)
-  const userData = dashboardData?.data?.user || {
+  const userData = dashboardData?.data?.user ? {
+    ...dashboardData.data.user,
+    lastLogin: formatLastLogin(dashboardData.data.user.lastLogin)
+  } : {
     name: 'Loading...',
     email: '...',
     memberSince: '2023',
@@ -285,6 +316,9 @@ const DashboardMain = () => {
     );
   }
 
+  const selectedLanguage = dashboardData?.data?.user?.language || 'English (India)';
+  const t = (key) => getTranslation(selectedLanguage, key);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ========== HEADER - Same as UserDashboard ========== */}
@@ -294,7 +328,7 @@ const DashboardMain = () => {
             <div>
               <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[25px] font-semibold text-amber-900 uppercase leading-tight flex items-center gap-2">
                 <Home className="w-[23px] h-[23px] text-amber-600" />
-                Dashboard
+                {t('dashboard')}
               </h1>
               <p className="sm:hidden text-sm text-gray-600 mt-0.5">
                 Welcome back, {userData.name}
@@ -343,7 +377,7 @@ const DashboardMain = () => {
       {/* Welcome Text */}
       <div className="flex-1 min-w-0"> {/* min-w-0 for truncation */}
         <h2 className="text-sm sm:text-base lg:text-lg font-bold text-amber-900 flex items-center gap-0.5 flex-wrap">
-          <span className="truncate">Welcome Back, {userData.name}!</span>
+          <span className="truncate">{t('welcome_back')}, {userData.name}!</span>
           <Hand className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
         </h2>
         <p className="text-[10px] sm:text-xs text-amber-800 mt-0.5 truncate">
@@ -363,7 +397,7 @@ const DashboardMain = () => {
   {/* Last Login Info */}
   <div className="mt-2 sm:mt-3 flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-amber-800">
     <LogIn className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
-    <span className="truncate">Last login: {userData.lastLogin}</span>
+    <span className="truncate">{t('last_login')}: {userData.lastLogin}</span>
   </div>
 </div>
 
@@ -391,7 +425,7 @@ const DashboardMain = () => {
               </div>
               <div className="mt-2">
                 <p className="text-xl font-bold text-gray-800">{card.value}</p>
-                <p className="text-xs text-gray-600">{card.label}</p>
+                <p className="text-xs text-gray-600">{t(card.type)}</p>
               </div>
             </div>
           ))}
@@ -406,11 +440,11 @@ const DashboardMain = () => {
       <div className="flex items-center justify-between">
         <h3 className="text-sm sm:text-[15px] font-bold text-gray-800 flex items-center gap-1 sm:gap-2">
           <ShoppingBag className="w-3 h-3 sm:w-4 sm:h-4 text-amber-600" />
-          <span>Recent Orders</span>
+          <span>{t('recent_orders')}</span>
           <span className="text-[10px] sm:text-xs font-normal text-gray-500 ml-1">(Last 5)</span>
         </h3>
         <Link to="/user/orders" className="text-xs sm:text-sm text-amber-600 hover:text-amber-700 flex items-center gap-0.5 sm:gap-1">
-          <span>View All</span>
+          <span>{t('view_all')}</span>
           <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
         </Link>
       </div>

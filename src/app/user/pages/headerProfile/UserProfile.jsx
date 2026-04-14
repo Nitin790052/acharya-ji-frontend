@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { 
+import React, { useState, useEffect } from 'react';
+import {
   User,
   Mail,
   Phone,
@@ -22,12 +22,27 @@ import {
   EyeOff,
   Smartphone,
   Monitor,
-  Clock
+  Clock,
+  Loader
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from "react-toastify";
+import {
+  useGetProfileQuery,
+  useUpdateProfileMutation,
+  useChangePasswordMutation,
+  useUploadAvatarMutation
+} from '../../../../services/userApi';
+import { API_URL } from '../../../../config/apiConfig';
+import { getTranslation } from '../../../../utils/translations';
 
 const UserProfile = () => {
+  // ========== RTK QUERY HOOKS ==========
+  const { data: profileResponse, isLoading, isError } = useGetProfileQuery();
+  const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
+  const [changePassword, { isLoading: isChangingPassword }] = useChangePasswordMutation();
+  const [uploadAvatar, { isLoading: isUploadingAvatar }] = useUploadAvatarMutation();
+
   // ========== STATE MANAGEMENT ==========
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -37,25 +52,104 @@ const UserProfile = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   // ========== PROFILE DATA ==========
   const [profile, setProfile] = useState({
     photo: null,
-    fullName: 'Rahul Sharma',
-    email: 'rahul.sharma@example.com',
-    phone: '+91 98765 43210',
-    address: 'Sector 45, Noida, Uttar Pradesh - 201301',
+    fullName: '',
+    email: '',
+    phone: '',
+    address: '',
     memberSince: '2023',
     lastLogin: 'Today, 9:30 AM'
   });
 
   // ========== EDIT FORM STATE ==========
   const [editForm, setEditForm] = useState({
-    fullName: profile.fullName,
-    email: profile.email,
-    phone: profile.phone,
-    address: profile.address
+    fullName: '',
+    email: '',
+    phone: '',
+    address: ''
   });
+
+  // ========== NOTIFICATION SETTINGS ==========
+  const [notificationSettings, setNotificationSettings] = useState({
+    emailNotifications: true,
+    smsNotifications: true,
+    whatsAppUpdates: false,
+    promotionalEmails: true,
+    bookingReminders: true,
+    paymentAlerts: true,
+    newsletter: false
+  });
+
+  // ========== LOGIN ACTIVITY ==========
+  const [loginActivity, setLoginActivity] = useState([]);
+
+  // ========== LANGUAGE ==========
+  const [language, setLanguage] = useState('English (India)');
+  const languages = [
+    { id: 1, name: 'English (India)', native: 'English' },
+    { id: 2, name: 'हिन्दी (Hindi)', native: 'हिन्दी' }
+  ];
+
+  // ========== THEME ==========
+  const [theme, setTheme] = useState('light'); // light, dark, system
+
+  // Sync state with fetched data
+  useEffect(() => {
+    if (profileResponse?.success && profileResponse.data) {
+      const userData = profileResponse.data;
+      const baseUrl = API_URL.replace('/api', '');
+
+      const formatDateTime = (timestamp) => {
+        if (!timestamp) return 'Just now';
+        const date = new Date(timestamp);
+        return date.toLocaleString('en-GB', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true
+        });
+      };
+
+      const formattedProfile = {
+        photo: userData.avatar ? `${baseUrl}${userData.avatar}` : null,
+        fullName: userData.name || '',
+        email: userData.email || '',
+        phone: userData.phone || '',
+        address: userData.address || '',
+        memberSince: userData.createdAt ? new Date(userData.createdAt).getFullYear().toString() : '2023',
+        lastLogin: userData.loginHistory && userData.loginHistory.length > 1
+          ? `${userData.loginHistory[1].device} from ${userData.loginHistory[1].location || 'Unknown location'} at ${formatDateTime(userData.loginHistory[1].timestamp)}`
+          : (userData.createdAt ? `First Login on ${new Date(userData.createdAt).toLocaleDateString('en-GB')}` : 'Just now')
+      };
+      setProfile(formattedProfile);
+      setEditForm({
+        fullName: formattedProfile.fullName,
+        email: formattedProfile.email,
+        phone: formattedProfile.phone,
+        address: formattedProfile.address
+      });
+      if (userData.notificationSettings) {
+        setNotificationSettings(userData.notificationSettings);
+      }
+      if (userData.language) setLanguage(userData.language);
+      if (userData.theme) setTheme(userData.theme);
+      if (userData.loginHistory) {
+        setLoginActivity(userData.loginHistory.map((h, index) => ({
+          id: h._id,
+          device: h.device,
+          location: h.location,
+          time: formatDateTime(h.timestamp),
+          current: index === 0
+        })));
+      }
+    }
+  }, [profileResponse]);
 
   // ========== PASSWORD CHANGE STATE ==========
   const [passwordData, setPasswordData] = useState({
@@ -71,38 +165,6 @@ const UserProfile = () => {
     verified: false
   });
 
-  // ========== LOGIN ACTIVITY ==========
-  const loginActivity = [
-    { id: 1, device: 'Chrome on Windows', location: 'Noida, India', time: 'Today, 9:30 AM', current: true },
-    { id: 2, device: 'Safari on iPhone', location: 'Noida, India', time: 'Yesterday, 8:15 PM', current: false },
-    { id: 3, device: 'Firefox on Mac', location: 'Delhi, India', time: '20 Jun 2024, 10:30 AM', current: false }
-  ];
-
-  // ========== NOTIFICATION SETTINGS ==========
-  const [notificationSettings, setNotificationSettings] = useState({
-    emailNotifications: true,
-    smsNotifications: true,
-    whatsAppUpdates: false,
-    promotionalEmails: true,
-    bookingReminders: true,
-    paymentAlerts: true,
-    newsletter: false
-  });
-
-  // ========== LANGUAGE ==========
-  const [language, setLanguage] = useState('English (India)');
-  const languages = [
-    { id: 1, name: 'English (India)', native: 'English' },
-    { id: 2, name: 'हिन्दी (Hindi)', native: 'हिन्दी' },
-    { id: 3, name: 'தமிழ் (Tamil)', native: 'தமிழ்' },
-    { id: 4, name: 'తెలుగు (Telugu)', native: 'తెలుగు' },
-    { id: 5, name: 'বাংলা (Bengali)', native: 'বাংলা' },
-    { id: 6, name: 'मराठी (Marathi)', native: 'मराठी' }
-  ];
-
-  // ========== THEME ==========
-  const [theme, setTheme] = useState('light'); // light, dark, system
-
   // ========== HANDLER FUNCTIONS ==========
   const handleEditToggle = () => {
     if (isEditing) {
@@ -116,16 +178,19 @@ const UserProfile = () => {
     setIsEditing(!isEditing);
   };
 
-  const handleSaveProfile = () => {
-    setProfile({
-      ...profile,
-      fullName: editForm.fullName,
-      email: editForm.email,
-      phone: editForm.phone,
-      address: editForm.address
-    });
-    setIsEditing(false);
-    toast.success('✅ Profile updated successfully!');
+  const handleSaveProfile = async () => {
+    try {
+      await updateProfile({
+        name: editForm.fullName,
+        phone: editForm.phone,
+        address: editForm.address
+      }).unwrap();
+
+      setIsEditing(false);
+      toast.success('✅ Profile updated successfully!');
+    } catch (err) {
+      toast.error(err.data?.message || 'Failed to update profile');
+    }
   };
 
   const handleInputChange = (e) => {
@@ -133,11 +198,29 @@ const UserProfile = () => {
     setEditForm({ ...editForm, [name]: value });
   };
 
-  const handlePhotoUpload = () => {
-    toast.info('Photo upload feature coming soon!');
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    toast.promise(
+      uploadAvatar(formData).unwrap(),
+      {
+        pending: 'Uploading profile picture...',
+        success: '✅ Profile picture updated!',
+        error: 'Failed to upload image'
+      }
+    );
   };
 
-  const handlePasswordChange = () => {
+  const handlePasswordChange = async () => {
     if (!passwordData.current || !passwordData.new || !passwordData.confirm) {
       toast.info('Please fill all fields');
       return;
@@ -150,10 +233,19 @@ const UserProfile = () => {
       toast.info('Password must be at least 6 characters');
       return;
     }
-    
-    toast.success('✅ Password changed successfully!');
-    setShowPasswordModal(false);
-    setPasswordData({ current: '', new: '', confirm: '' });
+
+    try {
+      await changePassword({
+        currentPassword: passwordData.current,
+        newPassword: passwordData.new
+      }).unwrap();
+
+      toast.success('✅ Password changed successfully!');
+      setShowPasswordModal(false);
+      setPasswordData({ current: '', new: '', confirm: '' });
+    } catch (err) {
+      toast.error(err.data?.message || 'Failed to change password');
+    }
   };
 
   const handle2FAToggle = () => {
@@ -161,25 +253,126 @@ const UserProfile = () => {
     toast.success(twoFA.enabled ? '✅ 2FA disabled' : '✅ 2FA enabled');
   };
 
-  const handleNotificationToggle = (key) => {
-    setNotificationSettings({ ...notificationSettings, [key]: !notificationSettings[key] });
-    toast.success('✅ Preference updated');
+  const handleNotificationToggle = async (key) => {
+    const updatedSettings = { ...notificationSettings, [key]: !notificationSettings[key] };
+    try {
+      await updateProfile({
+        notificationSettings: updatedSettings
+      }).unwrap();
+      setNotificationSettings(updatedSettings);
+      toast.success('✅ Preference updated');
+    } catch (err) {
+      toast.error('Failed to update preference');
+    }
   };
 
-  const handleLanguageChange = (lang) => {
-    setLanguage(lang.name);
-    setShowLanguageModal(false);
-    toast.success(`✅ Language changed to ${lang.name}`);
+  const handleLanguageChange = async (lang) => {
+    try {
+      await updateProfile({ language: lang.name }).unwrap();
+      setLanguage(lang.name);
+      setShowLanguageModal(false);
+      toast.success(`✅ Language changed to ${lang.name}`);
+    } catch (err) {
+      toast.error('Failed to update language');
+    }
   };
 
-  const handleThemeChange = (newTheme) => {
-    setTheme(newTheme);
-    toast.success(`✅ Theme changed to ${newTheme}`);
+  const handleThemeChange = async (newTheme) => {
+    try {
+      await updateProfile({ theme: newTheme }).unwrap();
+      setTheme(newTheme);
+      toast.success(`✅ Theme changed to ${newTheme}`);
+    } catch (err) {
+      toast.error('Failed to update theme');
+    }
+  };
+
+  const handleExportData = () => {
+    try {
+      if (!profileResponse?.data) {
+        toast.error("No data available to export");
+        return;
+      }
+
+      const userData = profileResponse.data;
+      const exportObject = {
+        exportedAt: new Date().toISOString(),
+        platform: "Acharya Ji Online",
+        profile: {
+          name: userData.name,
+          email: userData.email,
+          phone: userData.phone,
+          address: userData.address,
+          membership: userData.membershipType || 'Free Member',
+          memberSince: userData.createdAt,
+          walletBalance: userData.walletBalance || 0
+        },
+        preferences: {
+          language: userData.language,
+          theme: userData.theme,
+          notifications: userData.notificationSettings
+        },
+        security: {
+          loginHistory: userData.loginHistory?.map(h => ({
+            device: h.device,
+            location: h.location,
+            timestamp: h.timestamp,
+            ip: h.ip
+          })) || []
+        }
+      };
+
+      const blob = new Blob([JSON.stringify(exportObject, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Acharya_Ji_Profile_${userData.name.replace(/\s+/g, '_')}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success('✅ Profile data exported successfully!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to export profile data');
+    }
   };
 
   const handleLogoutAll = () => {
     toast.info('Logging out from all devices...');
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-2">
+          <Loader className="w-8 h-8 text-amber-500 animate-spin" />
+          <p className="text-amber-600 font-medium">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center max-w-md">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Failed to load profile</h2>
+          <p className="text-gray-600 mb-6">There was an error fetching your profile details. Please try again later.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-amber-500 text-white px-6 py-2 rounded-lg hover:bg-amber-600 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ========== STATUS STYLING ==========
   const getStatusStyle = (isActive) => {
@@ -194,6 +387,8 @@ const UserProfile = () => {
     </div>
   );
 
+  const t = (key) => getTranslation(language, key);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ========== HEADER ========== */}
@@ -203,7 +398,7 @@ const UserProfile = () => {
             <div>
               <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[25px] font-semibold text-amber-900 uppercase leading-tight flex items-center gap-2">
                 <User className="w-[23px] h-[23px] text-amber-600" />
-                Profile
+                {t('profile')}
               </h1>
               <p className="sm:hidden text-sm text-gray-600 mt-0.5">
                 Manage your account
@@ -220,8 +415,8 @@ const UserProfile = () => {
               onClick={isEditing ? handleSaveProfile : handleEditToggle}
               className={`
                 px-4 py-1.5 text-sm font-medium rounded-md transition-all capitalize cursor-pointer
-                ${isEditing 
-                  ? 'bg-green-500 text-white hover:bg-green-600' 
+                ${isEditing
+                  ? 'bg-green-500 text-white hover:bg-green-600'
                   : 'bg-amber-500 text-white hover:bg-amber-600'
                 }
               `}
@@ -229,12 +424,12 @@ const UserProfile = () => {
               {isEditing ? (
                 <span className="flex items-center gap-1">
                   <Save className="w-4 h-4" />
-                  Save Changes
+                  {t('save_changes')}
                 </span>
               ) : (
                 <span className="flex items-center gap-1">
                   <Edit2 className="w-4 h-4" />
-                  Edit Profile
+                  {t('edit_profile')}
                 </span>
               )}
             </button>
@@ -249,28 +444,40 @@ const UserProfile = () => {
         <div className="bg-white rounded-lg border border-gray-200 hover:border-amber-300 transition-colors p-4">
           <h3 className="text-[15px] font-bold text-gray-800 mb-3 flex items-center gap-2">
             <User className="w-4 h-4 text-amber-600" />
-            Personal Information
+            {t('personal_info')}
           </h3>
 
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Profile Photo */}
             <div className="flex flex-col items-center">
               <div className="relative">
-                <div className="w-24 h-24 bg-amber-50 rounded-lg flex items-center justify-center border-2 border-amber-200">
+                <div className="w-24 h-24 bg-amber-50 rounded-lg flex items-center justify-center border-2 border-amber-200 overflow-hidden">
                   {profile.photo ? (
-                    <img src={profile.photo} alt="Profile" className="w-full h-full rounded-lg object-cover" />
+                    <img src={profile.photo} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
                     <User className="w-12 h-12 text-amber-600" />
                   )}
+                  {isUploadingAvatar && (
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                      <Loader className="w-6 h-6 text-white animate-spin" />
+                    </div>
+                  )}
                 </div>
-                <button
-                  onClick={handlePhotoUpload}
-                  className="absolute -bottom-1 -right-1 p-1.5 bg-amber-500 rounded-lg text-white hover:bg-amber-600 transition-colors"
+                <label
+                  htmlFor="avatar-upload"
+                  className="absolute -bottom-1 -right-1 p-1.5 bg-amber-500 rounded-lg text-white hover:bg-amber-600 transition-colors cursor-pointer shadow-sm"
                 >
                   <Camera className="w-4 h-4" />
-                </button>
+                </label>
+                <input
+                  type="file"
+                  id="avatar-upload"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                />
               </div>
-              <p className="text-xs text-gray-500 mt-2">Member since {profile.memberSince}</p>
+              <p className="text-xs text-gray-500 mt-2">{t('member_since')} {profile.memberSince}</p>
             </div>
 
             {/* Personal Details */}
@@ -345,8 +552,8 @@ const UserProfile = () => {
             {/* Quick Stats */}
             <div className="bg-amber-50 rounded-lg p-3 min-w-[120px]">
               <Clock className="w-4 h-4 text-amber-600 mb-1" />
-              <p className="text-xs text-amber-600">Last Login</p>
-              <p className="text-sm font-bold text-amber-700 mt-1">{profile.lastLogin}</p>
+              <p className="text-xs text-amber-600">{t('last_login')}</p>
+              <p className="text-sm font-bold text-amber-700 mt-1 leading-tight">{profile.lastLogin}</p>
             </div>
           </div>
         </div>
@@ -358,7 +565,7 @@ const UserProfile = () => {
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-[15px] font-bold text-gray-800 flex items-center gap-2">
                 <Lock className="w-4 h-4 text-amber-600" />
-                Change Password
+                {t('change_password')}
               </h3>
               <button
                 onClick={() => setShowPasswordModal(true)}
@@ -378,7 +585,7 @@ const UserProfile = () => {
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-[15px] font-bold text-gray-800 flex items-center gap-2">
                 <Shield className="w-4 h-4 text-amber-600" />
-                2FA
+                {t('two_fa')}
               </h3>
               <button
                 onClick={() => setShow2FAModal(true)}
@@ -400,7 +607,7 @@ const UserProfile = () => {
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-[15px] font-bold text-gray-800 flex items-center gap-2">
                 <LogIn className="w-4 h-4 text-amber-600" />
-                Login Activity
+                {t('login_activity')}
               </h3>
               <button
                 onClick={() => toast.info('Viewing all login activity')}
@@ -409,7 +616,7 @@ const UserProfile = () => {
                 View All
               </button>
             </div>
-            <p className="text-xs text-gray-600">Current session: {loginActivity[0].device}</p>
+            <p className="text-xs text-gray-600">Current session: {loginActivity.length > 0 ? loginActivity[0].device : 'Searching...'}</p>
           </div>
         </div>
 
@@ -417,36 +624,40 @@ const UserProfile = () => {
         <div className="bg-white rounded-lg border border-gray-200 hover:border-amber-300 transition-colors p-3">
           <h3 className="text-[15px] font-bold text-gray-800 mb-2 flex items-center gap-2">
             <LogIn className="w-4 h-4 text-amber-600" />
-            Recent Login Activity
+            {t('recent_login')}
           </h3>
           <div className="space-y-2">
-            {loginActivity.map((activity) => (
-              <div key={activity.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  {activity.device.includes('iPhone') ? (
-                    <Smartphone className="w-3 h-3 text-gray-500" />
-                  ) : (
-                    <Monitor className="w-3 h-3 text-gray-500" />
-                  )}
-                  <div>
-                    <p className="text-xs font-medium text-gray-800">{activity.device}</p>
-                    <p className="text-xs text-gray-500">{activity.location}</p>
+            {loginActivity.length > 0 ? (
+              loginActivity.map((activity) => (
+                <div key={activity.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    {activity.device?.includes('iPhone') || activity.device?.includes('Mobile') ? (
+                      <Smartphone className="w-3 h-3 text-gray-500" />
+                    ) : (
+                      <Monitor className="w-3 h-3 text-gray-500" />
+                    )}
+                    <div>
+                      <p className="text-xs font-medium text-gray-800">{activity.device}</p>
+                      <p className="text-xs text-gray-500">{activity.location}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">{activity.time}</span>
+                    {activity.current && (
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Current</span>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">{activity.time}</span>
-                  {activity.current && (
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Current</span>
-                  )}
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-xs text-gray-500 py-4 text-center">No recent login activity found.</p>
+            )}
           </div>
-          <button 
+          <button
             onClick={handleLogoutAll}
             className="mt-2 text-xs text-red-600 hover:text-red-700 font-medium"
           >
-            Logout from all devices
+            {t('logout_all')}
           </button>
         </div>
 
@@ -457,7 +668,7 @@ const UserProfile = () => {
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-[15px] font-bold text-gray-800 flex items-center gap-2">
                 <Bell className="w-4 h-4 text-amber-600" />
-                Notifications
+                {t('notifications')}
               </h3>
               <button
                 onClick={() => setShowNotificationModal(true)}
@@ -493,7 +704,7 @@ const UserProfile = () => {
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-[15px] font-bold text-gray-800 flex items-center gap-2">
                 <Globe className="w-4 h-4 text-amber-600" />
-                Language
+                {t('language')}
               </h3>
               <button
                 onClick={() => setShowLanguageModal(true)}
@@ -510,33 +721,30 @@ const UserProfile = () => {
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-[15px] font-bold text-gray-800 flex items-center gap-2">
                 {theme === 'light' ? <Sun className="w-4 h-4 text-amber-600" /> : <Moon className="w-4 h-4 text-amber-600" />}
-                Theme
+                {t('theme')}
               </h3>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => handleThemeChange('light')}
-                className={`flex-1 px-2 py-1 text-xs rounded-lg flex items-center justify-center gap-1 ${
-                  theme === 'light' ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
+                className={`flex-1 px-2 py-1 text-xs rounded-lg flex items-center justify-center gap-1 ${theme === 'light' ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
               >
                 <Sun className="w-3 h-3" />
                 Light
               </button>
               <button
                 onClick={() => handleThemeChange('dark')}
-                className={`flex-1 px-2 py-1 text-xs rounded-lg flex items-center justify-center gap-1 ${
-                  theme === 'dark' ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
+                className={`flex-1 px-2 py-1 text-xs rounded-lg flex items-center justify-center gap-1 ${theme === 'dark' ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
               >
                 <Moon className="w-3 h-3" />
                 Dark
               </button>
               <button
                 onClick={() => handleThemeChange('system')}
-                className={`flex-1 px-2 py-1 text-xs rounded-lg flex items-center justify-center gap-1 ${
-                  theme === 'system' ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
+                className={`flex-1 px-2 py-1 text-xs rounded-lg flex items-center justify-center gap-1 ${theme === 'system' ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
               >
                 System
               </button>
@@ -556,13 +764,13 @@ const UserProfile = () => {
                 </p>
               </div>
             </div>
-            
-            <button 
+
+            <button
               className="px-3 py-1.5 text-xs bg-white text-gray-800 rounded-lg border border-gray-300 hover:bg-gray-50 flex items-center gap-1 cursor-pointer transition-colors"
-              onClick={() => toast.info('Downloading profile data...')}
+              onClick={handleExportData}
             >
               <Save className="w-3 h-3" />
-              Export Data
+              {t('export_data')}
             </button>
           </div>
         </div>
@@ -589,7 +797,7 @@ const UserProfile = () => {
                   <input
                     type={showCurrentPassword ? 'text' : 'password'}
                     value={passwordData.current}
-                    onChange={(e) => setPasswordData({...passwordData, current: e.target.value})}
+                    onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-amber-300 pr-10"
                   />
                   <button
@@ -607,7 +815,7 @@ const UserProfile = () => {
                   <input
                     type={showNewPassword ? 'text' : 'password'}
                     value={passwordData.new}
-                    onChange={(e) => setPasswordData({...passwordData, new: e.target.value})}
+                    onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-amber-300 pr-10"
                   />
                   <button
@@ -625,7 +833,7 @@ const UserProfile = () => {
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={passwordData.confirm}
-                    onChange={(e) => setPasswordData({...passwordData, confirm: e.target.value})}
+                    onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-amber-300 pr-10"
                   />
                   <button
@@ -682,9 +890,8 @@ const UserProfile = () => {
                 </div>
                 <button
                   onClick={handle2FAToggle}
-                  className={`px-3 py-1 text-xs rounded-full ${
-                    twoFA.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
-                  }`}
+                  className={`px-3 py-1 text-xs rounded-full ${twoFA.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
+                    }`}
                 >
                   {twoFA.enabled ? 'Enabled' : 'Disabled'}
                 </button>
@@ -694,28 +901,25 @@ const UserProfile = () => {
                 <label className="block text-xs text-gray-600 mb-2">Authentication Method</label>
                 <div className="space-y-2">
                   <button
-                    onClick={() => setTwoFA({...twoFA, method: 'app'})}
-                    className={`w-full p-2 text-left rounded-lg flex items-center gap-2 ${
-                      twoFA.method === 'app' ? 'bg-amber-50 border border-amber-200' : 'hover:bg-gray-50'
-                    }`}
+                    onClick={() => setTwoFA({ ...twoFA, method: 'app' })}
+                    className={`w-full p-2 text-left rounded-lg flex items-center gap-2 ${twoFA.method === 'app' ? 'bg-amber-50 border border-amber-200' : 'hover:bg-gray-50'
+                      }`}
                   >
                     <Smartphone className="w-4 h-4 text-amber-600" />
                     <span className="text-sm text-gray-800">Authenticator App</span>
                   </button>
                   <button
-                    onClick={() => setTwoFA({...twoFA, method: 'sms'})}
-                    className={`w-full p-2 text-left rounded-lg flex items-center gap-2 ${
-                      twoFA.method === 'sms' ? 'bg-amber-50 border border-amber-200' : 'hover:bg-gray-50'
-                    }`}
+                    onClick={() => setTwoFA({ ...twoFA, method: 'sms' })}
+                    className={`w-full p-2 text-left rounded-lg flex items-center gap-2 ${twoFA.method === 'sms' ? 'bg-amber-50 border border-amber-200' : 'hover:bg-gray-50'
+                      }`}
                   >
                     <Phone className="w-4 h-4 text-amber-600" />
                     <span className="text-sm text-gray-800">SMS Authentication</span>
                   </button>
                   <button
-                    onClick={() => setTwoFA({...twoFA, method: 'email'})}
-                    className={`w-full p-2 text-left rounded-lg flex items-center gap-2 ${
-                      twoFA.method === 'email' ? 'bg-amber-50 border border-amber-200' : 'hover:bg-gray-50'
-                    }`}
+                    onClick={() => setTwoFA({ ...twoFA, method: 'email' })}
+                    className={`w-full p-2 text-left rounded-lg flex items-center gap-2 ${twoFA.method === 'email' ? 'bg-amber-50 border border-amber-200' : 'hover:bg-gray-50'
+                      }`}
                   >
                     <Mail className="w-4 h-4 text-amber-600" />
                     <span className="text-sm text-gray-800">Email Authentication</span>
@@ -756,9 +960,8 @@ const UserProfile = () => {
                 </div>
                 <button
                   onClick={() => handleNotificationToggle('emailNotifications')}
-                  className={`px-3 py-1 text-xs rounded-full ${
-                    notificationSettings.emailNotifications ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                  }`}
+                  className={`px-3 py-1 text-xs rounded-full ${notificationSettings.emailNotifications ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                    }`}
                 >
                   {notificationSettings.emailNotifications ? 'On' : 'Off'}
                 </button>
@@ -771,9 +974,8 @@ const UserProfile = () => {
                 </div>
                 <button
                   onClick={() => handleNotificationToggle('smsNotifications')}
-                  className={`px-3 py-1 text-xs rounded-full ${
-                    notificationSettings.smsNotifications ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                  }`}
+                  className={`px-3 py-1 text-xs rounded-full ${notificationSettings.smsNotifications ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                    }`}
                 >
                   {notificationSettings.smsNotifications ? 'On' : 'Off'}
                 </button>
@@ -786,9 +988,8 @@ const UserProfile = () => {
                 </div>
                 <button
                   onClick={() => handleNotificationToggle('whatsAppUpdates')}
-                  className={`px-3 py-1 text-xs rounded-full ${
-                    notificationSettings.whatsAppUpdates ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                  }`}
+                  className={`px-3 py-1 text-xs rounded-full ${notificationSettings.whatsAppUpdates ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                    }`}
                 >
                   {notificationSettings.whatsAppUpdates ? 'On' : 'Off'}
                 </button>
@@ -801,9 +1002,8 @@ const UserProfile = () => {
                 </div>
                 <button
                   onClick={() => handleNotificationToggle('promotionalEmails')}
-                  className={`px-3 py-1 text-xs rounded-full ${
-                    notificationSettings.promotionalEmails ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                  }`}
+                  className={`px-3 py-1 text-xs rounded-full ${notificationSettings.promotionalEmails ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                    }`}
                 >
                   {notificationSettings.promotionalEmails ? 'On' : 'Off'}
                 </button>
@@ -816,9 +1016,8 @@ const UserProfile = () => {
                 </div>
                 <button
                   onClick={() => handleNotificationToggle('bookingReminders')}
-                  className={`px-3 py-1 text-xs rounded-full ${
-                    notificationSettings.bookingReminders ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                  }`}
+                  className={`px-3 py-1 text-xs rounded-full ${notificationSettings.bookingReminders ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                    }`}
                 >
                   {notificationSettings.bookingReminders ? 'On' : 'Off'}
                 </button>
@@ -831,9 +1030,8 @@ const UserProfile = () => {
                 </div>
                 <button
                   onClick={() => handleNotificationToggle('paymentAlerts')}
-                  className={`px-3 py-1 text-xs rounded-full ${
-                    notificationSettings.paymentAlerts ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                  }`}
+                  className={`px-3 py-1 text-xs rounded-full ${notificationSettings.paymentAlerts ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                    }`}
                 >
                   {notificationSettings.paymentAlerts ? 'On' : 'Off'}
                 </button>
@@ -846,9 +1044,8 @@ const UserProfile = () => {
                 </div>
                 <button
                   onClick={() => handleNotificationToggle('newsletter')}
-                  className={`px-3 py-1 text-xs rounded-full ${
-                    notificationSettings.newsletter ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                  }`}
+                  className={`px-3 py-1 text-xs rounded-full ${notificationSettings.newsletter ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                    }`}
                 >
                   {notificationSettings.newsletter ? 'On' : 'Off'}
                 </button>
@@ -884,9 +1081,8 @@ const UserProfile = () => {
                 <button
                   key={lang.id}
                   onClick={() => handleLanguageChange(lang)}
-                  className={`w-full p-3 text-left rounded-lg hover:bg-amber-50 transition-colors flex items-center justify-between ${
-                    language === lang.name ? 'bg-amber-50 border border-amber-200' : ''
-                  }`}
+                  className={`w-full p-3 text-left rounded-lg hover:bg-amber-50 transition-colors flex items-center justify-between ${language === lang.name ? 'bg-amber-50 border border-amber-200' : ''
+                    }`}
                 >
                   <div>
                     <p className="text-sm font-medium text-gray-800">{lang.name}</p>

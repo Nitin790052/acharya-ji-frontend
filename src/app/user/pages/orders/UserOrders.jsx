@@ -31,6 +31,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from "react-toastify";
 import { useReactToPrint } from 'react-to-print';
 import html2pdf from 'html2pdf.js';
+import { useGetUserOrdersQuery, useCancelOrderMutation } from '../../../../services/userApi';
 
 const UserOrders = () => {
   // ========== STATE MANAGEMENT ==========
@@ -53,290 +54,29 @@ const UserOrders = () => {
   const handlePrint = useReactToPrint({
     contentRef:printRef,
     documentTitle:"Order Detail PDF"
-  });
+  })
+
+  // ========== RTK QUERY ==========
+  const { data: ordersResponse, isLoading, isError, refetch } = useGetUserOrdersQuery('all');
+  const [cancelOrder, { isLoading: isCancelling }] = useCancelOrderMutation();
+
+  const handleCancelOrder = async (orderId) => {
+    if (window.confirm("Are you sure you want to cancel this order?")) {
+      try {
+        const res = await cancelOrder(orderId).unwrap();
+        if (res.success) {
+          toast.success("Order cancelled successfully");
+        }
+      } catch (err) {
+        toast.error(err.data?.message || "Failed to cancel order");
+      }
+    }
+  };
+
+  const orders = ordersResponse?.data || [];
 
   // ========== ORDERS DATA ==========
-  const orders = [
-   {
-  id: 'ORD011',
-  date: '29 June 2024',
-  time: '4:00 PM',
-  serviceName: 'Maha Mrityunjaya Jaap',
-  customerName: 'Amit Verma',
-  status: 'completed',
-  paymentStatus: 'paid',
-  amount: 4500,
-  paymentMethod: 'Razorpay',
-  priest: 'Pandit Rajesh Sharma',
-  location: 'Indirapuram, Ghaziabad',
-  type: 'offline',
-  items: [
-    { name: 'Jaap Samagri', quantity: 1, price: 800 },
-    { name: 'Dakshina', quantity: 1, price: 3700 }
-  ]
-},
-{
-  id: 'ORD012',
-  date: '30 June 2024',
-  time: '1:00 PM',
-  serviceName: 'Palmistry Consultation',
-  customerName: 'Neha Kapoor',
-  status: 'completed',
-  paymentStatus: 'paid',
-  amount: 799,
-  paymentMethod: 'UPI',
-  priest: 'Dr. Priya Singh',
-  type: 'online'
-},
-{
-  id: 'ORD013',
-  date: '01 July 2024',
-  time: '10:30 AM',
-  serviceName: 'Blue Sapphire Gemstone',
-  customerName: 'Ravi Malhotra',
-  status: 'processing',
-  paymentStatus: 'paid',
-  amount: 5200,
-  paymentMethod: 'Credit Card',
-  priest: 'Pandit Suresh Tiwari',
-  location: 'Sector 75, Noida',
-  type: 'offline',
-  items: [
-    { name: 'Blue Sapphire', quantity: 1, price: 5000 },
-    { name: 'Lab Certification', quantity: 1, price: 200 }
-  ]
-},
-{
-  id: 'ORD014',
-  date: '02 July 2024',
-  time: '6:00 PM',
-  serviceName: 'Hanuman Chalisa Path',
-  customerName: 'Sanjay Gupta',
-  status: 'pending',
-  paymentStatus: 'pending',
-  amount: 1800,
-  paymentMethod: 'Net Banking',
-  priest: 'Pandit Suresh Tiwari',
-  location: 'Vaishali, Ghaziabad',
-  type: 'offline'
-},
-{
-  id: 'ORD015',
-  date: '03 July 2024',
-  time: '9:00 AM',
-  serviceName: 'Rudraksha Mala (5 Mukhi)',
-  customerName: 'Priya Mehta',
-  status: 'completed',
-  paymentStatus: 'paid',
-  amount: 999,
-  paymentMethod: 'Wallet',
-  priest: '—',
-  type: 'offline',
-  items: [
-    { name: '5 Mukhi Rudraksha Mala', quantity: 1, price: 999 }
-  ]
-},
-{
-  id: 'ORD016',
-  date: '04 July 2024',
-  time: '12:00 PM',
-  serviceName: 'Kaal Sarp Dosh Puja',
-  customerName: 'Manoj Tiwari',
-  status: 'processing',
-  paymentStatus: 'paid',
-  amount: 7500,
-  paymentMethod: 'Razorpay',
-  priest: 'Pandit Rajesh Sharma',
-  location: 'Noida Extension',
-  type: 'offline',
-  items: [
-    { name: 'Puja Samagri', quantity: 1, price: 1500 },
-    { name: 'Dakshina', quantity: 1, price: 6000 }
-  ]
-},
-{
-  id: 'ORD017',
-  date: '05 July 2024',
-  time: '2:30 PM',
-  serviceName: 'Love & Relationship Report',
-  customerName: 'Sneha Sharma',
-  status: 'completed',
-  paymentStatus: 'paid',
-  amount: 499,
-  paymentMethod: 'UPI',
-  priest: 'Dr. Priya Singh',
-  type: 'online'
-},
-{
-  id: 'ORD018',
-  date: '06 July 2024',
-  time: '11:15 AM',
-  serviceName: 'Vastu Yantra (Copper)',
-  customerName: 'Ankit Agarwal',
-  status: 'processing',
-  paymentStatus: 'paid',
-  amount: 1499,
-  paymentMethod: 'Credit Card',
-  priest: '—',
-  type: 'offline',
-  items: [
-    { name: 'Vastu Yantra Copper', quantity: 1, price: 1499 }
-  ]
-},
-{
-  id: 'ORD019',
-  date: '07 July 2024',
-  time: '5:00 PM',
-  serviceName: 'Online Tarot Reading',
-  customerName: 'Kavita Singh',
-  status: 'completed',
-  paymentStatus: 'paid',
-  amount: 699,
-  paymentMethod: 'UPI',
-  priest: 'Dr. Anjali Mishra',
-  type: 'online'
-},
-{
-  id: 'ORD020',
-  date: '08 July 2024',
-  time: '8:30 AM',
-  serviceName: 'Griha Pravesh Puja',
-  customerName: 'Vikas Jain',
-  status: 'completed',
-  paymentStatus: 'completed',
-  amount: 6500,
-  paymentMethod: 'Razorpay',
-  priest: 'Pandit Suresh Tiwari',
-  location: 'Sector 137, Noida',
-  type: 'offline',
-  items: [
-    { name: 'Puja Samagri', quantity: 1, price: 1200 },
-    { name: 'Dakshina', quantity: 1, price: 5300 }
-  ]
-},
-    {
-      id: 'ORD002',
-      date: '22 June 2024',
-      time: '3:30 PM',
-      serviceName: 'Kundli Report',
-      customerName: 'Rahul Sharma',
-      status: 'pending',
-      paymentStatus: 'pending',
-      amount: 599,
-      paymentMethod: 'UPI',
-      priest: 'Dr. Anjali Mishra',
-      type: 'online'
-    },
-    {
-      id: 'ORD003',
-      date: '23 June 2024',
-      time: '2:15 PM',
-      serviceName: 'Gemstone - Yellow Sapphire',
-      customerName: 'Rahul Sharma',
-      status: 'processing',
-      paymentStatus: 'paid',
-      amount: 2499,
-      paymentMethod: 'Credit Card',
-      priest: 'Pandit Suresh Tiwari',
-      location: 'Sector 62, Noida',
-      type: 'offline'
-    },
-    {
-      id: 'ORD004',
-      date: '24 June 2024',
-      time: '7:00 PM',
-      serviceName: 'Consultation - Dr. Anjali',
-      customerName: 'Rahul Sharma',
-      status: 'completed',
-      paymentStatus: 'paid',
-      amount: 299,
-      paymentMethod: 'Wallet',
-      priest: 'Dr. Anjali Mishra',
-      type: 'online'
-    },
-    {
-      id: 'ORD005',
-      date: '20 June 2024',
-      time: '6:00 PM',
-      serviceName: 'Ganesh Abhishek',
-      customerName: 'Patel Ji',
-      status: 'cancelled',
-      paymentStatus: 'refunded',
-      amount: 2500,
-      paymentMethod: 'Razorpay',
-      priest: 'Pandit Suresh Tiwari',
-      location: 'Sector 62, Noida',
-      type: 'offline',
-      cancelReason: 'Inclement weather'
-    },
-    {
-      id: 'ORD006',
-      date: '18 June 2024',
-      time: '9:00 AM',
-      serviceName: 'Online Rudrabhishek',
-      customerName: 'Rohit Kumar',
-      status: 'completed',
-      paymentStatus: 'paid',
-      amount: 1500,
-      paymentMethod: 'UPI',
-      priest: 'Dr. Anjali Mishra',
-      type: 'online'
-    },
-    {
-      id: 'ORD007',
-      date: '28 June 2024',
-      time: '11:00 AM',
-      serviceName: 'Vastu Consultation',
-      customerName: 'Rahul Sharma',
-      status: 'processing',
-      paymentStatus: 'pending',
-      amount: 3999,
-      paymentMethod: 'Net Banking',
-      priest: 'Pandit Rajesh Sharma',
-      type: 'online'
-    },
-    {
-      id: 'ORD008',
-      date: '15 June 2024',
-      time: '8:00 AM',
-      serviceName: 'Navgrah Puja',
-      customerName: 'Sharma Family',
-      status: 'cancelled',
-      paymentStatus: 'refunded',
-      amount: 5000,
-      paymentMethod: 'Credit Card',
-      priest: 'Pandit Rajesh Sharma',
-      location: 'Sector 45, Noida',
-      type: 'offline'
-    },
-    {
-      id: 'ORD009',
-      date: '26 June 2024',
-      time: '5:30 PM',
-      serviceName: 'Lakshmi Puja',
-      customerName: 'Verma Ji',
-      status: 'pending',
-      paymentStatus: 'pending',
-      amount: 2800,
-      paymentMethod: 'Razorpay',
-      priest: 'Pandit Rajesh Sharma',
-      location: 'Sector 18, Noida',
-      type: 'offline'
-    },
-    {
-      id: 'ORD010',
-      date: '27 June 2024',
-      time: '9:30 AM',
-      serviceName: 'Numerology Report',
-      customerName: 'Rahul Sharma',
-      status: 'processing',
-      paymentStatus: 'paid',
-      amount: 699,
-      paymentMethod: 'Wallet',
-      priest: 'Dr. Priya Singh',
-      type: 'online'
-    }
-  ];
+  // Mock data removed for dynamic RTK Query data
 
   // ========== FILTER OPTIONS ==========
   const statusOptions = ['all', 'pending', 'processing', 'completed', 'cancelled'];
@@ -734,16 +474,23 @@ const UserOrders = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredOrders.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
-                      <ShoppingBag className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-sm font-medium text-gray-600">No orders found</p>
-                      <p className="text-xs text-gray-500 mt-1">Try changing your filters</p>
-                    </td>
-                  </tr>
-                ) : (
-                  currentOrders.map((order) => ( // Changed from filteredOrders to currentOrders
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
+                        <Loader className="w-10 h-10 text-amber-500 mx-auto animate-spin mb-3" />
+                        <p className="text-sm font-medium text-gray-600">Loading orders...</p>
+                      </td>
+                    </tr>
+                  ) : filteredOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
+                        <ShoppingBag className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-sm font-medium text-gray-600">No orders found</p>
+                        <p className="text-xs text-gray-500 mt-1">Try changing your filters</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    currentOrders.map((order) => ( // Changed from filteredOrders to currentOrders
                     <tr 
                       key={order.id} 
                       className="hover:bg-amber-50/30 transition-colors cursor-pointer"
@@ -808,6 +555,17 @@ const UserOrders = () => {
                           >
                             <Download className="w-4 h-4" />
                           </button>)}
+
+                           {/* Cancel Order Button */}
+                           {order.status === 'pending' && (
+                             <button
+                               onClick={() => handleCancelOrder(order.dbId)}
+                               className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors"
+                               title="Cancel Order"
+                             >
+                               <XCircle className="w-4 h-4" />
+                             </button>
+                           )}
                         </div>
                       </td>
                     </tr>

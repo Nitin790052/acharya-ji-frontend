@@ -20,6 +20,7 @@ import {
 import { toast } from "react-toastify";
 import { useReactToPrint } from 'react-to-print';
 import html2pdf from 'html2pdf.js';
+import { useGetUserOrdersQuery, useCancelOrderMutation } from '../../../../services/userApi';
 
 const PendingOrders = () => {
   // ========== STATE MANAGEMENT ==========
@@ -36,145 +37,29 @@ const PendingOrders = () => {
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     documentTitle: "Order Detail PDF"
-  });
+  })
+
+  // ========== RTK QUERY ==========
+  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('pending');
+  const [cancelOrder] = useCancelOrderMutation();
+
+  const handleCancelOrder = async (orderId) => {
+    if (window.confirm("Are you sure you want to cancel this order?")) {
+      try {
+        const res = await cancelOrder(orderId).unwrap();
+        if (res.success) {
+          toast.success("Order cancelled successfully");
+        }
+      } catch (err) {
+        toast.error(err.data?.message || "Failed to cancel order");
+      }
+    }
+  };
+
+  const pendingOrders = ordersResponse?.data || [];
 
   // ========== PENDING ORDERS DATA ==========
-  const pendingOrders = [
-  {
-    id: 'ORD002',
-    date: '22 June 2024',
-    time: '3:30 PM',
-    serviceName: 'Kundli Report',
-    customerName: 'Rahul Sharma',
-    status: 'pending',
-    paymentStatus: 'pending',
-    amount: 599,
-    paymentMethod: 'UPI',
-    priest: 'Dr. Anjali Mishra',
-    type: 'online'
-  },
-  {
-    id: 'ORD009',
-    date: '26 June 2024',
-    time: '5:30 PM',
-    serviceName: 'Lakshmi Puja',
-    customerName: 'Verma Ji',
-    status: 'pending',
-    paymentStatus: 'pending',
-    amount: 2800,
-    paymentMethod: 'Razorpay',
-    priest: 'Pandit Rajesh Sharma',
-    location: 'Sector 18, Noida',
-    type: 'offline'
-  },
-  {
-    id: 'ORD011',
-    date: '29 June 2024',
-    time: '11:00 AM',
-    serviceName: 'Mangal Dosh Puja',
-    customerName: 'Amit Tiwari',
-    status: 'pending',
-    paymentStatus: 'pending',
-    amount: 3200,
-    paymentMethod: 'Net Banking',
-    priest: 'Pandit Suresh Tiwari',
-    location: 'Ghaziabad, UP',
-    type: 'offline'
-  },
-  {
-    id: 'ORD012',
-    date: '30 June 2024',
-    time: '2:00 PM',
-    serviceName: 'Career Consultation',
-    customerName: 'Neha Verma',
-    status: 'pending',
-    paymentStatus: 'pending',
-    amount: 999,
-    paymentMethod: 'UPI',
-    priest: 'Dr. Priya Singh',
-    type: 'online'
-  },
-  {
-    id: 'ORD013',
-    date: '1 July 2024',
-    time: '9:00 AM',
-    serviceName: 'Navgrah Shanti Puja',
-    customerName: 'Rakesh Yadav',
-    status: 'pending',
-    paymentStatus: 'pending',
-    amount: 4500,
-    paymentMethod: 'Credit Card',
-    priest: 'Pandit Rajesh Sharma',
-    location: 'Greater Noida',
-    type: 'offline'
-  },
-  {
-    id: 'ORD014',
-    date: '2 July 2024',
-    time: '6:30 PM',
-    serviceName: 'Numerology Report',
-    customerName: 'Sneha Kapoor',
-    status: 'pending',
-    paymentStatus: 'pending',
-    amount: 699,
-    paymentMethod: 'Wallet',
-    priest: 'Dr. Anjali Mishra',
-    type: 'online'
-  },
-  {
-    id: 'ORD015',
-    date: '3 July 2024',
-    time: '4:00 PM',
-    serviceName: 'Gemstone Recommendation',
-    customerName: 'Vikas Malhotra',
-    status: 'pending',
-    paymentStatus: 'pending',
-    amount: 1499,
-    paymentMethod: 'Razorpay',
-    priest: 'Dr. Priya Singh',
-    type: 'online'
-  },
-  {
-    id: 'ORD016',
-    date: '4 July 2024',
-    time: '8:30 AM',
-    serviceName: 'Griha Pravesh Puja',
-    customerName: 'Mehta Family',
-    status: 'pending',
-    paymentStatus: 'pending',
-    amount: 5500,
-    paymentMethod: 'Net Banking',
-    priest: 'Pandit Suresh Tiwari',
-    location: 'Faridabad, Haryana',
-    type: 'offline'
-  },
-  {
-    id: 'ORD017',
-    date: '5 July 2024',
-    time: '1:15 PM',
-    serviceName: 'Online Rudrabhishek',
-    customerName: 'Ankit Sharma',
-    status: 'pending',
-    paymentStatus: 'pending',
-    amount: 1800,
-    paymentMethod: 'UPI',
-    priest: 'Dr. Anjali Mishra',
-    type: 'online'
-  },
-  {
-    id: 'ORD018',
-    date: '6 July 2024',
-    time: '7:45 PM',
-    serviceName: 'Marriage Compatibility Check',
-    customerName: 'Pooja Singh',
-    status: 'pending',
-    paymentStatus: 'pending',
-    amount: 799,
-    paymentMethod: 'Credit Card',
-    priest: 'Dr. Priya Singh',
-    type: 'online'
-  }
-];
+  // Mock data removed for dynamic RTK Query data
 
   // ========== FILTER OPTIONS ==========
   const paymentOptions = ['all', 'paid', 'pending', 'refunded'];
@@ -512,16 +397,23 @@ const PendingOrders = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredOrders.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
-                      <Clock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-sm font-medium text-gray-600">No pending orders found</p>
-                      <p className="text-xs text-gray-500 mt-1">Try changing your filters</p>
-                    </td>
-                  </tr>
-                ) : (
-                  currentOrders.map((order) => ( // Changed from filteredOrders to currentOrders
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
+                        <div className="w-10 h-10 border-4 border-amber-200 border-t-amber-600 rounded-full animate-spin mx-auto mb-3"></div>
+                        <p className="text-sm font-medium text-gray-600">Loading pending orders...</p>
+                      </td>
+                    </tr>
+                  ) : filteredOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
+                        <Clock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-sm font-medium text-gray-600">No pending orders found</p>
+                        <p className="text-xs text-gray-500 mt-1">Try changing your filters</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    currentOrders.map((order) => ( // Changed from filteredOrders to currentOrders
                     <tr 
                       key={order.id} 
                       className="hover:bg-amber-50/30 transition-colors "
@@ -567,6 +459,15 @@ const PendingOrders = () => {
                           >
                             <Download className="w-4 h-4" />
                           </button>
+
+                           {/* Cancel Order Button */}
+                           <button
+                             onClick={() => handleCancelOrder(order.dbId)}
+                             className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors"
+                             title="Cancel Order"
+                           >
+                             <XCircle className="w-4 h-4" />
+                           </button>
                         </div>
                       </td>
                     </tr>

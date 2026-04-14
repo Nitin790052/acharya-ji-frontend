@@ -80,7 +80,13 @@ const UserLogin = () => {
       const loginResponse = await loginUser({ phone: mobile, loginType: 'mobile' }).unwrap();
       handleLoginSuccess(loginResponse);
     } catch (err) {
-      toast.error(err.data?.message || "Invalid OTP");
+      console.error("Login verification error:", err);
+      // Differentiate between OTP failure and Login failure
+      if (otpVerified) {
+        toast.error("OTP Verified but auto-login failed. Please try logging in with Email.");
+      } else {
+        toast.error(err.data?.message || "Invalid OTP or selection");
+      }
     }
   };
 
