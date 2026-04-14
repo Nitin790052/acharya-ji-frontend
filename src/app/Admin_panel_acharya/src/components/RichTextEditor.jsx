@@ -10,7 +10,6 @@ const RichTextEditor = ({ value, onChange, placeholder = "Start typing..." }) =>
 		uploader: {
 			insertImageAsBase64URI: true
 		},
-		minHeight: 300,
         buttons: [
             'source', '|',
             'bold', 'italic', 'underline', 'strikethrough', 'eraser', 'brush', 'fontsize', '|',

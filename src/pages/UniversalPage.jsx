@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useGetPageBySlugQuery } from '../services/universalContentApi';
-import { Helmet } from 'react-helmet';
+import { Helmet } from 'react-helmet-async';
 import { BACKEND_URL } from '../config/apiConfig';
 import { 
     ArrowRight, 
