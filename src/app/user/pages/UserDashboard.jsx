@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from "react-toastify";
-import { useGetUserDashboardQuery } from '../../../services/userApi';
+import { useGetUserDashboardQuery, useAddMoneyMutation, usePayAllPendingMutation } from '../../../services/userApi';
 import { getTranslation } from '../../../utils/translations';
 
 const DashboardMain = () => {
@@ -55,6 +55,8 @@ const DashboardMain = () => {
 
   // ========== DATA FETCHING ==========
   const { data: dashboardData, isLoading, isError, error } = useGetUserDashboardQuery();
+  const [addMoney, { isLoading: isAddingMoney }] = useAddMoneyMutation();
+  const [payPending, { isLoading: isPayingPending }] = usePayAllPendingMutation();
 
   // Format Last Login
   const formatLastLogin = (lastLogin) => {
@@ -231,50 +233,50 @@ const DashboardMain = () => {
         break;
       case 'orders':
         toast.info('Redirecting to orders...');
-        navigate("/user/dashboard/order-user");
+        navigate("/user/dashboard/order-user/order-all");
         break;
       case 'invoice':
-        toast.info('Downloading latest invoice...');
+        if (recentOrders.length > 0) {
+          const latestOrderId = recentOrders[0].originalId || recentOrders[0].id;
+          toast.info('Opening latest invoice...');
+          navigate(`/user/dashboard/invoice/${latestOrderId}`);
+        } else {
+          toast.info('No orders found to download invoice.');
+        }
         break;
       default:
         toast.info(`${action} feature coming soon!`);
     }
   };
 
-  const handleAddMoney = () => {
+  const handleAddMoney = async () => {
     if (!addMoneyAmount || parseInt(addMoneyAmount) < 1) {
       toast.info('Please enter a valid amount');
       return;
     }
 
-    setIsProcessing(true);
-    
-    setTimeout(() => {
-      setIsProcessing(false);
+    try {
+      await addMoney(parseInt(addMoneyAmount)).unwrap();
       setShowAddMoneyModal(false);
       setAddMoneyAmount('');
-      toast.success(`✅ ₹${addMoneyAmount} added successfully to your wallet!`)
-    }, 2000);
+      toast.success(`✅ ₹${addMoneyAmount} added successfully to your wallet!`);
+    } catch (err) {
+      toast.error(err.data?.message || 'Failed to add money');
+    }
   };
 
   const handleQuickAmount = (amount) => {
     setAddMoneyAmount(amount.toString());
   };
 
-  const handleMakePayment = () => {
-    if (!addMoneyAmount || parseInt(addMoneyAmount) < 1) {
-      toast.info('Please enter payment amount');
-      return;
-    }
-
-    setIsProcessing(true);
-    
-    setTimeout(() => {
-      setIsProcessing(false);
+  const handleMakePayment = async () => {
+    try {
+      await payPending().unwrap();
       setShowPaymentModal(false);
-      setAddMoneyAmount('');
-      toast.success(`✅ Payment of ₹${addMoneyAmount} completed successfully!`)
-    }, 2000);
+      toast.success('✅ All pending payments settled successfully!');
+    } catch (err) {
+      toast.error(err.data?.message || 'Failed to process payment');
+    }
   };
 
   // Loading Spinner
@@ -496,7 +498,7 @@ const DashboardMain = () => {
                   <span className="text-xs text-green-600">Status</span>
                   <span className={getStatusStyle(latestPayment.status)}>
                     {getStatusIcon(latestPayment.status)}
-                    <span className="capitalize">Success</span>
+                    <span className="capitalize">{latestPayment.status}</span>
                   </span>
                 </div>
                 <p className="text-lg font-bold text-gray-800">{latestPayment.amount}</p>
@@ -573,9 +575,9 @@ const DashboardMain = () => {
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-amber-600" />
               <div>
-                <h4 className="text-xs font-semibold text-gray-800">This {selectedTime}'s Summary</h4>
+                <h4 className="text-xs font-semibold text-gray-800">Account Summary</h4>
                 <p className="text-xs text-gray-600">
-                  Total Spent: ₹7,299 • Orders: 5 • Pending: ₹1,200
+                  Total Spent: {dashboardData?.data?.summary?.find(s => s.type === 'payment')?.value || '₹0'} • Orders: {dashboardData?.data?.summary?.find(s => s.type === 'order')?.value || '0'} • Wallet: {dashboardData?.data?.summary?.find(s => s.type === 'wallet')?.value || '₹0'}
                 </p>
               </div>
             </div>
@@ -666,10 +668,10 @@ const DashboardMain = () => {
             <div className="flex gap-2">
               <button
                 onClick={handleAddMoney}
-                disabled={isProcessing || !addMoneyAmount}
+                disabled={isAddingMoney || !addMoneyAmount}
                 className="flex-1 bg-amber-500 text-white py-2 rounded-lg hover:bg-amber-600 disabled:bg-amber-300 flex items-center justify-center gap-2"
               >
-                {isProcessing ? <LoadingSpinner /> : 'Add Money'}
+                {isAddingMoney ? <LoadingSpinner /> : 'Add Money'}
               </button>
               <button
                 onClick={() => setShowAddMoneyModal(false)}
@@ -698,7 +700,7 @@ const DashboardMain = () => {
 
             <div className="bg-amber-50 p-3 rounded-lg mb-4">
               <p className="text-xs text-amber-600">Pending Amount</p>
-              <p className="text-2xl font-bold text-amber-700">₹1,200</p>
+              <p className="text-2xl font-bold text-amber-700">{formatCurrency(dashboardData?.data?.totalPendingAmount || 0)}</p>
             </div>
 
             <div className="mb-4">
@@ -748,10 +750,10 @@ const DashboardMain = () => {
             <div className="flex gap-2">
               <button
                 onClick={handleMakePayment}
-                disabled={isProcessing || !addMoneyAmount}
+                disabled={isPayingPending || (!dashboardData?.data?.totalPendingAmount)}
                 className="flex-1 bg-amber-500 text-white py-2 rounded-lg hover:bg-amber-600 disabled:bg-amber-300 flex items-center justify-center gap-2"
               >
-                {isProcessing ? <LoadingSpinner /> : 'Pay Now'}
+                {isPayingPending ? <LoadingSpinner /> : 'Pay Now'}
               </button>
               <button
                 onClick={() => setShowPaymentModal(false)}

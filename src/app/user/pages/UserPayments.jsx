@@ -38,10 +38,7 @@ import {
   ChevronLeft,
   MoreHorizontal
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { toast } from "react-toastify";
-import { useReactToPrint } from 'react-to-print';
-import html2pdf from 'html2pdf.js';
+import { useGetUserDashboardQuery, useGetUserHistoryQuery } from '../../../services/userApi';
 
 const UserPayments = () => {
   // ========== STATE MANAGEMENT ==========
@@ -63,13 +60,20 @@ const UserPayments = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const printRef = useRef();
 
+  // ========== RTK QUERY ==========
+  const { data: dashboardResponse, isLoading: isDashboardLoading } = useGetUserDashboardQuery();
+  const { data: historyResponse, isLoading: isHistoryLoading } = useGetUserHistoryQuery();
+
+  const dashboardData = dashboardResponse?.data;
+  const historyData = historyResponse?.data || [];
+
   // ========== WALLET DATA ==========
   const walletData = {
-    availableBalance: 2450,
-    totalSpent: 7299,
-    totalPaid: 8799,
-    totalCredits: 1500,
-    pendingPayments: 1200,
+    availableBalance: dashboardData?.user?.walletBalance || 0,
+    totalSpent: dashboardData?.summary?.find(s => s.type === 'history')?.value?.replace('₹', '') || 0,
+    totalPaid: dashboardData?.user?.totalPaid || 0,
+    totalCredits: dashboardData?.user?.totalCredits || 0,
+    pendingPayments: dashboardData?.summary?.find(s => s.type === 'payment')?.value?.replace('₹', '') || 0,
     currency: 'INR'
   };
 
@@ -102,170 +106,25 @@ const UserPayments = () => {
   ];
 
   // ========== PAYMENT HISTORY ==========
-  const paymentHistory = [
-    // Credits (Money In)
-    {
-      id: 'TXN001',
-      transactionId: 'RZP123456789',
-      date: '19 June 2024',
-      time: '2:15 PM',
-      description: 'Wallet Recharge',
-      amount: 1000,
-      type: 'credit',
-      method: 'Razorpay',
-      methodType: 'card',
-      status: 'success',
-      balance: 2450,
-      category: 'recharge',
-      invoiceAvailable: true
-    },
-    {
-      id: 'TXN002',
-      transactionId: 'UPI987654321',
-      date: '10 June 2024',
-      time: '11:30 AM',
-      description: 'Wallet Recharge',
-      amount: 500,
-      type: 'credit',
-      method: 'UPI',
-      methodType: 'upi',
-      status: 'success',
-      balance: 1450,
-      category: 'recharge',
+  const paymentHistory = historyData
+    .filter(item => item.type === 'payment')
+    .map(item => ({
+      id: item.id,
+      transactionId: item.details?.transactionId || item.id,
+      date: item.date,
+      time: item.time,
+      description: item.description,
+      amount: item.amount,
+      type: 'credit', // In history, we currently show bookings as payments (credits to the system)
+      method: item.details?.method || 'N/A',
+      methodType: (item.details?.method || '').toLowerCase().includes('upi') ? 'upi' : 
+                  (item.details?.method || '').toLowerCase().includes('card') ? 'card' : 'razorpay',
+      status: item.status,
+      balance: item.details?.balance || 0,
+      category: item.type,
       invoiceAvailable: true,
-      upiId: 'rahul@okhdfcbank'
-    },
-    {
-      id: 'TXN003',
-      transactionId: 'PMT456789123',
-      date: '5 June 2024',
-      time: '4:45 PM',
-      description: 'Promo Credit - WELCOME100',
-      amount: 100,
-      type: 'credit',
-      method: 'Promo',
-      methodType: 'promo',
-      status: 'success',
-      balance: 950,
-      category: 'promo',
-      promoCode: 'WELCOME100'
-    },
-    {
-      id: 'TXN004',
-      transactionId: 'REF123456789',
-      date: '21 June 2024',
-      time: '11:45 AM',
-      description: 'Refund - Ganesh Abhishek',
-      amount: 2500,
-      type: 'credit',
-      method: 'Wallet',
-      methodType: 'wallet',
-      status: 'success',
-      balance: 2450,
-      category: 'refund',
-      orderId: 'ORD005',
-      invoiceAvailable: true
-    },
-
-    // Debits (Money Out)
-    {
-      id: 'TXN005',
-      transactionId: 'TXN987654321',
-      date: '20 June 2024',
-      time: '9:00 AM',
-      description: 'Satyanarayan Puja',
-      amount: 3500,
-      type: 'debit',
-      method: 'Wallet',
-      methodType: 'wallet',
-      status: 'success',
-      balance: 1450,
-      category: 'puja',
-      orderId: 'ORD001',
-      invoiceAvailable: true
-    },
-    {
-      id: 'TXN006',
-      transactionId: 'TXN456789123',
-      date: '15 June 2024',
-      time: '4:30 PM',
-      description: 'Consultation - Dr. Anjali',
-      amount: 899,
-      type: 'debit',
-      method: 'Wallet',
-      methodType: 'wallet',
-      status: 'success',
-      balance: 4950,
-      category: 'consultation',
-      orderId: 'ORD004',
-      invoiceAvailable: true
-    },
-    {
-      id: 'TXN007',
-      transactionId: 'TXN789123456',
-      date: '10 June 2024',
-      time: '11:15 AM',
-      description: 'Gemstone - Yellow Sapphire',
-      amount: 2499,
-      type: 'debit',
-      method: 'Credit Card',
-      methodType: 'card',
-      status: 'success',
-      balance: 5849,
-      category: 'product',
-      orderId: 'ORD003',
-      cardLast4: '4242',
-      invoiceAvailable: true
-    },
-    {
-      id: 'TXN008',
-      transactionId: 'TXN321654987',
-      date: '5 June 2024',
-      time: '3:00 PM',
-      description: 'Ganesh Abhishek',
-      amount: 2500,
-      type: 'debit',
-      method: 'Net Banking',
-      methodType: 'netbanking',
-      status: 'failed',
-      balance: 8348,
-      category: 'puja',
-      orderId: 'ORD005',
-      failureReason: 'Insufficient balance'
-    },
-    {
-      id: 'TXN009',
-      transactionId: 'TXN654987321',
-      date: '22 June 2024',
-      time: '10:00 AM',
-      description: 'Vastu Consultation',
-      amount: 3999,
-      type: 'debit',
-      method: 'UPI',
-      methodType: 'upi',
-      status: 'pending',
-      balance: 2450,
-      category: 'consultation',
-      orderId: 'ORD007',
-      upiId: 'rahul@okhdfcbank'
-    },
-    {
-      id: 'TXN010',
-      transactionId: 'TXN147258369',
-      date: '18 June 2024',
-      time: '9:00 AM',
-      description: 'Online Rudrabhishek',
-      amount: 1500,
-      type: 'debit',
-      method: 'Wallet',
-      methodType: 'wallet',
-      status: 'success',
-      balance: 3950,
-      category: 'puja',
-      orderId: 'ORD006',
-      invoiceAvailable: true
-    }
-  ];
+      orderId: item.details?.orderId
+    }));
 
   // ========== FILTER OPTIONS ==========
   const statusOptions = [

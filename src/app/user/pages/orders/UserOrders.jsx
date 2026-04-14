@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { 
+import {
   ShoppingBag,
   Calendar,
   Clock,
@@ -49,11 +49,11 @@ const UserOrders = () => {
 
   // navigation logic 
   const navigate = useNavigate();
-  
+
   // print logic
   const handlePrint = useReactToPrint({
-    contentRef:printRef,
-    documentTitle:"Order Detail PDF"
+    contentRef: printRef,
+    documentTitle: "Order Detail PDF"
   })
 
   // ========== RTK QUERY ==========
@@ -93,15 +93,15 @@ const UserOrders = () => {
   const filteredOrders = orders.filter(order => {
     // Status filter
     if (statusFilter !== 'all' && order.status !== statusFilter) return false;
-    
+
     // Payment filter
     if (paymentFilter !== 'all' && order.paymentStatus !== paymentFilter) return false;
-    
+
     // Date filter
     if (dateFilter !== 'all') {
       const orderDate = new Date(order.date.split(' ').reverse().join('-'));
       const today = new Date();
-      
+
       if (dateFilter === 'today') {
         if (orderDate.toDateString() !== today.toDateString()) return false;
       } else if (dateFilter === 'week') {
@@ -112,7 +112,7 @@ const UserOrders = () => {
         if (orderDate < monthAgo) return false;
       }
     }
-    
+
     // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
@@ -122,7 +122,7 @@ const UserOrders = () => {
         order.customerName.toLowerCase().includes(term)
       );
     }
-    
+
     return true;
   });
 
@@ -142,17 +142,17 @@ const UserOrders = () => {
   const getPageNumbers = () => {
     const pageNumbers = [];
     const maxVisiblePages = 5;
-    
+
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
         pageNumbers.push(i);
       }
     } else {
       pageNumbers.push(1);
-      
+
       let start = Math.max(2, currentPage - 1);
       let end = Math.min(totalPages - 1, currentPage + 1);
-      
+
       if (currentPage <= 3) {
         start = 2;
         end = 4;
@@ -160,29 +160,29 @@ const UserOrders = () => {
         start = totalPages - 3;
         end = totalPages - 1;
       }
-      
+
       if (start > 2) {
         pageNumbers.push('ellipsis1');
       }
-      
+
       for (let i = start; i <= end; i++) {
         pageNumbers.push(i);
       }
-      
+
       if (end < totalPages - 1) {
         pageNumbers.push('ellipsis2');
       }
-      
+
       pageNumbers.push(totalPages);
     }
-    
+
     return pageNumbers;
   };
 
   // ========== STATUS STYLING FUNCTIONS ==========
   const getStatusStyle = (status) => {
     const base = "px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 w-fit";
-    switch(status) {
+    switch (status) {
       case 'completed':
         return `${base} bg-green-100 text-green-700`;
       case 'processing':
@@ -198,7 +198,7 @@ const UserOrders = () => {
 
   const getPaymentStatusStyle = (status) => {
     const base = "px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 w-fit";
-    switch(status) {
+    switch (status) {
       case 'paid':
         return `${base} bg-green-100 text-green-700`;
       case 'pending':
@@ -211,7 +211,7 @@ const UserOrders = () => {
   };
 
   const getStatusIcon = (status) => {
-    switch(status) {
+    switch (status) {
       case 'completed':
         return <CheckCircle className="w-3 h-3" />;
       case 'processing':
@@ -240,15 +240,15 @@ const UserOrders = () => {
     setShowDetailsModal(true);
   };
 
- const handleDownloadInvoice = (orderId,orderData) => {
+  const handleDownloadInvoice = (orderId, orderData) => {
 
-  if (showDetailsModal===true) {
-     navigate(`/user/dashboard/modal/invoice/${orderId}`,{state:orderData},);
-     toast.success("Invoice has been generated Successfully!!");
-  } else {
-    navigate(`/user/dashboard/invoice/${orderId}`,{state:orderData},);
-  toast.success("Invoice has been Successfully Downloaded ");
-};
+    if (showDetailsModal === true) {
+      navigate(`/user/dashboard/modal/invoice/${orderId}`, { state: orderData },);
+      toast.success("Invoice has been generated Successfully!!");
+    } else {
+      navigate(`/user/dashboard/invoice/${orderId}`, { state: orderData },);
+      toast.success("Invoice has been Successfully Downloaded ");
+    };
   }
 
   const handlePrintInvoice = (orderId) => {
@@ -275,31 +275,31 @@ const UserOrders = () => {
 
   // ========== STATS CARDS ==========
   const statsCards = [
-    { 
+    {
       label: 'Total Orders',
       value: orders.length,
       bgColor: 'bg-amber-50',
       icon: <ShoppingBag className="text-amber-600" size={20} />
     },
-    { 
+    {
       label: 'Pending',
       value: orders.filter(o => o.status === 'pending').length,
       bgColor: 'bg-amber-50',
       icon: <Clock className="text-amber-600" size={20} />
     },
-    { 
+    {
       label: 'Processing',
       value: orders.filter(o => o.status === 'processing').length,
       bgColor: 'bg-blue-50',
       icon: <Clock className="text-blue-600" size={20} />
     },
-    { 
+    {
       label: 'Completed',
       value: orders.filter(o => o.status === 'completed').length,
       bgColor: 'bg-green-50',
       icon: <CheckCircle className="text-green-600" size={20} />
     },
-    { 
+    {
       label: 'Cancelled',
       value: orders.filter(o => o.status === 'cancelled').length,
       bgColor: 'bg-red-50',
@@ -361,8 +361,8 @@ const UserOrders = () => {
         {/* ========== STATS CARDS ========== */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {statsCards.map((stat, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className="bg-white rounded-lg border border-gray-200 hover:border-amber-300 transition-colors p-3 cursor-pointer"
               onClick={() => {
                 if (stat.label === 'Pending') setStatusFilter('pending');
@@ -474,26 +474,26 @@ const UserOrders = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
-                        <Loader className="w-10 h-10 text-amber-500 mx-auto animate-spin mb-3" />
-                        <p className="text-sm font-medium text-gray-600">Loading orders...</p>
-                      </td>
-                    </tr>
-                  ) : filteredOrders.length === 0 ? (
-                    <tr>
-                      <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
-                        <ShoppingBag className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                        <p className="text-sm font-medium text-gray-600">No orders found</p>
-                        <p className="text-xs text-gray-500 mt-1">Try changing your filters</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    currentOrders.map((order) => ( // Changed from filteredOrders to currentOrders
-                    <tr 
-                      key={order.id} 
-                      className="hover:bg-amber-50/30 transition-colors cursor-pointer"
+                {isLoading ? (
+                  <tr>
+                    <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
+                      <Loader className="w-10 h-10 text-amber-500 mx-auto animate-spin mb-3" />
+                      <p className="text-sm font-medium text-gray-600">Loading orders...</p>
+                    </td>
+                  </tr>
+                ) : filteredOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
+                      <ShoppingBag className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-sm font-medium text-gray-600">No orders found</p>
+                      <p className="text-xs text-gray-500 mt-1">Try changing your filters</p>
+                    </td>
+                  </tr>
+                ) : (
+                  currentOrders.map((order) => ( // Changed from filteredOrders to currentOrders
+                    <tr
+                      key={order.id}
+                      className="hover:bg-amber-50/30 transition-colors "
                     >
                       <td className="px-4 py-3 text-sm font-medium text-amber-600">{order.id}</td>
                       <td className="px-4 py-3 text-sm text-gray-600">
@@ -525,12 +525,12 @@ const UserOrders = () => {
                         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
 
                           {/*logic of view Buttons */}
-                         {order.status==="pending" || order.status==="processing"?(<button
+                          {order.status === "pending" || order.status === "processing" ? (<button
                             className="p-1 text-red-600 hover:bg-amber-50 rounded cursor-not-allowed"
                             title="View Details"
                           >
                             <EyeOff className="w-4 h-4" />
-                          </button>):( <button
+                          </button>) : (<button
                             onClick={() => handleViewDetails(order)}
                             className="p-1 text-amber-600 hover:bg-amber-50 rounded"
                             title="View Details"
@@ -538,34 +538,34 @@ const UserOrders = () => {
                             <Eye className="w-4 h-4" />
                           </button>)}
                           {/*Download button logic*/}
-                         {order.status==="pending" || order.status==="processing"?( <button
-                              className="p-1 text-red-600 hover:bg-amber-50 rounded cursor-not-allowed"
-                              title="Download Invoice"
-                            >
-                              <Download className="w-4 h-4" />
-                            </button>):( <button
+                          {order.status === "pending" || order.status === "processing" ? (<button
+                            className="p-1 text-red-600 hover:bg-amber-50 rounded cursor-not-allowed"
+                            title="Download Invoice"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>) : (<button
                             onClick={() => {
-                           setSelectedOrder(order);
-                           setTimeout(() => {
-                             handleDownloadInvoice(order.id,order);
-                           }, 500);
-                         }}
+                              setSelectedOrder(order);
+                              setTimeout(() => {
+                                handleDownloadInvoice(order.id, order);
+                              }, 500);
+                            }}
                             className="p-1 text-amber-600 hover:bg-amber-50 rounded"
                             title="Download Invoice"
                           >
                             <Download className="w-4 h-4" />
                           </button>)}
 
-                           {/* Cancel Order Button */}
-                           {order.status === 'pending' && (
-                             <button
-                               onClick={() => handleCancelOrder(order.dbId)}
-                               className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors"
-                               title="Cancel Order"
-                             >
-                               <XCircle className="w-4 h-4" />
-                             </button>
-                           )}
+                          {/* Cancel Order Button */}
+                          {order.status === 'pending' && (
+                            <button
+                              onClick={() => handleCancelOrder(order.dbId)}
+                              className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors"
+                              title="Cancel Order"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -586,16 +586,15 @@ const UserOrders = () => {
                 <button
                   onClick={() => paginate(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className={`px-3 py-1 text-xs rounded-lg flex items-center gap-1 transition-colors ${
-                    currentPage === 1
+                  className={`px-3 py-1 text-xs rounded-lg flex items-center gap-1 transition-colors ${currentPage === 1
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                       : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-600'
-                  }`}
+                    }`}
                 >
                   <ChevronLeft className="w-3 h-3" />
                   Previous
                 </button>
-                
+
                 {/* Page Numbers with Ellipsis */}
                 {getPageNumbers().map((page, index) => {
                   if (page === 'ellipsis1' || page === 'ellipsis2') {
@@ -608,31 +607,29 @@ const UserOrders = () => {
                       </span>
                     );
                   }
-                  
+
                   return (
                     <button
                       key={index}
                       onClick={() => paginate(page)}
-                      className={`px-3 py-1 text-xs rounded-lg transition-colors ${
-                        currentPage === page
+                      className={`px-3 py-1 text-xs rounded-lg transition-colors ${currentPage === page
                           ? 'bg-amber-500 text-white hover:bg-amber-600'
                           : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-600'
-                      }`}
+                        }`}
                     >
                       {page}
                     </button>
                   );
                 })}
-                
+
                 {/* Next Button */}
                 <button
                   onClick={() => paginate(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className={`px-3 py-1 text-xs rounded-lg flex items-center gap-1 transition-colors ${
-                    currentPage === totalPages
+                  className={`px-3 py-1 text-xs rounded-lg flex items-center gap-1 transition-colors ${currentPage === totalPages
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                       : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-600'
-                  }`}
+                    }`}
                 >
                   Next
                 </button>
@@ -651,8 +648,8 @@ const UserOrders = () => {
                 <p className="text-xs text-gray-600">Contact our support team for assistance</p>
               </div>
             </div>
-            
-            <button 
+
+            <button
               className="px-3 py-1.5 text-xs bg-white text-gray-800 rounded-lg border border-gray-300 hover:bg-gray-50 flex items-center gap-1 cursor-pointer transition-colors"
               onClick={() => toast.info('Downloading all orders...')}
             >
@@ -668,7 +665,7 @@ const UserOrders = () => {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div  className="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center">
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center">
               <h3 className="text-lg font-bold text-gray-800">Order Details</h3>
               <button
                 onClick={() => setShowDetailsModal(false)}
@@ -786,13 +783,13 @@ const UserOrders = () => {
 
               {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-2 pt-2 print:hidden">
-               <button
-  onClick={() => handleDownloadInvoice(selectedOrder.id, selectedOrder)}  // This is correct
-  className="bg-amber-500 text-white py-2 rounded-lg hover:bg-amber-600 flex items-center justify-center gap-2"
->
-  <Download className="w-4 h-4" />
-  Download Invoice
-</button>
+                <button
+                  onClick={() => handleDownloadInvoice(selectedOrder.id, selectedOrder)}  // This is correct
+                  className="bg-amber-500 text-white py-2 rounded-lg hover:bg-amber-600 flex items-center justify-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Download Invoice
+                </button>
                 <button
                   onClick={() => handlePrintInvoice(selectedOrder.id)}
                   className="bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 flex items-center justify-center gap-2"

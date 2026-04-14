@@ -73,6 +73,21 @@ export const userApi = createApi({
       query: () => '/history',
       providesTags: ['User'],
     }),
+    addMoney: builder.mutation({
+      query: (amount) => ({
+        url: '/add-money',
+        method: 'POST',
+        body: { amount },
+      }),
+      invalidatesTags: ['User'],
+    }),
+    payAllPending: builder.mutation({
+      query: () => ({
+        url: '/pay-all-pending',
+        method: 'POST',
+      }),
+      invalidatesTags: ['User'],
+    }),
     
     // AUTH ENDPOINTS
     registerUser: builder.mutation({
@@ -162,4 +177,6 @@ export const {
   useUpdateProfileMutation,
   useChangePasswordMutation,
   useUploadAvatarMutation,
+  useAddMoneyMutation,
+  usePayAllPendingMutation,
 } = userApi;

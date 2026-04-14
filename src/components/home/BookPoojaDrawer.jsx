@@ -7,18 +7,30 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const poojaServices = [
-    { id: 1, name: "Griha Pravesh Puja", desc: "House warming ceremony for peace & prosperity" },
-    { id: 2, name: "Satyanarayan Katha", desc: "For divine blessings and family wellbeing" },
-    { id: 3, name: "Rudrabhishek", desc: "Lord Shiva worship for health and strength" },
-    { id: 4, name: "Navgraha Shanti Puja", desc: "Planetary peace ritual for success" },
-    { id: 5, name: "Marriage Puja", desc: "Traditional wedding ceremonies & rituals" },
-    { id: 6, name: "Generic Consultation", desc: "Talk to us about any other spiritual service" }
-];
+import { useGetAllOfferingsQuery } from "@/services/pujaOfferingApi";
+import { useCreateBookingMutation } from "@/services/bookingApi";
+import { toast } from "react-toastify";
 
 const BookPoojaDrawer = ({ open, onClose }) => {
+    const { data: offerings = [] } = useGetAllOfferingsQuery();
+    const [createBooking, { isLoading: isBooking }] = useCreateBookingMutation();
+    
+    // Get logged in user from dashboard data if needed, or from localStorage
+    const savedUserString = localStorage.getItem('user');
+    const savedUser = savedUserString ? JSON.parse(savedUserString) : null;
+
     const [submitted, setSubmitted] = useState(false);
     const [selectedService, setSelectedService] = useState(null);
+    const [formData, setFormData] = useState({
+        name: savedUser?.name || '',
+        mobile: savedUser?.phone || '',
+        email: savedUser?.email || '',
+        date: '',
+        time: '',
+        location: '',
+        message: '',
+        mode: 'Home Visit'
+    });
 
     React.useEffect(() => {
         if (!open) {
@@ -30,13 +42,34 @@ const BookPoojaDrawer = ({ open, onClose }) => {
         }
     }, [open]);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setSubmitted(true);
+        
+        const payload = {
+            ...formData,
+            user: savedUser?._id || savedUser?.id,
+            pujaType: selectedService.title,
+            amount: selectedService.price || 0,
+            city: formData.location // Mapping location to city for backend compatibility
+        };
+
+        try {
+            await createBooking(payload).unwrap();
+            setSubmitted(true);
+            toast.success("Puja booked successfully!");
+        } catch (err) {
+            toast.error(err.data?.message || "Booking failed. Please try again.");
+        }
     };
 
     const handleServiceSelect = (service) => {
         setSelectedService(service);
+        setFormData(prev => ({ ...prev, pujaType: service.title }));
+    };
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const inputClasses = "rounded-none border-slate-200 h-10 focus:border-[#E8453C] focus:ring-[#E8453C]/10 transition-all font-inter text-sm bg-white";
@@ -139,16 +172,17 @@ const BookPoojaDrawer = ({ open, onClose }) => {
                                 <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Select a Service</h4>
                             </div>
                             <div className="grid gap-4">
-                                {poojaServices.map((service) => (
+                                {offerings.map((service) => (
                                     <div
-                                        key={service.id}
+                                        key={service._id}
                                         onClick={() => handleServiceSelect(service)}
                                         className="p-5 bg-white border border-slate-200 rounded-none cursor-pointer hover:border-[#E8453C]/30 hover:shadow-md transition-all group hover:translate-x-2"
                                     >
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <h3 className="font-bold text-slate-900 group-hover:text-[#E8453C] transition-colors">{service.name}</h3>
-                                                <p className="text-xs text-slate-500 mt-1">{service.desc}</p>
+                                                <h3 className="font-bold text-slate-900 group-hover:text-[#E8453C] transition-colors uppercase tracking-tight">{service.title}</h3>
+                                                <p className="text-xs text-slate-500 mt-1 italic">"{service.shortDescription}"</p>
+                                                <p className="text-[10px] font-black text-orange-600 mt-2 uppercase tracking-widest">Starts from ₹{service.price}</p>
                                             </div>
                                             <div className="w-8 h-8 rounded-none bg-slate-50 flex items-center justify-center group-hover:bg-[#E8453C]/10 transition-colors">
                                                 <Calendar className="w-4 h-4 text-slate-400 group-hover:text-[#E8453C]" />
@@ -156,6 +190,14 @@ const BookPoojaDrawer = ({ open, onClose }) => {
                                         </div>
                                     </div>
                                 ))}
+                                {offerings.length === 0 && (
+                                    <div className="text-center py-10">
+                                        <div className="animate-spin mb-4">
+                                            <Sparkles className="w-6 h-6 text-orange-300 mx-auto" />
+                                        </div>
+                                        <p className="text-xs text-gray-400 uppercase tracking-widest">Fetching sacred services...</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ) : (
@@ -171,18 +213,39 @@ const BookPoojaDrawer = ({ open, onClose }) => {
                                 <div className="grid grid-cols-1 gap-5">
                                     <div>
                                         <Label className={labelClasses}>Full Name</Label>
-                                        <Input required placeholder="Your Name" className={inputClasses} />
+                                        <Input 
+                                            name="name"
+                                            required 
+                                            placeholder="Your Name" 
+                                            className={inputClasses} 
+                                            value={formData.name}
+                                            onChange={handleChange}
+                                        />
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-5">
                                     <div>
                                         <Label className={labelClasses}>Phone Number</Label>
-                                        <Input required placeholder="+91 XXXX XXXX" className={inputClasses} />
+                                        <Input 
+                                            name="mobile"
+                                            required 
+                                            placeholder="+91 XXXX XXXX" 
+                                            className={inputClasses} 
+                                            value={formData.mobile}
+                                            onChange={handleChange}
+                                        />
                                     </div>
                                     <div>
                                         <Label className={labelClasses}>Email Address</Label>
-                                        <Input type="email" placeholder="Optional" className={inputClasses} />
+                                        <Input 
+                                            name="email"
+                                            type="email" 
+                                            placeholder="Optional" 
+                                            className={inputClasses} 
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -196,17 +259,28 @@ const BookPoojaDrawer = ({ open, onClose }) => {
 
                                 <div>
                                     <Label className={labelClasses}>Selected Service</Label>
-                                    <Input disabled value={selectedService.name} className={inputClasses + " bg-slate-50"} />
+                                    <Input disabled value={selectedService.title} className={inputClasses + " bg-slate-50"} />
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-5">
                                     <div>
                                         <Label className={labelClasses}>Preferred Date</Label>
-                                        <Input type="date" required className={inputClasses} />
+                                        <Input 
+                                            name="date"
+                                            type="date" 
+                                            required 
+                                            className={inputClasses} 
+                                            value={formData.date}
+                                            onChange={handleChange}
+                                            min={new Date().toISOString().split('T')[0]}
+                                        />
                                     </div>
                                     <div>
                                         <Label className={labelClasses}>Preferred Time</Label>
-                                        <Select>
+                                        <Select 
+                                            value={formData.time} 
+                                            onValueChange={(val) => setFormData(prev => ({ ...prev, time: val }))}
+                                        >
                                             <SelectTrigger className={inputClasses}>
                                                 <SelectValue placeholder="Select Time" />
                                             </SelectTrigger>
@@ -221,7 +295,15 @@ const BookPoojaDrawer = ({ open, onClose }) => {
 
                                 <div>
                                     <Label className={labelClasses}>Location / Full Address</Label>
-                                    <Textarea required placeholder="Enter the location for the ceremony..." rows={2} className="rounded-lg border-slate-200 focus:border-[#E8453C] focus:ring-[#E8453C]/10 transition-all font-inter text-sm bg-white" />
+                                    <Textarea 
+                                        name="location"
+                                        required 
+                                        placeholder="Enter the location for the ceremony..." 
+                                        rows={2} 
+                                        className="rounded-lg border-slate-200 focus:border-[#E8453C] focus:ring-[#E8453C]/10 transition-all font-inter text-sm bg-white" 
+                                        value={formData.location}
+                                        onChange={handleChange}
+                                    />
                                 </div>
                             </div>
 
@@ -233,7 +315,14 @@ const BookPoojaDrawer = ({ open, onClose }) => {
                                 </div>
 
                                 <div>
-                                    <Textarea placeholder="Any specific requirements or questions..." rows={3} className="rounded-lg border-slate-200 focus:border-[#E8453C] focus:ring-[#E8453C]/10 transition-all font-inter text-sm bg-white" />
+                                    <Textarea 
+                                        name="message"
+                                        placeholder="Any specific requirements or questions..." 
+                                        rows={3} 
+                                        className="rounded-lg border-slate-200 focus:border-[#E8453C] focus:ring-[#E8453C]/10 transition-all font-inter text-sm bg-white" 
+                                        value={formData.message}
+                                        onChange={handleChange}
+                                    />
                                 </div>
                             </div>
 
@@ -248,9 +337,11 @@ const BookPoojaDrawer = ({ open, onClose }) => {
 
                             <Button
                                 type="submit"
+                                disabled={isBooking}
                                 className="h-12 rounded-none bg-[#E8453C] hover:bg-[#D43F37] text-white font-bold text-sm uppercase tracking-widest transition-all shadow-xl shadow-[#E8453C]/20 flex items-center justify-center gap-3 mb-6 group"
                             >
-                                Submit Booking <Send className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                                {isBooking ? "Processing Ritual..." : "Submit Booking"} 
+                                {!isBooking && <Send className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />}
                             </Button>
                         </form>
                     )}

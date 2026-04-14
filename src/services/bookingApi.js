@@ -4,7 +4,7 @@ import { API_URL } from '../config/apiConfig';
 export const bookingApi = createApi({
     reducerPath: 'bookingApi',
     baseQuery: fetchBaseQuery({ baseUrl: API_URL }),
-    tagTypes: ['Bookings'],
+    tagTypes: ['Bookings', 'User'],
     endpoints: (builder) => ({
         getAllBookings: builder.query({
             query: () => 'bookings',
@@ -16,7 +16,7 @@ export const bookingApi = createApi({
                 method: 'POST',
                 body: formData,
             }),
-            invalidatesTags: ['Bookings'],
+            invalidatesTags: ['Bookings', 'User'],
         }),
         updateBooking: builder.mutation({
             query: ({ id, formData }) => ({
@@ -24,21 +24,21 @@ export const bookingApi = createApi({
                 method: 'PUT',
                 body: formData,
             }),
-            invalidatesTags: ['Bookings'],
+            invalidatesTags: ['Bookings', 'User'],
         }),
         deleteBooking: builder.mutation({
             query: (id) => ({
                 url: `bookings/${id}`,
                 method: 'DELETE',
             }),
-            invalidatesTags: ['Bookings'],
+            invalidatesTags: ['Bookings', 'User'],
         }),
         toggleActiveBooking: builder.mutation({
             query: (id) => ({
                 url: `bookings/toggle-active/${id}`,
                 method: 'POST',
             }),
-            invalidatesTags: ['Bookings'],
+            invalidatesTags: ['Bookings', 'User'],
         }),
     }),
 });

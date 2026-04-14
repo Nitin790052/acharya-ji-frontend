@@ -7,14 +7,15 @@ import {
   Mail,
   CheckCircle,
   Shield,
+  ArrowLeft,
 } from "lucide-react";
 
 import { useUserAuth } from "../auth/AuthContext";
 import { toast } from "react-toastify";
-import { 
-  useLoginUserMutation, 
-  useSendOtpMutation, 
-  useVerifyOtpMutation 
+import {
+  useLoginUserMutation,
+  useSendOtpMutation,
+  useVerifyOtpMutation
 } from "../../../services/userApi";
 
 const UserLogin = () => {
@@ -75,7 +76,7 @@ const UserLogin = () => {
       const response = await verifyOtp({ identifier: mobile, otp }).unwrap();
       setOtpVerified(true);
       toast.success(response.message || "OTP verified successfully!");
-      
+
       // Auto-login after OTP verification for mobile
       const loginResponse = await loginUser({ phone: mobile, loginType: 'mobile' }).unwrap();
       handleLoginSuccess(loginResponse);
@@ -117,6 +118,15 @@ const UserLogin = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
+      {/* Back to Website Arrow Button */}
+      <button
+        onClick={() => navigate("/")}
+        className="absolute top-6 left-6 z-50 flex items-center justify-center w-10 h-10 bg-white border border-orange-100 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group"
+        title="Back to Website"
+      >
+        <ArrowLeft size={18} className="text-orange-600 group-hover:-translate-x-1 transition-transform" />
+      </button>
+
       {/* Background Image */}
       <div className="absolute inset-0 z-0 bg-[#FBF6F6]"></div>
 
