@@ -1,8 +1,9 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { API_URL } from '../config/apiConfig';
 
 export const learningContentApi = createApi({
     reducerPath: 'learningContentApi',
-    baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:5000/api/learning-content' }),
+    baseQuery: fetchBaseQuery({ baseUrl: `${API_URL}/learning-content` }),
     tagTypes: ['LearningContent', 'LearningOverview'],
     endpoints: (builder) => ({
         getLearningPageBySlug: builder.query({
