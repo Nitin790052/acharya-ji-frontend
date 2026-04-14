@@ -1,32 +1,47 @@
 const getApiUrl = () => {
-  // Check if we are running on localhost
+  // 1. Check if VITE_API_URL is explicitly set in .env
+  const envUrl = import.meta.env.VITE_API_URL;
+  
+  // 2. Check if we are in development mode (npm run dev)
+  const isDevMode = import.meta.env.DEV;
+  
+  // 3. Check if we are running on a local hostname
   const isLocalhost = 
     window.location.hostname === 'localhost' || 
     window.location.hostname === '127.0.0.1' ||
     window.location.hostname.startsWith('192.168.') ||
-    window.location.hostname.startsWith('10.') ||
     window.location.hostname.endsWith('.local');
 
-  // If local, use localhost:5000 (standard for local backend)
-  // If not, use the environment variable (Render)
-  const baseApiUrl = isLocalhost 
-    ? 'http://localhost:5000/api'
-    : (import.meta.env.VITE_API_URL || 'https://acharya-ji-online-backend.onrender.com/api/');
+  // Logic: 
+  // - If we are on localhost AND in dev mode, prefer localhost:5000
+  // - Otherwise, use the ENV variable if it exists
+  // - Fallback to the production render URL
+  let baseApiUrl = 'https://acharya-ji-online-backend.onrender.com/api';
+
+  if (isLocalhost && isDevMode) {
+    baseApiUrl = 'http://localhost:5000/api';
+  } else if (envUrl) {
+    baseApiUrl = envUrl;
+  }
 
   return baseApiUrl.replace(/\/+$/, '');
 };
 
 const getBackendUrl = () => {
+  const envUrl = import.meta.env.VITE_BACKEND_URL;
+  const isDevMode = import.meta.env.DEV;
   const isLocalhost = 
     window.location.hostname === 'localhost' || 
     window.location.hostname === '127.0.0.1' ||
-    window.location.hostname.startsWith('192.168.') ||
-    window.location.hostname.startsWith('10.') ||
-    window.location.hostname.endsWith('.local');
+    window.location.hostname.startsWith('192.168.');
 
-  const baseBackendUrl = isLocalhost
-    ? 'http://localhost:5000'
-    : (import.meta.env.VITE_BACKEND_URL || 'https://acharya-ji-online-backend.onrender.com');
+  let baseBackendUrl = 'https://acharya-ji-online-backend.onrender.com';
+
+  if (isLocalhost && isDevMode) {
+    baseBackendUrl = 'http://localhost:5000';
+  } else if (envUrl) {
+    baseBackendUrl = envUrl;
+  }
 
   return baseBackendUrl.replace(/\/+$/, '');
 };
