@@ -16,7 +16,7 @@ const getApiUrl = () => {
   // - If we are on localhost AND in dev mode, prefer localhost:5000
   // - Otherwise, use the ENV variable if it exists
   // - Fallback to the production render URL
-  let baseApiUrl = 'https://acharya-ji-online-backend.onrender.com/api';
+  let baseApiUrl = 'https://acharya-ji-backend.onrender.com/api';
 
   if (isLocalhost && isDevMode) {
     baseApiUrl = 'http://localhost:5000/api';
@@ -35,7 +35,7 @@ const getBackendUrl = () => {
     window.location.hostname === '127.0.0.1' ||
     window.location.hostname.startsWith('192.168.');
 
-  let baseBackendUrl = 'https://acharya-ji-online-backend.onrender.com';
+  let baseBackendUrl = 'https://acharya-ji-backend.onrender.com';
 
   if (isLocalhost && isDevMode) {
     baseBackendUrl = 'http://localhost:5000';
