@@ -1,4 +1,4 @@
-import { QrCode, CreditCard, Loader } from "lucide-react";
+import { Loader, Download } from "lucide-react";
 import React, { useEffect, useRef } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import QRCode from "react-qr-code";
@@ -11,7 +11,7 @@ const Invoice = ({ order }) => {
 
   const { id } = useParams();
   const location = useLocation();
-  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('all');
+  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('all', { pollingInterval: 3000 });
 
   // Priority: 1. Navigation State, 2. RTK Query Cache, 3. Null
   const data = location.state || ordersResponse?.data?.find(o => o.id === id);
@@ -108,16 +108,14 @@ useEffect(() => {
 
   // Calculate totals
   const calculateSubtotal = () => {
-    if (invoiceOrder.items && invoiceOrder.items.length > 0) {
-      return invoiceOrder.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    }
-    return invoiceOrder.amount || 0;
+    if (!invoiceOrder.items) return invoiceOrder.amount || 0;
+    return invoiceOrder.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
 
   const subtotal = calculateSubtotal();
   const gstRate = 18;
-  const gstAmount = (subtotal * gstRate) / 100;
-  const grandTotal = subtotal + gstAmount;
+  const gstAmount = (invoiceOrder.subtotal || invoiceOrder.amount * gstRate) / 100;
+  const grandTotal = (invoiceOrder.amount || subtotal) + gstAmount;
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -126,7 +124,7 @@ useEffect(() => {
       currency: 'INR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(amount);
+    }).format(amount).replace('₹', '₹');
   };
 
   // Generate invoice number
@@ -136,23 +134,33 @@ useEffect(() => {
     <>
       {/* Show Invoice component only for invoice path */}
       {isInvoice && (
-        <div className="bg-gray-300 py-10 print:bg-white relative min-h-screen">
-          <div ref={printRef} className="max-w-4xl mx-auto bg-white p-6 text-gray-800 text-sm print:shadow-none print:p-2 rounded-[2px] shadow-lg relative overflow-hidden">
-            
-            {/* CANCELLED Overlay */}
-            {(invoiceOrder.status === 'cancelled' || invoiceOrder.paymentStatus === 'refunded') && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
-                <div className="absolute inset-0 bg-red-50 opacity-40"></div>
-                <div className="relative transform rotate-[-30deg]">
-                  <span className="text-7xl font-bold text-red-900 opacity-40 border-8 border-red-900 px-8 py-4 rounded-2xl">
-                    CANCELLED
-                  </span>
-                </div>
-              </div>
-            )}
-
+        <div className="bg-gray-300 pb-10 pt-3 print:bg-white ">
+          <div className='flex justify-end px-24 pb-3'>
+            <button
+              onClick={() => {
+                if (!printRef.current) return;
+                const opt = {
+                  margin: 0,
+                  filename: `Invoice-${data.id || id}.pdf`,
+                  image: { type: "jpeg", quality: 0.98 },
+                  html2canvas: { scale: 2 },
+                  jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+                };
+                html2pdf().set(opt).from(printRef.current).save();
+              }}
+              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-amber-700 text-sm font-medium transition-colors duration-200 group relative"
+              title="Download Invoice"
+            >
+              <Download size={18} className="group-hover:animate-pulse" />
+              <span className="relative">
+                Download Invoice
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-amber-600 group-hover:w-full transition-all duration-300"></span>
+              </span>
+            </button>
+          </div>
+          <div ref={printRef} className="max-w-4xl mx-auto bg-white p-6 text-gray-800 text-sm print:shadow-none print:p-2 rounded-[2px] shadow-lg">
             {/* Watermark for Print */}
-            <div className="watermark-print hidden print:block absolute opacity-5 text-8xl font-bold rotate-[-30deg] top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10">
+            <div className="print:block hidden absolute opacity-5 text-8xl font-bold rotate-[-30deg] top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
               ACHARYA JI
             </div>
 
@@ -164,11 +172,11 @@ useEffect(() => {
                     <table className="w-full">
                       <tbody>
                         <tr>
-                          <td className="pr-4 w-20 ">
+                          <td className="pr-2 w-20 ">
                             <img
                               src="/logo.png"
                               alt="Acharya Ji Logo"
-                              className="w-[80px] h-[70px] object-contain"
+                              className="w-[64px] h-[56px] object-fill"
                               onError={(e) => {
                                 e.target.onerror = null;
                                 e.target.src = 'https://via.placeholder.com/80?text=Acharya+Ji';
@@ -176,9 +184,9 @@ useEffect(() => {
                             />
                           </td>
                           <td>
-                            <p className="text-2xl font-bold text-amber-700 leading-tight">Acharya Ji</p>
-                            <p className="text-[10px] text-gray-600 font-medium uppercase tracking-wider">Pure Spiritual & Vedic Services</p>
-                            <p className="text-[9px] text-gray-500 mt-1">ESTD. 2020</p>
+                            <p className="text-xl font-bold text-amber-700">Acharya Ji</p>
+                            <p className="text-xs text-gray-600">Online Spiritual Services</p>
+                            <p className="text-xs text-gray-500 mt-1">Since 2020</p>
                           </td>
                         </tr>
                       </tbody>
@@ -186,16 +194,16 @@ useEffect(() => {
                   </td>
 
                   <td className="text-right p-4 align-top w-1/2">
-                    <p className="text-[28px] font-black tracking-widest text-amber-800 leading-none">
+                    <p className="text-[24px] font-bold tracking-widest text-amber-700">
                       TAX INVOICE
                     </p>
-                    <p className="text-[10px] text-gray-500 mt-2 uppercase font-bold tracking-tighter">Original Copy for Recipient</p>
+                    <p className="text-xs text-gray-500 mt-1">Original for Recipient</p>
                   </td>
                 </tr>
 
                 <tr>
                   <td colSpan="2">
-                    <hr className="my-4 border-t-2 border-amber-200" />
+                    <hr className="my-2 border-t-2 border-amber-200" />
                   </td>
                 </tr>
 
@@ -206,37 +214,30 @@ useEffect(() => {
                       <tbody>
                         <tr>
                           <td className="w-1/3 align-top">
-                            <p className="font-bold text-amber-700 mb-1 text-[10px] uppercase tracking-wider">Vendor Information:</p>
-                            <p className="font-bold text-gray-900 text-sm">Acharya Ji Online Services</p>
-                            <p className="text-xs text-gray-600 leading-relaxed">A-45, 3rd Floor, Knowledge Park III<br/>Greater Noida, Uttar Pradesh<br/>India - 201310</p>
-                            <div className="mt-2 space-y-0.5">
-                              <p className="text-[10px] text-gray-500 font-bold">GSTIN: <span className="text-gray-800">09ACHJI1234F1Z5</span></p>
-                              <p className="text-[10px] text-gray-500 font-bold">PAN: <span className="text-gray-800">ACHJI1234F</span></p>
-                            </div>
+                            <p className="font-semibold text-amber-700 mb-1">Sold By:</p>
+                            <p className="font-medium">Acharya Ji Online Services</p>
+                            <p className="text-xs text-gray-600">123, Spiritual Complex</p>
+                            <p className="text-xs text-gray-600">Sector 62, Noida</p>
+                            <p className="text-xs text-gray-600">Uttar Pradesh - 201309</p>
+                            <p className="text-xs text-gray-600 mt-1"><span className="text-xs font-semibold">GSTIN:</span> 09ABCDE1234F1Z5</p>
+                            <p className="text-xs text-gray-600"><span className="text-xs font-semibold">PAN:</span> ABCDE1234F</p>
                           </td>
 
-                          <td className="w-1/3 align-top text-center border-l border-r border-gray-100 px-2">
-                            <p className="font-bold text-amber-700 mb-1 text-[10px] uppercase tracking-wider">Place of Supply:</p>
-                            <p className="text-xs text-gray-800 font-bold">{invoiceOrder.location?.split(',').pop()?.trim() || 'Uttar Pradesh'}</p>
-                            <p className="text-xs text-gray-500 font-medium">(State Code: 09)</p>
+                          <td className="w-1/3 align-top text-center">
+                            <p className="font-semibold text-amber-700 mb-1">Place of Supply:</p>
+                            <p className="text-xs text-gray-600">Uttar Pradesh</p>
+                            <p className="text-xs text-gray-600">State Code: 09</p>
                           </td>
 
                           <td className="w-1/3 align-top text-end">
-                            <div className="inline-block border-2 border-amber-600/20 p-2 rounded-xl bg-amber-50/50 shadow-sm hover:border-amber-500/40 transition-all duration-300">
-                              <div className="text-center">
-                                <QRCode
-                                    value={JSON.stringify({
-                                      id: invoiceOrder.id,
-                                      customer: invoiceOrder.customerName,
-                                      total: formatCurrency(grandTotal),
-                                      date: invoiceOrder.date,
-                                      ref: invoiceOrder.transactionId || 'INTERNAL'
-                                    })}
-                                    size={85}
-                                    level="H"
-                                />
-                                <p className="text-[7px] text-amber-800 font-black mt-1.5 uppercase tracking-widest leading-none">Secured Data Hash</p>
-                                <p className="text-[6px] text-gray-400 font-bold uppercase mt-0.5 tracking-tighter">Verified by Acharya Ji</p>
+                            <div className="inline-block border border-gray-200 p-1 rounded">
+                              <div className="w-[100px] h-[100px] bg-gray-100 flex items-center justify-center text-[6px] text-gray-400">
+                                <div className="text-center">
+                                  <QRCode
+                                    value={`http://localhost:8080/user/dashboard/invoice/${data.id}`}
+                                    size={90}
+                                  />
+                                </div>
                               </div>
                             </div>
                           </td>
@@ -248,152 +249,173 @@ useEffect(() => {
 
                 <tr>
                   <td colSpan="2">
-                    <hr className="my-4 border-t border-gray-100" />
+                    <hr className="my-2 border-t border-gray-200" />
                   </td>
                 </tr>
 
                 {/* ================= BILLING & SHIPPING ================= */}
                 <tr>
-                  <td className="p-4 w-1/2 border-r border-gray-100 align-top">
-                    <p className="font-bold text-amber-700 mb-3 flex items-center gap-1 text-[10px] uppercase tracking-widest">
-                      <span className="w-1 h-3 bg-amber-500 rounded-full "></span>
-                      Bill To:
+                  <td className="p-4 w-1/2 border-r border-gray-200 align-top">
+                    <p className="font-semibold text-amber-700 mb-2 flex items-center gap-1 ">
+                      <span className="w-1 h-4 bg-amber-500 rounded-full "></span>
+                      Billing Address:
                     </p>
-                    <p className="font-black text-gray-900 text-sm text-amber-900 capitalize">{invoiceOrder.customerName}</p>
-                    <p className="text-xs text-gray-600 leading-relaxed mt-1">{invoiceOrder.location || 'Location shared at time of booking'}</p>
-                    <p className="text-xs text-gray-800 mt-2 font-bold"><span className="text-gray-500 font-medium">Contact:</span> {invoiceOrder.customerMobile || 'N/A'}</p>
+                    <p className="font-medium">{invoiceOrder.customerName}</p>
+                    <p className="text-xs text-gray-600">{invoiceOrder.location || 'Address not available'}</p>
+                    <p className="text-xs text-gray-600">Uttar Pradesh - 201301</p>
+                    <p className="text-xs text-gray-600">Phone: {invoiceOrder.customerMobile || '+91 98765 43210'}</p>
                   </td>
 
                   <td className="p-4 w-1/2 align-top">
-                    <p className="font-bold text-amber-700 mb-3 flex items-center gap-1 text-[10px] uppercase tracking-widest">
-                      <span className="w-1 h-3 bg-amber-500 rounded-full "></span>
-                      Service Destination:
+                    <p className="font-semibold text-amber-700 mb-2 flex items-center gap-1 ">
+                      <span className="w-1 h-4 bg-amber-500 rounded-full "></span>
+                      Shipping Address:
                     </p>
-                    <p className="font-black text-gray-900 text-sm capitalize">{invoiceOrder.customerName}</p>
-                    <p className="text-xs text-gray-600 leading-relaxed mt-1">{invoiceOrder.location || 'Registered supply location'}</p>
-                    <p className="text-[10px] text-gray-400 mt-3 font-bold italic tracking-tighter">(Verified Digital Destination)</p>
+                    <p className="font-medium">{invoiceOrder.customerName}</p>
+                    <p className="text-xs text-gray-600">{invoiceOrder.location || 'Address not available'}</p>
+                    <p className="text-xs text-gray-600">Uttar Pradesh - 201301</p>
+                    <p className="text-xs text-gray-600">Same as Billing Address</p>
                   </td>
                 </tr>
 
-                <tr className="bg-gray-50/80">
-                  <td colSpan="2" className="border-t border-b border-gray-200">
+                <tr>
+                  <td colSpan="2">
+                    <hr className="my-2 border-t border-gray-200" />
+                  </td>
+                </tr>
+
+                {/* ================= ORDER INFO ================= */}
+                <tr>
+                  <td className="px-4 py-2 align-top w-1/2">
                     <table className="w-full">
                       <tbody>
                         <tr>
-                          <td className="px-6 py-4 divide-y divide-gray-100 w-1/2">
-                            <div className="flex justify-between py-1.5">
-                              <span className="text-[10px] text-gray-500 font-bold uppercase">Order Reference:</span>
-                              <span className="text-xs font-black text-gray-800">#{invoiceOrder.id}</span>
-                            </div>
-                            <div className="flex justify-between py-1.5">
-                              <span className="text-[10px] text-gray-500 font-bold uppercase">Invoice Number:</span>
-                              <span className="text-xs font-bold text-amber-700">{invoiceNumber}</span>
-                            </div>
-                            <div className="flex justify-between py-1.5">
-                              <span className="text-[10px] text-gray-500 font-bold uppercase">Booking Date:</span>
-                              <span className="text-xs font-bold text-gray-800">{invoiceOrder.date}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 divide-y divide-gray-100 w-1/2 border-l border-gray-200">
-                            <div className="flex justify-between py-1.5">
-                              <span className="text-[10px] text-gray-500 font-bold uppercase">Delivery Channel:</span>
-                              <span className="text-xs font-black text-amber-600 uppercase italic">{invoiceOrder.type}</span>
-                            </div>
-                            <div className="flex justify-between py-1.5">
-                              <span className="text-[10px] text-gray-500 font-bold uppercase">Auth Priest:</span>
-                              <span className="text-xs font-bold text-gray-800">{invoiceOrder.priest}</span>
-                            </div>
-                            <div className="flex justify-between py-1.5 items-center">
-                              <span className="text-[10px] text-gray-500 font-bold uppercase">Financial Status:</span>
-                              <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${
-                                invoiceOrder.paymentStatus === 'paid' ? 'bg-green-600 text-white' : 'bg-amber-500 text-white'
-                              }`}>
-                                {invoiceOrder.paymentStatus}
-                              </span>
-                            </div>
-                          </td>
+                          <td className="text-xs text-gray-500">Order ID:</td>
+                          <td className="text-xs font-medium">{invoiceOrder.id}</td>
+                        </tr>
+                        <tr>
+                          <td className="text-xs text-gray-500">Invoice No:</td>
+                          <td className="text-xs font-medium">{invoiceNumber}</td>
+                        </tr>
+                        <tr>
+                          <td className="text-xs text-gray-500">Order Date:</td>
+                          <td className="text-xs font-medium">{invoiceOrder.date}</td>
+                        </tr>
+                        <tr>
+                          <td className="text-xs text-gray-500">Order Time:</td>
+                          <td className="text-xs font-medium">{invoiceOrder.time}</td>
                         </tr>
                       </tbody>
                     </table>
+                  </td>
+
+                  <td className="px-4 py-2 align-top w-1/2">
+                    <table className="w-full">
+                      <tbody>
+                        <tr>
+                          <td className="text-xs text-gray-500">Service Type:</td>
+                          <td className="text-xs font-medium capitalize">{invoiceOrder.type}</td>
+                        </tr>
+                        <tr>
+                          <td className="text-xs text-gray-500">Priest:</td>
+                          <td className="text-xs font-medium">{invoiceOrder.priest}</td>
+                        </tr>
+                        <tr>
+                          <td className="text-xs text-gray-500">Invoice Date:</td>
+                          <td className="text-xs font-medium">{new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
+                        </tr>
+                        <tr>
+                          <td className="text-xs text-gray-500">Due Date:</td>
+                          <td className="text-xs font-medium">{invoiceOrder.paymentStatus === 'paid' ? 'Paid' : 'Upon Receipt'}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td colSpan="2">
+                    <hr className="my-2 border-t border-gray-200" />
                   </td>
                 </tr>
 
                 {/* ================= ITEM TABLE ================= */}
                 <tr>
-                  <td colSpan="2" className="px-4 py-8">
-                    <p className="font-bold text-amber-800 mb-4 flex items-center gap-2 text-[10px] uppercase tracking-[0.2em]">
-                      <span className="w-1.5 h-1.5 bg-amber-600 rounded-full animate-ping"></span>
-                      Service Assessment Details:
+                  <td colSpan="2" className="px-4 py-2">
+                    <p className="font-semibold text-amber-700 mb-2 flex items-center gap-1 ">
+                      <span className="w-1 h-4 bg-amber-500 rounded-full "></span>
+                      Item Details:
                     </p>
 
-                    <table className="w-full border border-gray-200 border-collapse rounded-xl overflow-hidden shadow-sm">
+                    <table className="w-full border border-gray-300 border-collapse text-sm">
                       <thead>
-                        <tr className="bg-amber-800 text-white font-black uppercase text-[9px] tracking-[0.15em]">
-                          <th className="p-4 text-left border-r border-amber-700 w-12">#</th>
-                          <th className="p-4 text-left border-r border-amber-700">Description of Vedic Service</th>
-                          <th className="p-4 text-center border-r border-amber-700 w-24">Unit Qty</th>
-                          <th className="p-4 text-right border-r border-amber-700 w-36">Base Unit Rate (₹)</th>
-                          <th className="p-4 text-right w-36">Net Taxable (₹)</th>
+                        <tr className="bg-amber-50">
+                          <th className="border p-2 text-left text-xs font-semibold text-gray-700">#</th>
+                          <th className="border p-2 text-left text-xs font-semibold text-gray-700">Item / Service</th>
+                          <th className="border p-2 text-center text-xs font-semibold text-gray-700">Qty</th>
+                          <th className="border p-2 text-right text-xs font-semibold text-gray-700">Unit Price (₹)</th>
+                          <th className="border p-2 text-right text-xs font-semibold text-gray-700">Total (₹)</th>
                         </tr>
                       </thead>
                       <tbody>
                         {(!invoiceOrder.items || invoiceOrder.items.length === 0) ? (
-                          <tr className="hover:bg-amber-50/50 transition-colors">
-                            <td className="border-b border-r border-gray-100 p-4 text-center text-xs font-bold text-gray-400 font-mono">01</td>
-                            <td className="border-b border-r border-gray-100 p-4">
-                              <div className="text-xs font-black text-gray-900">{invoiceOrder.serviceName}</div>
-                              <div className="text-[9px] text-gray-500 font-bold mt-1 uppercase italic tracking-tighter">Vedic spiritual assistance via {invoiceOrder.type} platform</div>
-                            </td>
-                            <td className="border-b border-r border-gray-100 p-4 text-center text-xs font-black text-gray-600 font-mono">01</td>
-                            <td className="border-b border-r border-gray-100 p-4 text-right text-xs font-bold text-gray-700">{formatCurrency(invoiceOrder.amount).replace('₹', '')}</td>
-                            <td className="border-b p-4 text-right text-xs font-black text-gray-900">{formatCurrency(invoiceOrder.amount).replace('₹', '')}</td>
-                          </tr>
-                        ) : (
-                          invoiceOrder.items.map((item, index) => (
-                            <tr key={index} className="hover:bg-amber-50/50 transition-colors">
-                              <td className="border-b border-r border-gray-100 p-4 text-center text-xs font-bold text-gray-400 font-mono">{String(index + 1).padStart(2, '0')}</td>
-                              <td className="border-b border-r border-gray-100 p-4">
-                                <div className="text-xs font-black text-gray-900">{item.name}</div>
-                                <div className="text-[9px] text-gray-500 font-bold mt-1 uppercase italic tracking-tighter">{item.category || 'Vedic Item'} Supply</div>
-                              </td>
-                              <td className="border-b border-r border-gray-100 p-4 text-center text-xs font-black text-gray-600 font-mono">{String(item.quantity).padStart(2, '0')}</td>
-                              <td className="border-b border-r border-gray-100 p-4 text-right text-xs font-bold text-gray-700">{formatCurrency(item.price).replace('₹', '')}</td>
-                              <td className="border-b p-4 text-right text-xs font-black text-gray-900">{formatCurrency(item.price * item.quantity).replace('₹', '')}</td>
+                          <>
+                            <tr className="hover:bg-gray-50">
+                              <td className="border p-2 text-center text-xs">1</td>
+                              <td className="border p-2 text-xs">{invoiceOrder.serviceName}</td>
+                              <td className="border p-2 text-center text-xs">{invoiceOrder.quantity || 1}</td>
+                              <td className="border p-2 text-right text-xs">{formatCurrency(invoiceOrder.amount).replace('₹', '')}</td>
+                              <td className="border p-2 text-right text-xs">{formatCurrency((invoiceOrder.amount || 0) * (invoiceOrder.quantity || 1)).replace('₹', '')}</td>
                             </tr>
-                          ))
+                          </>
+                        ) : (
+                          <>
+                            {invoiceOrder.items?.map((item, index) => (
+                              <tr key={index} className="hover:bg-gray-50">
+                                <td className="border p-2 text-center text-xs">{index + 1}</td>
+                                <td className="border p-2 text-xs">{item.name} </td>
+                                <td className="border p-2 text-center text-xs">{item.quantity}</td>
+                                <td className="border p-2 text-right text-xs">{formatCurrency(item.price).replace('₹', '')}</td>
+                                <td className="border p-2 text-right text-xs">{formatCurrency(item.price * item.quantity).replace('₹', '')}</td>
+                              </tr>
+                            ))}
+                          </>
                         )}
 
-                        {/* Calculations Section */}
-                        <tr className="bg-gray-50/50">
-                          <td colSpan="4" className="p-3 text-right text-[10px] font-black text-gray-500 uppercase tracking-widest border-r border-gray-200">
-                            Net Taxable Value Subtotal:
+                        {/* Subtotal Row */}
+                        <tr className="bg-gray-50">
+                          <td colSpan="4" className="border p-2 text-right text-xs font-medium">
+                            Subtotal:
                           </td>
-                          <td className="p-3 text-right text-xs font-black text-gray-900">
+                          <td className="border p-2 text-right text-xs font-medium">
                             {formatCurrency(subtotal).replace('₹', '')}
                           </td>
                         </tr>
 
+                        {/* GST Row */}
                         <tr>
-                          <td colSpan="4" className="p-3 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest border-r border-gray-200">
-                            Integrated GST @ 18%:
+                          <td colSpan="4" className="border p-2 text-right text-xs">
+                            GST (18%):
                           </td>
-                          <td className="p-3 text-right text-xs font-bold text-gray-700 font-mono">
+                          <td className="border p-2 text-right text-xs">
                             {formatCurrency(gstAmount).replace('₹', '')}
                           </td>
                         </tr>
 
-                        <tr className="bg-amber-900 text-white">
-                          <td colSpan="4" className="p-4 text-right text-xs font-black uppercase tracking-[0.2em]">
-                            Total Invoice Value:
+                        {/* Grand Total Row */}
+                        <tr className="bg-amber-50">
+                          <td colSpan="4" className="border p-2 text-right text-xs font-bold">
+                            Grand Total:
                           </td>
-                          <td className="p-4 text-right text-sm font-black italic">
+                          <td className="border p-2 text-right text-xs font-bold text-amber-700">
                             {formatCurrency(grandTotal).replace('₹', '')}
                           </td>
                         </tr>
 
-                        <tr className="bg-white">
-                          <td colSpan="5" className="p-4 text-[10px] text-amber-900 text-center font-black uppercase tracking-widest border-t-2 border-amber-900 italic">
-                            Amount in Words: {convertNumberToWords(grandTotal)} Indian Rupees Only
+                        {/* Amount in Words */}
+                        <tr>
+                          <td colSpan="5" className="border p-2 text-xs text-gray-600 italic">
+                            Amount in words: {convertNumberToWords(grandTotal)} Rupees only
                           </td>
                         </tr>
                       </tbody>
@@ -401,100 +423,103 @@ useEffect(() => {
                   </td>
                 </tr>
 
+                <tr>
+                  <td colSpan="2">
+                    <hr className="my-2 border-t border-gray-200" />
+                  </td>
+                </tr>
+
                 {/* ================= PAYMENT SUMMARY ================= */}
                 <tr>
-                  <td className="px-4 py-4 align-top w-1/2">
-                    <div className="bg-amber-50/30 p-5 rounded-2xl border-2 border-amber-100 shadow-inner">
-                      <p className="font-black text-amber-800 mb-4 text-[10px] uppercase tracking-[0.3em] flex items-center gap-2">
-                        <CreditCard className="w-5 h-5 text-amber-600" />
-                        Billing Ledger:
-                      </p>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-end">
-                          <span className="text-[10px] text-gray-500 font-bold uppercase italic">Assessed Value:</span>
-                          <span className="text-xs text-gray-900 font-black">{formatCurrency(subtotal)}</span>
-                        </div>
-                        <div className="flex justify-between items-end border-b border-amber-100 pb-2">
-                          <span className="text-[10px] text-gray-500 font-bold uppercase italic">Tax Liability:</span>
-                          <span className="text-xs text-gray-900 font-black">{formatCurrency(gstAmount)}</span>
-                        </div>
-                        <div className="flex justify-between items-center pt-2">
-                          <span className="text-xs font-black text-amber-900 uppercase">Grand Total:</span>
-                          <span className="text-xl font-black text-amber-900 decoration-double underline decoration-amber-500 underline-offset-8">
-                            {formatCurrency(grandTotal)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                  <td className="px-4 py-2 align-top w-1/2">
+                    <p className="font-semibold text-amber-700 mb-2 flex items-center gap-1 ">
+                      <span className="w-1 h-4 bg-amber-500 rounded-full "></span>
+                      Payment Summary:
+                    </p>
+                    <table className="w-full">
+                      <tbody>
+                        <tr>
+                          <td className="text-xs text-gray-600 py-1">Subtotal:</td>
+                          <td className="text-xs text-right font-medium">{formatCurrency(subtotal)}</td>
+                        </tr>
+                        <tr>
+                          <td className="text-xs text-gray-600 py-1">GST (18%):</td>
+                          <td className="text-xs text-right font-medium">{formatCurrency(gstAmount)}</td>
+                        </tr>
+                        <tr className="border-t border-gray-200">
+                          <td className="text-xs font-bold py-1">Grand Total:</td>
+                          <td className="text-xs font-bold text-right text-amber-700">{formatCurrency(grandTotal)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </td>
 
-                  <td className="px-4 py-4 align-top w-1/2">
-                    <div className="bg-gray-900 p-5 rounded-2xl shadow-xl relative overflow-hidden group">
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-3xl -mr-12 -mt-12 group-hover:bg-amber-500/20 transition-all duration-500"></div>
-                      <p className="font-black text-amber-500 mb-4 text-[10px] uppercase tracking-[0.3em] flex items-center gap-2">
-                        <QrCode className="w-5 h-5" />
-                        Auth Logs:
-                      </p>
-                      <div className="space-y-3">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-[8px] text-gray-500 font-black uppercase tracking-widest">Gateway Provider</span>
-                          <span className="text-[11px] font-black text-white italic">{invoiceOrder.paymentMethod}</span>
-                        </div>
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-[8px] text-gray-500 font-black uppercase tracking-widest">Digital Ref Hash</span>
-                          <span className="text-[9px] font-black text-amber-400 font-mono break-all">{invoiceOrder.transactionId}</span>
-                        </div>
-                        <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <div className={`w-2.5 h-2.5 rounded-full ${invoiceOrder.paymentStatus === 'paid' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.6)] animate-pulse' : 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.6)] animate-bounce'}`}></div>
-                                <span className="text-[10px] font-black text-white uppercase tracking-tighter">{invoiceOrder.paymentStatus}</span>
-                            </div>
-                            <span className="text-[8px] text-gray-500 font-black font-mono">{invoiceOrder.date}</span>
-                        </div>
-                      </div>
-                    </div>
+                  <td className="px-4 py-2 align-top w-1/2">
+                    <p className="font-semibold text-amber-700 mb-2 flex items-center gap-1 ">
+                      <span className="w-1 h-4 bg-amber-500 rounded-full "></span>
+                      Transaction Details:
+                    </p>
+                    <table className="w-full">
+                      <tbody>
+                        <tr>
+                          <td className="text-xs text-gray-600 py-1">Payment Method:</td>
+                          <td className="text-xs font-medium text-right">{invoiceOrder.paymentMethod}</td>
+                        </tr>
+                        <tr>
+                          <td className="text-xs text-gray-600 py-1">Transaction ID:</td>
+                          <td className="text-xs font-medium text-right">TXN{invoiceOrder.id}123</td>
+                        </tr>
+                        <tr>
+                          <td className="text-xs text-gray-600 py-1">Payment Status:</td>
+                          <td className="text-xs text-right">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              invoiceOrder.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' :
+                              invoiceOrder.paymentStatus === 'pending' ? 'bg-amber-50 text-amber-600' :
+                              'bg-red-50 text-red-600'
+                            }`}>
+                              {invoiceOrder.paymentStatus?.toUpperCase()}
+                            </span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="text-xs text-gray-600 py-1">Payment Date:</td>
+                          <td className="text-xs font-medium text-right">{invoiceOrder.paymentStatus === 'paid' ? invoiceOrder.date : 'Pending'}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td colSpan="2">
+                    <hr className="my-4 border-t-2 border-amber-200" />
                   </td>
                 </tr>
 
                 {/* ================= FOOTER ================= */}
                 <tr>
-                  <td colSpan="2" className="text-center text-gray-500 px-4 py-10">
-                    <div className="mb-6">
-                      <img src="/logo.png" className="w-10 h-10 mx-auto opacity-20 grayscale hover:opacity-100 transition-opacity duration-700" alt="footer-logo" />
+                  <td colSpan="2" className="text-center text-gray-500 px-4 py-2">
+                    <p className="text-xs">This is a computer-generated invoice and does not require a physical signature.</p>
+                    <div className="flex justify-center items-center gap-4 mt-2 text-[10px] flex-wrap">
+                      <span>Terms & Conditions Apply</span>
+                      <span className="hidden sm:inline">•</span>
+                      <span>Subject to Noida Jurisdiction</span>
+                      <span className="hidden sm:inline">•</span>
+                      <span>Thank you for your business!</span>
                     </div>
-                    <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent mb-6"></div>
-                    <p className="text-[9px] font-black uppercase tracking-[0.4em] text-gray-400 mb-4">Digitally Generated Tax Document - Signature Exempted under IT Act 2000</p>
-                    <div className="flex justify-center items-center gap-8 text-[9px] font-black text-amber-700/60 uppercase tracking-[0.2em] mb-8">
-                      <span className="hover:text-amber-800 cursor-pointer">Noida Jurisdiction</span>
-                      <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></div>
-                      <span className="hover:text-amber-800 cursor-pointer">Non-Transferable</span>
-                      <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></div>
-                      <span className="hover:text-amber-800 cursor-pointer">Standard VAT Compliant</span>
-                    </div>
-                    <div className="bg-gray-50 p-6 rounded-2xl border border-dashed border-gray-200 inline-block px-12">
-                      <p className="text-[11px] font-black text-gray-900 flex items-center justify-center gap-3">
-                        <span className="text-amber-600 uppercase tracking-tighter">Support Core:</span> 
-                        <span className="bg-amber-100 px-2 py-1 rounded text-amber-900">billing@acharyaji.com</span> 
-                        <span className="text-gray-300">|</span> 
-                        <span className="font-mono text-xs">+91 999 000 7777</span>
-                      </p>
-                    </div>
-                    <p className="text-[9px] mt-10 text-gray-400 font-bold italic tracking-widest leading-relaxed">
-                      "Wishing you eternal peace and prosperity. Thank you for making Acharya Ji a part of your spiritual quest."
-                    </p>
+                    <p className="text-[10px] mt-2 text-gray-400">For any queries, contact support@acharyaji.com or call +91 98765 43210</p>
                   </td>
                 </tr>
               </tbody>
             </table>
 
             {/* Print Styles */}
-            <style jsx>{`
+            <style>{`
               @media print {
-                body { background: white; -webkit-print-color-adjust: exact; }
+                body { background: white; }
                 .no-print { display: none; }
-                .bg-gray-300 { background: white !important; }
-                .shadow-lg, .shadow-xl { shadow: none !important; }
-                .rounded-[2px] { border-radius: 0 !important; }
+                .print\\:shadow-none { box-shadow: none; }
+                .bg-gray-300 { background: white; }
               }
             `}</style>
           </div>

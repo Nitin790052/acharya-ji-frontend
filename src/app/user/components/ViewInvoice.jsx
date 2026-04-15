@@ -5,18 +5,18 @@ import html2pdf from "html2pdf.js";
 import { Download } from 'lucide-react';
 
 const ViewInvoice = () => {
-    const { id } = useParams();              
+    const { id } = useParams();
     const location = useLocation();
     const data = location.state;
-    
+
     if (!data) {
         return <p>No order data found for ID: {id}</p>;
     }
-    
+
     console.log(data, "data has been received");
-    
+
     const printRef = useRef();
-    
+
     // Function to handle PDF download on button click
     const handleDownloadPDF = () => {
         if (!printRef.current) {
@@ -83,13 +83,13 @@ const ViewInvoice = () => {
     return (
         <div>
             <div className="bg-gray-300 pb-10 pt-3 print:bg-white ">
-                <div className='flex justify-end px-24 pb-3'> 
-                    <button 
+                <div className='flex justify-end px-24 pb-3'>
+                    <button
                         onClick={handleDownloadPDF}
                         className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-amber-700 text-sm font-medium transition-colors duration-200 group relative"
                         title="Download Invoice"
                     >
-                        <Download size={18} className="group-hover:animate-pulse" /> 
+                        <Download size={18} className="group-hover:animate-pulse" />
                         <span className="relative">
                             Download Invoice
                             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-amber-600 group-hover:w-full transition-all duration-300"></span>
@@ -296,17 +296,17 @@ const ViewInvoice = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {invoiceOrder.category === "service" ? ( 
+                                            {(!invoiceOrder.items || invoiceOrder.items.length === 0) ? (
                                                 <>
                                                     <tr className="hover:bg-gray-50">
                                                         <td className="border p-2 text-center text-xs">1</td>
                                                         <td className="border p-2 text-xs">{invoiceOrder.serviceName}</td>
-                                                        <td className="border p-2 text-center text-xs">{invoiceOrder.quantity}</td>
+                                                        <td className="border p-2 text-center text-xs">{invoiceOrder.quantity || 1}</td>
                                                         <td className="border p-2 text-right text-xs">{formatCurrency(invoiceOrder.amount).replace('₹', '')}</td>
-                                                        <td className="border p-2 text-right text-xs">{formatCurrency(invoiceOrder.amount * 1).replace('₹', '')}</td>
+                                                        <td className="border p-2 text-right text-xs">{formatCurrency((invoiceOrder.amount || 0) * (invoiceOrder.quantity || 1)).replace('₹', '')}</td>
                                                     </tr>
                                                 </>
-                                            ) : ( 
+                                            ) : (
                                                 <>
                                                     {invoiceOrder.items?.map((item, index) => (
                                                         <tr key={index} className="hover:bg-gray-50">
@@ -410,11 +410,10 @@ const ViewInvoice = () => {
                                             <tr>
                                                 <td className="text-xs text-gray-600 py-1">Payment Status:</td>
                                                 <td className="text-xs text-right">
-                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                                        invoiceOrder.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' :
-                                                        invoiceOrder.paymentStatus === 'pending' ? 'bg-amber-50 text-amber-600' :
-                                                        'bg-red-50 text-red-600'
-                                                    }`}>
+                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${invoiceOrder.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' :
+                                                            invoiceOrder.paymentStatus === 'pending' ? 'bg-amber-50 text-amber-600' :
+                                                                'bg-red-50 text-red-600'
+                                                        }`}>
                                                         {invoiceOrder.paymentStatus?.toUpperCase()}
                                                     </span>
                                                 </td>

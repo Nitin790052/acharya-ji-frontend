@@ -62,7 +62,8 @@ const UserLogin = () => {
       setOtpTimer(30);
 
       if (response.debugOtp) {
-        toast.info(`OTP (Debug): ${response.debugOtp}`);
+        console.log(`%c🔐 OTP for ${mobile}: ${response.debugOtp}`, 'color: #f97316; font-size: 18px; font-weight: bold; background: #fff7ed; padding: 4px 12px; border-radius: 6px;');
+
       }
       toast.success(response.message || "OTP sent successfully!");
     } catch (err) {

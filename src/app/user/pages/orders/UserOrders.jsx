@@ -57,7 +57,7 @@ const UserOrders = () => {
   })
 
   // ========== RTK QUERY ==========
-  const { data: ordersResponse, isLoading, isError, refetch } = useGetUserOrdersQuery('all');
+  const { data: ordersResponse, isLoading, isError, refetch } = useGetUserOrdersQuery('all', { pollingInterval: 3000 });
   const [cancelOrder, { isLoading: isCancelling }] = useCancelOrderMutation();
 
   const handleCancelOrder = async (orderId) => {

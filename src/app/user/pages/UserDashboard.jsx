@@ -54,7 +54,7 @@ const DashboardMain = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   // ========== DATA FETCHING ==========
-  const { data: dashboardData, isLoading, isError, error } = useGetUserDashboardQuery();
+  const { data: dashboardData, isLoading, isError, error } = useGetUserDashboardQuery(undefined, { pollingInterval: 3000 });
   const [addMoney, { isLoading: isAddingMoney }] = useAddMoneyMutation();
   const [payPending, { isLoading: isPayingPending }] = usePayAllPendingMutation();
 

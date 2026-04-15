@@ -35,9 +35,9 @@ import {
   Printer,
   Banknote,
   Landmark,
-  ChevronLeft,
-  MoreHorizontal
 } from 'lucide-react';
+import { useReactToPrint } from 'react-to-print';
+import html2pdf from 'html2pdf.js';
 import { useGetUserDashboardQuery, useGetUserHistoryQuery } from '../../../services/userApi';
 
 const UserPayments = () => {
@@ -61,8 +61,8 @@ const UserPayments = () => {
   const printRef = useRef();
 
   // ========== RTK QUERY ==========
-  const { data: dashboardResponse, isLoading: isDashboardLoading } = useGetUserDashboardQuery();
-  const { data: historyResponse, isLoading: isHistoryLoading } = useGetUserHistoryQuery();
+  const { data: dashboardResponse, isLoading: isDashboardLoading } = useGetUserDashboardQuery(undefined, { pollingInterval: 3000 });
+  const { data: historyResponse, isLoading: isHistoryLoading } = useGetUserHistoryQuery(undefined, { pollingInterval: 3000 });
 
   const dashboardData = dashboardResponse?.data;
   const historyData = historyResponse?.data || [];
@@ -70,10 +70,10 @@ const UserPayments = () => {
   // ========== WALLET DATA ==========
   const walletData = {
     availableBalance: dashboardData?.user?.walletBalance || 0,
-    totalSpent: dashboardData?.summary?.find(s => s.type === 'history')?.value?.replace('₹', '') || 0,
+    totalSpent: String(dashboardData?.summary?.find(s => s.type === 'payment')?.value || '0').replace('₹', ''),
     totalPaid: dashboardData?.user?.totalPaid || 0,
     totalCredits: dashboardData?.user?.totalCredits || 0,
-    pendingPayments: dashboardData?.summary?.find(s => s.type === 'payment')?.value?.replace('₹', '') || 0,
+    pendingPayments: dashboardData?.totalPendingAmount || 0,
     currency: 'INR'
   };
 

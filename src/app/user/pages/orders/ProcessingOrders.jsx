@@ -50,7 +50,7 @@ const ProcessingOrders = () => {
   })
 
   // ========== RTK QUERY ==========
-  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('processing');
+  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('processing', { pollingInterval: 3000 });
   const processingOrders = ordersResponse?.data || [];
 
   // ========== PROCESSING ORDERS DATA ==========

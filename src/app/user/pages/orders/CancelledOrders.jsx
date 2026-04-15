@@ -45,7 +45,7 @@ const CancelledOrders = () => {
   });
 
   // ========== RTK QUERY ==========
-  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('cancelled');
+  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('cancelled', { pollingInterval: 3000 });
   const cancelledOrders = ordersResponse?.data || [];
 
   const cancelledOrdersMock = [

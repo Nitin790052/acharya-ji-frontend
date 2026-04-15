@@ -354,10 +354,10 @@ const RegistrationForm = () => {
                         }}
                         placeholder="John Doe"
                         className={`w-full bg-white border-2 ${touched.fullName && errors.fullName
-                            ? 'border-red-300 focus:border-red-400'
-                            : focusedField === 'fullName'
-                              ? 'border-amber-300 shadow-lg shadow-amber-100'
-                              : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-red-300 focus:border-red-400'
+                          : focusedField === 'fullName'
+                            ? 'border-amber-300 shadow-lg shadow-amber-100'
+                            : 'border-gray-200 hover:border-gray-300'
                           } rounded-xl px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 focus:outline-none transition-all duration-300`}
                       />
                       {touched.fullName && errors.fullName && (
@@ -395,10 +395,10 @@ const RegistrationForm = () => {
                         placeholder="9876543210"
                         maxLength="10"
                         className={`w-full bg-white border-2 ${touched.mobile && errors.mobile
-                            ? 'border-red-300 focus:border-red-400'
-                            : focusedField === 'mobile'
-                              ? 'border-amber-300 shadow-lg shadow-amber-100'
-                              : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-red-300 focus:border-red-400'
+                          : focusedField === 'mobile'
+                            ? 'border-amber-300 shadow-lg shadow-amber-100'
+                            : 'border-gray-200 hover:border-gray-300'
                           } rounded-xl px-4 py-2.5 pl-16 text-sm text-gray-700 placeholder-gray-400 focus:outline-none transition-all duration-300 ${phoneOtpStep === 'verified' ? 'bg-green-50/30' : ''}`}
                       />
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -472,10 +472,10 @@ const RegistrationForm = () => {
                         }}
                         placeholder="hello@example.com"
                         className={`w-full bg-white border-2 ${touched.email && errors.email
-                            ? 'border-red-300 focus:border-red-400'
-                            : focusedField === 'email'
-                              ? 'border-amber-300 shadow-lg shadow-amber-100'
-                              : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-red-300 focus:border-red-400'
+                          : focusedField === 'email'
+                            ? 'border-amber-300 shadow-lg shadow-amber-100'
+                            : 'border-gray-200 hover:border-gray-300'
                           } rounded-xl px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 focus:outline-none transition-all duration-300 ${emailOtpStep === 'verified' ? 'bg-green-50/30' : ''}`}
                       />
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -554,8 +554,8 @@ const RegistrationForm = () => {
                       onFocus={() => setFocusedField('dob')}
                       onBlur={() => setFocusedField(null)}
                       className={`w-full bg-white border-2 ${focusedField === 'dob'
-                          ? 'border-amber-300 shadow-lg shadow-amber-100'
-                          : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-amber-300 shadow-lg shadow-amber-100'
+                        : 'border-gray-200 hover:border-gray-300'
                         } rounded-xl px-4 py-2.5 text-sm text-gray-600 focus:outline-none transition-all duration-300`}
                     />
                   </div>
@@ -579,8 +579,8 @@ const RegistrationForm = () => {
                               className="peer sr-only"
                             />
                             <div className={`w-4 h-4 rounded-full border-2 transition-all ${formData.gender === gender.value
-                                ? 'border-amber-500'
-                                : 'border-gray-300 group-hover:border-amber-300'
+                              ? 'border-amber-500'
+                              : 'border-gray-300 group-hover:border-amber-300'
                               }`}>
                               {formData.gender === gender.value && (
                                 <div className="w-2 h-2 bg-amber-500 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
@@ -588,8 +588,8 @@ const RegistrationForm = () => {
                             </div>
                           </div>
                           <span className={`text-sm ${formData.gender === gender.value
-                              ? 'text-amber-600 font-medium'
-                              : 'text-gray-600'
+                            ? 'text-amber-600 font-medium'
+                            : 'text-gray-600'
                             }`}>
                             {gender.label}
                           </span>
@@ -612,8 +612,8 @@ const RegistrationForm = () => {
                         onFocus={() => setFocusedField('country')}
                         onBlur={() => setFocusedField(null)}
                         className={`w-full bg-white border-2 ${focusedField === 'country'
-                            ? 'border-amber-300 shadow-lg shadow-amber-100'
-                            : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-amber-300 shadow-lg shadow-amber-100'
+                          : 'border-gray-200 hover:border-gray-300'
                           } rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none transition-all duration-300 appearance-none`}
                       >
                         <option value="">Select Country</option>
@@ -640,8 +640,8 @@ const RegistrationForm = () => {
                         onBlur={() => setFocusedField(null)}
                         disabled={!formData.country}
                         className={`w-full bg-white border-2 ${focusedField === 'state'
-                            ? 'border-amber-300 shadow-lg shadow-amber-100'
-                            : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-amber-300 shadow-lg shadow-amber-100'
+                          : 'border-gray-200 hover:border-gray-300'
                           } rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none transition-all duration-300 appearance-none disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed`}
                       >
                         <option value="">Select State</option>
@@ -668,8 +668,8 @@ const RegistrationForm = () => {
                         onBlur={() => setFocusedField(null)}
                         disabled={!formData.state}
                         className={`w-full bg-white border-2 ${focusedField === 'city'
-                            ? 'border-amber-300 shadow-lg shadow-amber-100'
-                            : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-amber-300 shadow-lg shadow-amber-100'
+                          : 'border-gray-200 hover:border-gray-300'
                           } rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none transition-all duration-300 appearance-none disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed`}
                       >
                         <option value="">Select City</option>
@@ -731,10 +731,10 @@ const RegistrationForm = () => {
                         }}
                         placeholder="••••••••"
                         className={`w-full bg-white border-2 ${touched.password && errors.password
-                            ? 'border-red-300 focus:border-red-400'
-                            : focusedField === 'password'
-                              ? 'border-amber-300 shadow-lg shadow-amber-100'
-                              : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-red-300 focus:border-red-400'
+                          : focusedField === 'password'
+                            ? 'border-amber-300 shadow-lg shadow-amber-100'
+                            : 'border-gray-200 hover:border-gray-300'
                           } rounded-xl px-4 py-2.5 pr-12 text-sm text-gray-700 placeholder-gray-400 focus:outline-none transition-all duration-300`}
                       />
                       <button
@@ -769,10 +769,10 @@ const RegistrationForm = () => {
                         }}
                         placeholder="••••••••"
                         className={`w-full bg-white border-2 ${touched.confirmPassword && errors.confirmPassword
-                            ? 'border-red-300 focus:border-red-400'
-                            : focusedField === 'confirmPassword'
-                              ? 'border-amber-300 shadow-lg shadow-amber-100'
-                              : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-red-300 focus:border-red-400'
+                          : focusedField === 'confirmPassword'
+                            ? 'border-amber-300 shadow-lg shadow-amber-100'
+                            : 'border-gray-200 hover:border-gray-300'
                           } rounded-xl px-4 py-2.5 pr-12 text-sm text-gray-700 placeholder-gray-400 focus:outline-none transition-all duration-300`}
                       />
                       <button
@@ -823,8 +823,8 @@ const RegistrationForm = () => {
                   type="submit"
                   disabled={!isFormValid()}
                   className={`w-full py-3 rounded-xl text-base font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${isFormValid()
-                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xl shadow-amber-200 hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] border-l-4 border-blue-500'
-                      : 'bg-amber-500 text-white  cursor-not-allowed  '
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xl shadow-amber-200 hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] border-l-4 border-blue-500'
+                    : 'bg-amber-500 text-white  cursor-not-allowed  '
                     }`}
                 >
                   <span>Create Premium Account</span>

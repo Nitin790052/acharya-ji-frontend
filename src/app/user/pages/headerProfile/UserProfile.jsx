@@ -38,7 +38,7 @@ import { getTranslation } from '../../../../utils/translations';
 
 const UserProfile = () => {
   // ========== RTK QUERY HOOKS ==========
-  const { data: profileResponse, isLoading, isError } = useGetProfileQuery();
+  const { data: profileResponse, isLoading, isError } = useGetProfileQuery(undefined, { pollingInterval: 3000 });
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
   const [changePassword, { isLoading: isChangingPassword }] = useChangePasswordMutation();
   const [uploadAvatar, { isLoading: isUploadingAvatar }] = useUploadAvatarMutation();
@@ -48,6 +48,7 @@ const UserProfile = () => {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [show2FAModal, setShow2FAModal] = useState(false);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [showAllLogins, setShowAllLogins] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -610,10 +611,10 @@ const UserProfile = () => {
                 {t('login_activity')}
               </h3>
               <button
-                onClick={() => toast.info('Viewing all login activity')}
+                onClick={() => setShowAllLogins(!showAllLogins)}
                 className="text-xs text-amber-600 hover:text-amber-700 font-medium"
               >
-                View All
+                {showAllLogins ? 'Show Less' : 'View All'}
               </button>
             </div>
             <p className="text-xs text-gray-600">Current session: {loginActivity.length > 0 ? loginActivity[0].device : 'Searching...'}</p>
@@ -628,7 +629,7 @@ const UserProfile = () => {
           </h3>
           <div className="space-y-2">
             {loginActivity.length > 0 ? (
-              loginActivity.map((activity) => (
+              (showAllLogins ? loginActivity : loginActivity.slice(0, 5)).map((activity) => (
                 <div key={activity.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-2">
                     {activity.device?.includes('iPhone') || activity.device?.includes('Mobile') ? (
@@ -653,12 +654,22 @@ const UserProfile = () => {
               <p className="text-xs text-gray-500 py-4 text-center">No recent login activity found.</p>
             )}
           </div>
-          <button
-            onClick={handleLogoutAll}
-            className="mt-2 text-xs text-red-600 hover:text-red-700 font-medium"
-          >
-            {t('logout_all')}
-          </button>
+          <div className="flex items-center justify-between mt-2">
+            <button
+              onClick={handleLogoutAll}
+              className="text-xs text-red-600 hover:text-red-700 font-medium"
+            >
+              {t('logout_all')}
+            </button>
+            {loginActivity.length > 5 && (
+              <button
+                onClick={() => setShowAllLogins(!showAllLogins)}
+                className="text-xs text-amber-600 hover:text-amber-700 font-medium"
+              >
+                {showAllLogins ? `Show Less` : `View All Activity (${loginActivity.length})`}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* ========== C) PREFERENCES ========== */}
