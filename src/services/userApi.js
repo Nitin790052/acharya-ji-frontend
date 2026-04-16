@@ -52,7 +52,10 @@ export const userApi = createApi({
     }),
     
     getUserDashboard: builder.query({
-      query: () => '/dashboard',
+      query: (period) => ({
+        url: '/dashboard',
+        params: { period }
+      }),
       providesTags: ['User'],
     }),
     getUserOrders: builder.query({
@@ -70,7 +73,10 @@ export const userApi = createApi({
       invalidatesTags: ['User'],
     }),
     getUserHistory: builder.query({
-      query: () => '/history',
+      query: (period) => ({
+        url: '/history',
+        params: { period }
+      }),
       providesTags: ['User'],
     }),
     addMoney: builder.mutation({
@@ -84,6 +90,13 @@ export const userApi = createApi({
     payAllPending: builder.mutation({
       query: () => ({
         url: '/pay-all-pending',
+        method: 'POST',
+      }),
+      invalidatesTags: ['User'],
+    }),
+    payOrder: builder.mutation({
+      query: (orderId) => ({
+        url: `/orders/${orderId}/pay`,
         method: 'POST',
       }),
       invalidatesTags: ['User'],
@@ -150,6 +163,13 @@ export const userApi = createApi({
       }),
       invalidatesTags: ['User'],
     }),
+    deleteOrder: builder.mutation({
+      query: (orderId) => ({
+        url: `/orders/${orderId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['User'],
+    }),
   }),
 });
 
@@ -179,4 +199,6 @@ export const {
   useUploadAvatarMutation,
   useAddMoneyMutation,
   usePayAllPendingMutation,
+  usePayOrderMutation,
+  useDeleteOrderMutation,
 } = userApi;

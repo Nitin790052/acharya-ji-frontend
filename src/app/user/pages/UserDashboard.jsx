@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Calendar,
   Star,
   Sparkles,
@@ -7,6 +7,7 @@ import {
   Wallet,
   Clock,
   ChevronRight,
+  ChevronLeft,
   Download,
   MessageCircle,
   Bell,
@@ -42,26 +43,27 @@ import { getTranslation } from '../../../utils/translations';
 const DashboardMain = () => {
   // ========== STATE MANAGEMENT ==========
   const [selectedTime, setSelectedTime] = useState('week');
-  
+
   // Modal States
   const [showAddMoneyModal, setShowAddMoneyModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  
+  const [currentPageOrders, setCurrentPageOrders] = useState(1);
+
   // Add Money States
   const [addMoneyAmount, setAddMoneyAmount] = useState('');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('razorpay');
   const [isProcessing, setIsProcessing] = useState(false);
 
   // ========== DATA FETCHING ==========
-  const { data: dashboardData, isLoading, isError, error } = useGetUserDashboardQuery(undefined, { pollingInterval: 3000 });
+  const { data: dashboardData, isLoading, isError, error } = useGetUserDashboardQuery(selectedTime, { pollingInterval: 3000 });
   const [addMoney, { isLoading: isAddingMoney }] = useAddMoneyMutation();
   const [payPending, { isLoading: isPayingPending }] = usePayAllPendingMutation();
 
   // Format Last Login
   const formatLastLogin = (lastLogin) => {
     if (!lastLogin || lastLogin === 'Just now') return 'Just now';
-    
+
     // If it's the new object format from backend
     if (typeof lastLogin === 'object' && lastLogin.timestamp) {
       const { device, location, timestamp } = lastLogin;
@@ -100,11 +102,11 @@ const DashboardMain = () => {
 
   // ========== A) WELCOME SECTION DATA ==========
   const today = new Date();
-  const formattedDate = today.toLocaleDateString('en-US', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
+  const formattedDate = today.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
   });
 
   // ========== B) SUMMARY CARDS (Important Metrics) ==========
@@ -145,9 +147,9 @@ const DashboardMain = () => {
 
   // ========== D) QUICK ACTIONS ==========
   const quickActions = [
-    { id: 1, icon: <PaymentIcon className="w-4 h-4" />, label: 'Make Payment', action: 'payment', color: 'from-amber-600 to-yellow-600', path:"/user/dashboard/payments-user" },
-    { id: 2, icon: <User className="w-4 h-4" />, label: 'Update Profile', action: 'profile', color: 'from-amber-600 to-yellow-600', path:"/user/dashboard/profile-user"},
-    { id: 3, icon: <ShoppingBag className="w-4 h-4" />, label: 'View All Orders', action: 'orders', color: 'from-amber-600 to-yellow-600', path:"/user/dashboard/order-user" },
+    { id: 1, icon: <PaymentIcon className="w-4 h-4" />, label: 'Make Payment', action: 'payment', color: 'from-amber-600 to-yellow-600', path: "/user/dashboard/payments-user" },
+    { id: 2, icon: <User className="w-4 h-4" />, label: 'Update Profile', action: 'profile', color: 'from-amber-600 to-yellow-600', path: "/user/dashboard/profile-user" },
+    { id: 3, icon: <ShoppingBag className="w-4 h-4" />, label: 'View All Orders', action: 'orders', color: 'from-amber-600 to-yellow-600', path: "/user/dashboard/order-user" },
     { id: 4, icon: <Download className="w-4 h-4" />, label: 'Download Invoice', action: 'invoice', color: 'from-amber-600 to-yellow-600', }
   ];
 
@@ -165,7 +167,7 @@ const DashboardMain = () => {
   // ========== STATUS STYLING FUNCTIONS ==========
   const getStatusStyle = (status) => {
     const base = "px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 w-fit";
-    switch(status) {
+    switch (status) {
       case 'confirmed':
       case 'completed':
       case 'success':
@@ -180,7 +182,7 @@ const DashboardMain = () => {
   };
 
   const getStatusIcon = (status) => {
-    switch(status) {
+    switch (status) {
       case 'confirmed':
       case 'completed':
       case 'success':
@@ -195,7 +197,7 @@ const DashboardMain = () => {
   };
 
   const getNotificationIcon = (type) => {
-    switch(type) {
+    switch (type) {
       case 'reminder':
         return <Calendar className="w-3 h-3 text-blue-600" />;
       case 'payment':
@@ -223,7 +225,7 @@ const DashboardMain = () => {
 
   // ========== HANDLER FUNCTIONS ==========
   const handleQuickAction = (action) => {
-    switch(action) {
+    switch (action) {
       case 'payment':
         setShowPaymentModal(true);
         break;
@@ -308,7 +310,7 @@ const DashboardMain = () => {
         <XCircle className="w-12 h-12 text-red-500 mb-4" />
         <h2 className="text-xl font-bold text-gray-800">Connection Error</h2>
         <p className="text-gray-600 mt-2 max-w-sm">{error?.data?.message || "Could not connect to the server."}</p>
-        <button 
+        <button
           onClick={() => window.location.reload()}
           className="mt-6 px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
         >
@@ -349,8 +351,8 @@ const DashboardMain = () => {
                 onClick={() => setSelectedTime(time)}
                 className={`
                   px-3 py-1 text-xs font-medium rounded-md transition-all capitalize cursor-pointer
-                  ${selectedTime === time 
-                    ? 'bg-amber-500 text-white' 
+                  ${selectedTime === time
+                    ? 'bg-amber-500 text-white'
                     : 'text-gray-600 hover:bg-gray-100'
                   }
                 `}
@@ -366,48 +368,48 @@ const DashboardMain = () => {
       <div className="space-y-4 px-6 pb-6 pt-2">
 
         {/* ========== A) WELCOME SECTION ========== */}
-       <div className="bg-gradient-to-br from-amber-100 to-yellow-200 rounded-lg p-3 sm:p-4 text-amber-900">
-  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
-    
-    {/* Left Section - User Info */}
-    <div className="flex items-center gap-2 sm:gap-3">
-      {/* Icon - slightly smaller on mobile */}
-      <div className="p-1.5 sm:p-2 bg-white/50 rounded-lg shrink-0">
-        <User className="w-4 h-4 sm:w-5 sm:h-5 text-amber-700" />
-      </div>
-      
-      {/* Welcome Text */}
-      <div className="flex-1 min-w-0"> {/* min-w-0 for truncation */}
-        <h2 className="text-sm sm:text-base lg:text-lg font-bold text-amber-900 flex items-center gap-0.5 flex-wrap">
-          <span className="truncate">{t('welcome_back')}, {userData.name}!</span>
-          <Hand className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-        </h2>
-        <p className="text-[10px] sm:text-xs text-amber-800 mt-0.5 truncate">
-          {formattedDate}
-        </p>
-      </div>
-    </div>
+        <div className="bg-gradient-to-br from-amber-100 to-yellow-200 rounded-lg p-3 sm:p-4 text-amber-900">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
 
-    {/* Motivational Line - Hidden on very small screens, visible on mobile+ */}
-    <div className="bg-white/40 backdrop-blur-sm rounded-lg px-2 sm:px-3 py-1 sm:py-1.5 self-start sm:self-auto w-full sm:w-auto">
-      <p className="text-[10px] sm:text-xs text-amber-800 text-center sm:text-left">
-        "Your spiritual journey continues..."
-      </p>
-    </div>
-  </div>
-  
-  {/* Last Login Info */}
-  <div className="mt-2 sm:mt-3 flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-amber-800">
-    <LogIn className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
-    <span className="truncate">{t('last_login')}: {userData.lastLogin}</span>
-  </div>
-</div>
+            {/* Left Section - User Info */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Icon - slightly smaller on mobile */}
+              <div className="p-1.5 sm:p-2 bg-white/50 rounded-lg shrink-0">
+                <User className="w-4 h-4 sm:w-5 sm:h-5 text-amber-700" />
+              </div>
+
+              {/* Welcome Text */}
+              <div className="flex-1 min-w-0"> {/* min-w-0 for truncation */}
+                <h2 className="text-sm sm:text-base lg:text-lg font-bold text-amber-900 flex items-center gap-0.5 flex-wrap">
+                  <span className="truncate">{t('welcome_back')}, {userData.name}!</span>
+                  <Hand className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                </h2>
+                <p className="text-[10px] sm:text-xs text-amber-800 mt-0.5 truncate">
+                  {formattedDate}
+                </p>
+              </div>
+            </div>
+
+            {/* Motivational Line - Hidden on very small screens, visible on mobile+ */}
+            <div className="bg-white/40 backdrop-blur-sm rounded-lg px-2 sm:px-3 py-1 sm:py-1.5 self-start sm:self-auto w-full sm:w-auto">
+              <p className="text-[10px] sm:text-xs text-amber-800 text-center sm:text-left">
+                "Your spiritual journey continues..."
+              </p>
+            </div>
+          </div>
+
+          {/* Last Login Info */}
+          <div className="mt-2 sm:mt-3 flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-amber-800">
+            <LogIn className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
+            <span className="truncate">{t('last_login')}: {userData.lastLogin}</span>
+          </div>
+        </div>
 
         {/* ========== B) SUMMARY CARDS (5 Cards) ========== */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {summaryCards.map((card, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className="bg-white rounded-lg border border-gray-200 hover:border-amber-300 transition-colors p-3 cursor-pointer"
               onClick={() => {
                 if (card.label === "Wallet Balance") {
@@ -436,54 +438,83 @@ const DashboardMain = () => {
         {/* ========== C) RECENT ACTIVITY SECTION ========== */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {/* Left Column - Recent Orders (Last 5) */}
-         <div className="lg:col-span-2 space-y-3">
-  <div className="bg-white rounded-lg border border-gray-200 hover:border-amber-300 transition-colors">
-    <div className="p-2 sm:p-3 border-b border-gray-200">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm sm:text-[15px] font-bold text-gray-800 flex items-center gap-1 sm:gap-2">
-          <ShoppingBag className="w-3 h-3 sm:w-4 sm:h-4 text-amber-600" />
-          <span>{t('recent_orders')}</span>
-          <span className="text-[10px] sm:text-xs font-normal text-gray-500 ml-1">(Last 5)</span>
-        </h3>
-        <Link to="/user/orders" className="text-xs sm:text-sm text-amber-600 hover:text-amber-700 flex items-center gap-0.5 sm:gap-1">
-          <span>{t('view_all')}</span>
-          <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
-        </Link>
-      </div>
-    </div>
+          <div className="lg:col-span-2 space-y-3">
+            <div className="bg-white rounded-lg border border-gray-200 hover:border-amber-300 transition-colors">
+              <div className="p-2 sm:p-3 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm sm:text-[15px] font-bold text-gray-800 flex items-center gap-1 sm:gap-2">
+                    <ShoppingBag className="w-3 h-3 sm:w-4 sm:h-4 text-amber-600" />
+                    <span>{t('recent_orders')}</span>
+                    <span className="text-[10px] sm:text-xs font-normal text-gray-500 ml-1">(Last 6 per page)</span>
+                  </h3>
+                  <Link to="order-user/order-all" className="text-xs sm:text-sm text-amber-600 hover:text-amber-700 flex items-center gap-0.5 sm:gap-1">
+                    <span>{t('view_all')}</span>
+                    <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+                  </Link>
+                </div>
+              </div>
 
-    <div className="divide-y divide-gray-200">
-      {recentOrders.map((order) => (
-        <div key={order.id} className="p-2 sm:p-3 hover:bg-amber-50/30 transition-colors">
-          <div className="flex items-center justify-between gap-2">
-            {/* Left side - Order info */}
-            <div className="flex-1 min-w-0"> {/* min-w-0 enables truncation */}
-              <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-                <h4 className="text-xs sm:text-sm font-semibold text-gray-800 truncate max-w-[120px] sm:max-w-[200px]">
-                  {order.service}
-                </h4>
-                <span className="text-[10px] sm:text-xs text-gray-500 shrink-0">{order.id}</span>
+              <div className="divide-y divide-gray-200">
+                {recentOrders.slice((currentPageOrders - 1) * 5, currentPageOrders * 5).map((order) => (
+                  <div key={order.id} className="p-2 sm:p-3 hover:bg-amber-50/30 transition-colors">
+                    <div className="flex items-center justify-between gap-2">
+                      {/* Left side - Order info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                          <h4 className="text-xs sm:text-sm font-semibold text-gray-800 truncate max-w-[120px] sm:max-w-[200px]">
+                            {order.service}
+                          </h4>
+                          <span className="text-[10px] sm:text-xs text-gray-500 shrink-0">{order.id}</span>
+                        </div>
+                        <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">{order.date}</p>
+                      </div>
+
+                      {/* Right side - Amount & Status */}
+                      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                        <span className="text-xs sm:text-sm font-medium text-gray-800 whitespace-nowrap">
+                          {order.amount}
+                        </span>
+                        <div className={getStatusStyle(order.status)}>
+                          {getStatusIcon(order.status)}
+                          <span className="hidden sm:inline capitalize text-xs ml-0.5">{order.status}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {recentOrders.length === 0 && (
+                  <div className="p-8 text-center text-gray-500 text-sm">
+                    No recent orders found
+                  </div>
+                )}
               </div>
-              <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">{order.date}</p>
-            </div>
-            
-            {/* Right side - Amount & Status */}
-            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-              <span className="text-xs sm:text-sm font-medium text-gray-800 whitespace-nowrap">
-                {order.amount}
-              </span>
-              <div className={getStatusStyle(order.status)}>
-                {getStatusIcon(order.status)}
-                {/* Hide text on mobile, show only icon */}
-                <span className="hidden sm:inline capitalize text-xs ml-0.5">{order.status}</span>
-              </div>
+
+              {/* Pagination Controls */}
+              {recentOrders.length > 6 && (
+                <div className="p-3 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
+                  <p className="text-[10px] text-gray-500">
+                    Showing {Math.min((currentPageOrders - 1) * 6 + 1, recentOrders.length)}-{Math.min(currentPageOrders * 6, recentOrders.length)} of {recentOrders.length}
+                  </p>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => setCurrentPageOrders(prev => Math.max(1, prev - 1))}
+                      disabled={currentPageOrders === 1}
+                      className="p-1 rounded border border-gray-200 disabled:opacity-30 hover:bg-white transition-colors"
+                    >
+                      <ChevronLeft size={14} />
+                    </button>
+                    <button
+                      onClick={() => setCurrentPageOrders(prev => Math.min(Math.ceil(recentOrders.length / 6), prev + 1))}
+                      disabled={currentPageOrders >= Math.ceil(recentOrders.length / 6)}
+                      className="p-1 rounded border border-gray-200 disabled:opacity-30 hover:bg-white transition-colors"
+                    >
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      ))}
-    </div>
-  </div>
-</div>
 
           {/* Right Column - Latest Payment & Notifications */}
           <div className="space-y-3">
@@ -504,7 +535,7 @@ const DashboardMain = () => {
                 <p className="text-lg font-bold text-gray-800">{latestPayment.amount}</p>
                 <p className="text-xs text-gray-600 mt-1">{latestPayment.method}</p>
                 <p className="text-xs text-gray-500 mt-1">{latestPayment.date} • {latestPayment.time}</p>
-                <button 
+                <button
                   className="mt-2 w-full text-xs text-amber-600 hover:text-amber-700 font-medium flex items-center justify-center gap-1"
                   onClick={() => toast.info('Downloading receipt...')}
                 >
@@ -521,7 +552,7 @@ const DashboardMain = () => {
                   <Bell className="w-4 h-4 text-amber-600" />
                   Notifications
                 </h3>
-                <button 
+                <button
                   className="text-xs text-amber-600 hover:text-amber-700"
                   onClick={() => setShowNotifications(true)}
                 >
@@ -581,16 +612,16 @@ const DashboardMain = () => {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex gap-2">
-              <button 
+              <button
                 className="px-3 py-1.5 text-xs bg-white text-gray-800 rounded-lg border border-gray-300 hover:bg-gray-50 flex items-center gap-1 cursor-pointer transition-colors"
                 onClick={() => toast.info('Downloading statement...')}
               >
                 <Download className="w-3 h-3" />
                 Statement
               </button>
-              <button 
+              <button
                 className="px-3 py-1.5 text-xs bg-white text-gray-800 rounded-lg border border-gray-300 hover:bg-gray-50 flex items-center gap-1 cursor-pointer transition-colors"
                 onClick={() => toast.info('Contacting support...')}
               >
@@ -652,11 +683,10 @@ const DashboardMain = () => {
                   <button
                     key={method.id}
                     onClick={() => setSelectedPaymentMethod(method.id)}
-                    className={`p-2 border rounded-lg flex items-center justify-center gap-2 text-xs ${
-                      selectedPaymentMethod === method.id
-                        ? 'border-amber-300 bg-amber-50 text-amber-700'
-                        : 'border-gray-200 hover:border-amber-300'
-                    }`}
+                    className={`p-2 border rounded-lg flex items-center justify-center gap-2 text-xs ${selectedPaymentMethod === method.id
+                      ? 'border-amber-300 bg-amber-50 text-amber-700'
+                      : 'border-gray-200 hover:border-amber-300'
+                      }`}
                   >
                     {method.icon}
                     {method.name}
@@ -734,11 +764,10 @@ const DashboardMain = () => {
                   <button
                     key={method.id}
                     onClick={() => setSelectedPaymentMethod(method.id)}
-                    className={`p-2 border rounded-lg flex items-center justify-center gap-2 text-xs ${
-                      selectedPaymentMethod === method.id
-                        ? 'border-amber-300 bg-amber-50 text-amber-700'
-                        : 'border-gray-200 hover:border-amber-300'
-                    }`}
+                    className={`p-2 border rounded-lg flex items-center justify-center gap-2 text-xs ${selectedPaymentMethod === method.id
+                      ? 'border-amber-300 bg-amber-50 text-amber-700'
+                      : 'border-gray-200 hover:border-amber-300'
+                      }`}
                   >
                     {method.icon}
                     {method.name}

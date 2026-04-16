@@ -36,6 +36,14 @@ import {
 import { toast } from "react-toastify";
 import { BACKEND_URL } from "../../../../../config/apiConfig";
 
+const maskEmail = (email) => {
+  if (!email) return '';
+  const [name, domain] = email.split('@');
+  if (!domain) return email;
+  if (name.length <= 3) return `***@${domain}`;
+  return `${name.substring(0, 3)}***@${domain}`;
+};
+
 const AllUsers = () => {
   console.log('Rendering AllUsers Component');
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,10 +63,10 @@ const AllUsers = () => {
     searchTerm: searchTerm,
     page: currentPage,
     limit: itemsPerPage
-  });
+  }, { pollingInterval: 3000 });
 
   // Fetch statistics
-  const { data: statsResponse } = useGetUserStatsQuery();
+  const { data: statsResponse } = useGetUserStatsQuery(undefined, { pollingInterval: 3000 });
 
   // Mutations
   const [updateStatus] = useUpdateUserStatusMutation();
@@ -103,7 +111,7 @@ const AllUsers = () => {
       user.totalOrders,
       user.totalSpend,
       user.status,
-      user.location
+      user.location || user.address || 'Not Specified'
     ]);
 
     const csvContent = [headers, ...csvData]
@@ -485,10 +493,10 @@ const AllUsers = () => {
                     <tr key={user._id} className="table-row-hover">
                       <td className="px-4 py-3 text-left">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center text-blue-900 font-semibold text-sm overflow-hidden border border-gray-100 shadow-sm">
+                          <div className="w-8 h-8 shrink-0 bg-blue-50 rounded-full flex items-center justify-center text-blue-900 font-semibold text-sm overflow-hidden border border-gray-100 shadow-sm">
                             {user.avatar ? (
                               <img
-                                src={`${BACKEND_URL}/${user.avatar}`}
+                                src={`${BACKEND_URL}${user.avatar.startsWith('/') ? '' : '/'}${user.avatar}`}
                                 alt={user.name}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
@@ -504,7 +512,7 @@ const AllUsers = () => {
                             <p className="text-sm font-medium text-gray-900">{user.name}</p>
                             <p className="text-xs text-gray-500 flex items-center gap-1">
                               <FiMapPin size={10} />
-                              {user.location || 'Not Specified'}
+                              {user.location || user.address || 'Not Specified'}
                             </p>
                           </div>
                         </div>
@@ -513,7 +521,7 @@ const AllUsers = () => {
                         <div className="space-y-1 text-left">
                           <p className="text-xs text-gray-600 flex items-center gap-1">
                             <FiMail size={10} className="text-gray-400" />
-                            {user.email}
+                            {maskEmail(user.email)}
                           </p>
                           <p className="text-xs text-gray-600 flex items-center gap-1">
                             <FiPhone size={10} className="text-gray-400" />
@@ -668,10 +676,10 @@ const AllUsers = () => {
                   {/* User Profile Card */}
                   <div className="bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl border border-gray-200">
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
+                      <div className="w-16 h-16 shrink-0 bg-blue-50 rounded-full flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
                         {selectedUser.avatar ? (
                           <img
-                            src={`${BACKEND_URL}/${selectedUser.avatar}`}
+                            src={`${BACKEND_URL}${selectedUser.avatar.startsWith('/') ? '' : '/'}${selectedUser.avatar}`}
                             alt={selectedUser.name}
                             className="w-full h-full object-cover"
                             onError={(e) => {
@@ -687,7 +695,7 @@ const AllUsers = () => {
                         <h4 className="text-xl font-bold text-gray-900">{selectedUser.name}</h4>
                         <p className="text-sm text-gray-500 flex items-center gap-1">
                           <FiMapPin size={14} />
-                          {selectedUser.location}
+                          {selectedUser.location || selectedUser.address || 'Not Specified'}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
@@ -794,7 +802,7 @@ const AllUsers = () => {
                     <label className="text-sm font-medium text-gray-700">Location</label>
                     <input
                       type="text"
-                      defaultValue={selectedUser.location}
+                      defaultValue={selectedUser.location || selectedUser.address}
                       className="w-full mt-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                     />
                   </div>

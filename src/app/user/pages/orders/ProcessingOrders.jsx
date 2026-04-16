@@ -39,6 +39,8 @@ const ProcessingOrders = () => {
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showTrackingModal, setShowTrackingModal] = useState(false);
+  const [trackingOrder, setTrackingOrder] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
   const printRef = useRef();
@@ -50,8 +52,9 @@ const ProcessingOrders = () => {
   })
 
   // ========== RTK QUERY ==========
-  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('processing', { pollingInterval: 3000 });
-  const processingOrders = ordersResponse?.data || [];
+  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('all', { pollingInterval: 3000 });
+  const allOrders = ordersResponse?.data || [];
+  const processingOrders = allOrders.filter(o => ['processing', 'confirmed'].includes(o.status.toLowerCase()));
 
   // ========== PROCESSING ORDERS DATA ==========
   // Mock data removed for dynamic RTK Query data
@@ -160,6 +163,7 @@ const ProcessingOrders = () => {
       case 'completed':
         return `${base} bg-green-100 text-green-700`;
       case 'processing':
+      case 'confirmed':
         return `${base} bg-blue-100 text-blue-700`;
       case 'pending':
         return `${base} bg-amber-50 text-amber-600`;
@@ -189,7 +193,8 @@ const ProcessingOrders = () => {
       case 'completed':
         return <CheckCircle className="w-3 h-3" />;
       case 'processing':
-        return <Package className="w-3 h-3" />;
+      case 'confirmed':
+        return <CheckCircle className="w-3 h-3" />;
       case 'pending':
         return <Clock className="w-3 h-3" />;
       case 'cancelled':
@@ -234,8 +239,9 @@ const ProcessingOrders = () => {
     handlePrint();
   };
 
-  const handleTrackOrder = (orderId) => {
-    toast.info(`Tracking order ${orderId}`);
+  const handleTrackOrder = (order) => {
+    setTrackingOrder(order);
+    setShowTrackingModal(true);
   };
 
   const handleClearFilters = () => {
@@ -481,7 +487,7 @@ const ProcessingOrders = () => {
                             <EyeOff className="w-4 h-4" />
                           </button>
                           <button
-                            // onClick={() => handleTrackOrder(order.id)}
+                            onClick={() => handleTrackOrder(order)}
                             className="p-1 text-amber-600 hover:bg-amber-50 rounded"
                             title="Track Order"
                           >
@@ -731,7 +737,7 @@ const ProcessingOrders = () => {
 
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => handleTrackOrder(selectedOrder.id)}
+                  onClick={() => handleTrackOrder(selectedOrder)}
                   className="bg-amber-500 text-white py-2 rounded-lg hover:bg-amber-600 flex items-center justify-center gap-2"
                 >
                   <Truck className="w-4 h-4" />
@@ -745,6 +751,74 @@ const ProcessingOrders = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== ORDER TRACKING MODAL ========== */}
+      {showTrackingModal && trackingOrder && (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 backdrop-blur-sm" style={{ animation: 'fadeIn 0.2s ease-out' }}>
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative" style={{ animation: 'slideUp 0.3s ease-out' }}>
+            <button
+              onClick={() => setShowTrackingModal(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-gray-100 text-gray-400 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="text-center mb-8">
+              <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Truck className="w-6 h-6 text-amber-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Track Order Status</h3>
+              <p className="text-sm font-medium text-amber-600 mt-1">ID: {trackingOrder.id}</p>
+            </div>
+
+            <div className="ml-4 space-y-0">
+              <div className="relative pl-8 pb-8">
+                <div className="absolute left-[7px] top-4 -bottom-4 w-0.5 bg-amber-500 z-0"></div>
+                <div className="absolute left-0 top-1 w-4 h-4 rounded-full bg-amber-500 border-2 border-white shadow z-10"></div>
+                <div className="-mt-1">
+                  <p className="text-sm font-bold text-gray-900 leading-none mb-1">Order Placed</p>
+                  <p className="text-xs text-gray-500">{trackingOrder.date} • {trackingOrder.time}</p>
+                </div>
+              </div>
+
+              <div className="relative pl-8 pb-8">
+                <div className="absolute left-[7px] top-4 -bottom-4 w-0.5 bg-amber-500 z-0"></div>
+                <div className="absolute left-0 top-1 w-4 h-4 rounded-full bg-amber-500 border-2 border-white shadow z-10"></div>
+                <div className="-mt-1">
+                  <p className="text-sm font-bold text-gray-900 leading-none mb-1">Payment Confirmed</p>
+                  <p className="text-xs text-gray-500">
+                    {trackingOrder.paymentStatus === 'paid' ? 'Payment verified successfully' : 'Verifying payment...'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="relative pl-8 pb-8">
+                <div className="absolute left-[7px] top-4 -bottom-4 w-0.5 bg-gray-200 z-0"></div>
+                <div className="absolute left-0 top-1 w-4 h-4 rounded-full bg-amber-500 border-2 border-white shadow shadow-amber-300 animate-pulse z-10"></div>
+                <div className="-mt-1">
+                  <p className="text-sm font-bold text-amber-600 leading-none mb-1">Location / Venue</p>
+                  <p className="text-xs text-gray-500">{trackingOrder.location || 'Location Not Specified'}</p>
+                </div>
+              </div>
+
+              <div className="relative pl-8 opacity-40">
+                <div className="absolute left-0 top-1 w-4 h-4 rounded-full bg-gray-300 border-2 border-white shadow z-10"></div>
+                <div className="-mt-1">
+                  <p className="text-sm font-bold text-gray-900 leading-none mb-1">Completed</p>
+                  <p className="text-xs text-gray-500">Waiting for final completion</p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowTrackingModal(false)}
+              className="w-full mt-6 bg-gray-900 text-white py-3 rounded-xl hover:bg-gray-800 font-medium transition-colors shadow-lg shadow-gray-900/20 cursor-pointer"
+            >
+              Close Window
+            </button>
           </div>
         </div>
       )}

@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { 
+import {
   ShoppingBag,
   XCircle,
   AlertCircle,
@@ -17,13 +17,14 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
-  MoreHorizontal
+  MoreHorizontal,
+  Trash2
 } from 'lucide-react';
 import { toast } from "react-toastify";
 import { useReactToPrint } from 'react-to-print';
 import html2pdf from 'html2pdf.js';
 import { useNavigate } from 'react-router-dom';
-import { useGetUserOrdersQuery } from '../../../../services/userApi';
+import { useGetUserOrdersQuery, useDeleteOrderMutation } from '../../../../services/userApi';
 
 const CancelledOrders = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -34,9 +35,9 @@ const CancelledOrders = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
   const printRef = useRef();
-  
 
-  
+
+
   const navigate = useNavigate();
 
   const handlePrint = useReactToPrint({
@@ -46,175 +47,187 @@ const CancelledOrders = () => {
 
   // ========== RTK QUERY ==========
   const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('cancelled', { pollingInterval: 3000 });
+  const [deleteOrder] = useDeleteOrderMutation();
+
+  const handleDeleteOrder = async (orderId) => {
+    if (window.confirm("Are you sure you want to permanently delete this order from your history?")) {
+      try {
+        await deleteOrder(orderId).unwrap();
+        toast.success("Order deleted successfully");
+      } catch (err) {
+        toast.error(err.data?.message || "Failed to delete order");
+      }
+    }
+  };
   const cancelledOrders = ordersResponse?.data || [];
 
   const cancelledOrdersMock = [
-  {
-    id: 'ORD005',
-    date: '20 June 2024',
-    time: '6:00 PM',
-    serviceName: 'Ganesh Abhishek',
-    customerName: 'Patel Ji',
-    status: 'cancelled',
-    paymentStatus: 'refunded',
-    amount: 2500,
-    paymentMethod: 'Razorpay',
-    priest: 'Pandit Suresh Tiwari',
-    location: 'Sector 62, Noida',
-    type: 'offline',
-    cancelReason: 'Inclement weather',
-    refundDate: '21 June 2024',
-    items: [
-      { name: 'Puja Samagri', quantity: 1, price: 500 },
-      { name: 'Prasad', quantity: 5, price: 100 },
-      { name: 'Dakshina', quantity: 1, price: 1900 }
-    ]
-  },
-  {
-    id: 'ORD008',
-    date: '15 June 2024',
-    time: '8:00 AM',
-    serviceName: 'Navgrah Puja',
-    customerName: 'Sharma Family',
-    status: 'cancelled',
-    paymentStatus: 'refunded',
-    amount: 5000,
-    paymentMethod: 'Credit Card',
-    priest: 'Pandit Rajesh Sharma',
-    location: 'Sector 45, Noida',
-    type: 'offline',
-    cancelReason: 'Customer requested cancellation',
-    refundDate: '16 June 2024',
-    items: [
-      { name: 'Puja Samagri', quantity: 1, price: 1000 },
-      { name: 'Prasad', quantity: 10, price: 100 },
-      { name: 'Dakshina', quantity: 1, price: 3900 }
-    ]
-  },
-  {
-    id: 'ORD026',
-    date: '22 June 2024',
-    time: '4:00 PM',
-    serviceName: 'Kundli Report',
-    customerName: 'Amit Verma',
-    status: 'cancelled',
-    paymentStatus: 'refunded',
-    amount: 799,
-    paymentMethod: 'UPI',
-    priest: 'Dr. Anjali Mishra',
-    type: 'online',
-    cancelReason: 'Incorrect birth details provided',
-    refundDate: '23 June 2024'
-  },
-  {
-    id: 'ORD027',
-    date: '24 June 2024',
-    time: '1:00 PM',
-    serviceName: 'Career Consultation',
-    customerName: 'Neha Kapoor',
-    status: 'cancelled',
-    paymentStatus: 'refunded',
-    amount: 999,
-    paymentMethod: 'Wallet',
-    priest: 'Dr. Priya Singh',
-    type: 'online',
-    cancelReason: 'Schedule conflict',
-    refundDate: '25 June 2024'
-  },
-  {
-    id: 'ORD028',
-    date: '26 June 2024',
-    time: '9:30 AM',
-    serviceName: 'Griha Pravesh Puja',
-    customerName: 'Mehta Family',
-    status: 'cancelled',
-    paymentStatus: 'refunded',
-    amount: 5500,
-    paymentMethod: 'Net Banking',
-    priest: 'Pandit Suresh Tiwari',
-    location: 'Faridabad, Haryana',
-    type: 'offline',
-    cancelReason: 'Venue issue',
-    refundDate: '27 June 2024'
-  },
-  {
-    id: 'ORD029',
-    date: '28 June 2024',
-    time: '7:00 PM',
-    serviceName: 'Lakshmi Puja',
-    customerName: 'Verma Ji',
-    status: 'cancelled',
-    paymentStatus: 'refunded',
-    amount: 2800,
-    paymentMethod: 'Razorpay',
-    priest: 'Pandit Rajesh Sharma',
-    location: 'Sector 18, Noida',
-    type: 'offline',
-    cancelReason: 'Personal emergency',
-    refundDate: '29 June 2024'
-  },
-  {
-    id: 'ORD030',
-    date: '30 June 2024',
-    time: '10:30 AM',
-    serviceName: 'Marriage Compatibility Check',
-    customerName: 'Pooja Singh',
-    status: 'cancelled',
-    paymentStatus: 'refunded',
-    amount: 699,
-    paymentMethod: 'Credit Card',
-    priest: 'Dr. Priya Singh',
-    type: 'online',
-    cancelReason: 'Duplicate booking',
-    refundDate: '1 July 2024'
-  },
-  {
-    id: 'ORD031',
-    date: '2 July 2024',
-    time: '6:00 PM',
-    serviceName: 'Online Rudrabhishek',
-    customerName: 'Ankit Sharma',
-    status: 'cancelled',
-    paymentStatus: 'refunded',
-    amount: 1800,
-    paymentMethod: 'UPI',
-    priest: 'Dr. Anjali Mishra',
-    type: 'online',
-    cancelReason: 'Technical issues during session',
-    refundDate: '3 July 2024'
-  },
-  {
-    id: 'ORD032',
-    date: '4 July 2024',
-    time: '8:30 AM',
-    serviceName: 'Gemstone Recommendation',
-    customerName: 'Rakesh Yadav',
-    status: 'cancelled',
-    paymentStatus: 'refunded',
-    amount: 1499,
-    paymentMethod: 'Net Banking',
-    priest: 'Pandit Rajesh Sharma',
-    type: 'online',
-    cancelReason: 'Customer changed mind',
-    refundDate: '5 July 2024'
-  },
-  {
-    id: 'ORD033',
-    date: '6 July 2024',
-    time: '3:15 PM',
-    serviceName: 'Navgrah Shanti Puja',
-    customerName: 'Sharma Family',
-    status: 'cancelled',
-    paymentStatus: 'refunded',
-    amount: 4500,
-    paymentMethod: 'Credit Card',
-    priest: 'Pandit Suresh Tiwari',
-    location: 'Greater Noida',
-    type: 'offline',
-    cancelReason: 'Unavoidable circumstances',
-    refundDate: '7 July 2024'
-  }
-];
+    {
+      id: 'ORD005',
+      date: '20 June 2024',
+      time: '6:00 PM',
+      serviceName: 'Ganesh Abhishek',
+      customerName: 'Patel Ji',
+      status: 'cancelled',
+      paymentStatus: 'refunded',
+      amount: 2500,
+      paymentMethod: 'Razorpay',
+      priest: 'Pandit Suresh Tiwari',
+      location: 'Sector 62, Noida',
+      type: 'offline',
+      cancelReason: 'Inclement weather',
+      refundDate: '21 June 2024',
+      items: [
+        { name: 'Puja Samagri', quantity: 1, price: 500 },
+        { name: 'Prasad', quantity: 5, price: 100 },
+        { name: 'Dakshina', quantity: 1, price: 1900 }
+      ]
+    },
+    {
+      id: 'ORD008',
+      date: '15 June 2024',
+      time: '8:00 AM',
+      serviceName: 'Navgrah Puja',
+      customerName: 'Sharma Family',
+      status: 'cancelled',
+      paymentStatus: 'refunded',
+      amount: 5000,
+      paymentMethod: 'Credit Card',
+      priest: 'Pandit Rajesh Sharma',
+      location: 'Sector 45, Noida',
+      type: 'offline',
+      cancelReason: 'Customer requested cancellation',
+      refundDate: '16 June 2024',
+      items: [
+        { name: 'Puja Samagri', quantity: 1, price: 1000 },
+        { name: 'Prasad', quantity: 10, price: 100 },
+        { name: 'Dakshina', quantity: 1, price: 3900 }
+      ]
+    },
+    {
+      id: 'ORD026',
+      date: '22 June 2024',
+      time: '4:00 PM',
+      serviceName: 'Kundli Report',
+      customerName: 'Amit Verma',
+      status: 'cancelled',
+      paymentStatus: 'refunded',
+      amount: 799,
+      paymentMethod: 'UPI',
+      priest: 'Dr. Anjali Mishra',
+      type: 'online',
+      cancelReason: 'Incorrect birth details provided',
+      refundDate: '23 June 2024'
+    },
+    {
+      id: 'ORD027',
+      date: '24 June 2024',
+      time: '1:00 PM',
+      serviceName: 'Career Consultation',
+      customerName: 'Neha Kapoor',
+      status: 'cancelled',
+      paymentStatus: 'refunded',
+      amount: 999,
+      paymentMethod: 'Wallet',
+      priest: 'Dr. Priya Singh',
+      type: 'online',
+      cancelReason: 'Schedule conflict',
+      refundDate: '25 June 2024'
+    },
+    {
+      id: 'ORD028',
+      date: '26 June 2024',
+      time: '9:30 AM',
+      serviceName: 'Griha Pravesh Puja',
+      customerName: 'Mehta Family',
+      status: 'cancelled',
+      paymentStatus: 'refunded',
+      amount: 5500,
+      paymentMethod: 'Net Banking',
+      priest: 'Pandit Suresh Tiwari',
+      location: 'Faridabad, Haryana',
+      type: 'offline',
+      cancelReason: 'Venue issue',
+      refundDate: '27 June 2024'
+    },
+    {
+      id: 'ORD029',
+      date: '28 June 2024',
+      time: '7:00 PM',
+      serviceName: 'Lakshmi Puja',
+      customerName: 'Verma Ji',
+      status: 'cancelled',
+      paymentStatus: 'refunded',
+      amount: 2800,
+      paymentMethod: 'Razorpay',
+      priest: 'Pandit Rajesh Sharma',
+      location: 'Sector 18, Noida',
+      type: 'offline',
+      cancelReason: 'Personal emergency',
+      refundDate: '29 June 2024'
+    },
+    {
+      id: 'ORD030',
+      date: '30 June 2024',
+      time: '10:30 AM',
+      serviceName: 'Marriage Compatibility Check',
+      customerName: 'Pooja Singh',
+      status: 'cancelled',
+      paymentStatus: 'refunded',
+      amount: 699,
+      paymentMethod: 'Credit Card',
+      priest: 'Dr. Priya Singh',
+      type: 'online',
+      cancelReason: 'Duplicate booking',
+      refundDate: '1 July 2024'
+    },
+    {
+      id: 'ORD031',
+      date: '2 July 2024',
+      time: '6:00 PM',
+      serviceName: 'Online Rudrabhishek',
+      customerName: 'Ankit Sharma',
+      status: 'cancelled',
+      paymentStatus: 'refunded',
+      amount: 1800,
+      paymentMethod: 'UPI',
+      priest: 'Dr. Anjali Mishra',
+      type: 'online',
+      cancelReason: 'Technical issues during session',
+      refundDate: '3 July 2024'
+    },
+    {
+      id: 'ORD032',
+      date: '4 July 2024',
+      time: '8:30 AM',
+      serviceName: 'Gemstone Recommendation',
+      customerName: 'Rakesh Yadav',
+      status: 'cancelled',
+      paymentStatus: 'refunded',
+      amount: 1499,
+      paymentMethod: 'Net Banking',
+      priest: 'Pandit Rajesh Sharma',
+      type: 'online',
+      cancelReason: 'Customer changed mind',
+      refundDate: '5 July 2024'
+    },
+    {
+      id: 'ORD033',
+      date: '6 July 2024',
+      time: '3:15 PM',
+      serviceName: 'Navgrah Shanti Puja',
+      customerName: 'Sharma Family',
+      status: 'cancelled',
+      paymentStatus: 'refunded',
+      amount: 4500,
+      paymentMethod: 'Credit Card',
+      priest: 'Pandit Suresh Tiwari',
+      location: 'Greater Noida',
+      type: 'offline',
+      cancelReason: 'Unavoidable circumstances',
+      refundDate: '7 July 2024'
+    }
+  ];
 
 
   const paymentOptions = ['all', 'paid', 'pending', 'refunded'];
@@ -228,11 +241,11 @@ const CancelledOrders = () => {
 
   const filteredOrders = cancelledOrders.filter(order => {
     if (paymentFilter !== 'all' && order.paymentStatus !== paymentFilter) return false;
-    
+
     if (dateFilter !== 'all') {
       const orderDate = new Date(order.date.split(' ').reverse().join('-'));
       const today = new Date();
-      
+
       if (dateFilter === 'today') {
         if (orderDate.toDateString() !== today.toDateString()) return false;
       } else if (dateFilter === 'week') {
@@ -243,7 +256,7 @@ const CancelledOrders = () => {
         if (orderDate < monthAgo) return false;
       }
     }
-    
+
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       return (
@@ -252,7 +265,7 @@ const CancelledOrders = () => {
         order.customerName.toLowerCase().includes(term)
       );
     }
-    
+
     return true;
   });
 
@@ -272,17 +285,17 @@ const CancelledOrders = () => {
   const getPageNumbers = () => {
     const pageNumbers = [];
     const maxVisiblePages = 5;
-    
+
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
         pageNumbers.push(i);
       }
     } else {
       pageNumbers.push(1);
-      
+
       let start = Math.max(2, currentPage - 1);
       let end = Math.min(totalPages - 1, currentPage + 1);
-      
+
       if (currentPage <= 3) {
         start = 2;
         end = 4;
@@ -290,28 +303,28 @@ const CancelledOrders = () => {
         start = totalPages - 3;
         end = totalPages - 1;
       }
-      
+
       if (start > 2) {
         pageNumbers.push('ellipsis1');
       }
-      
+
       for (let i = start; i <= end; i++) {
         pageNumbers.push(i);
       }
-      
+
       if (end < totalPages - 1) {
         pageNumbers.push('ellipsis2');
       }
-      
+
       pageNumbers.push(totalPages);
     }
-    
+
     return pageNumbers;
   };
 
   const getStatusStyle = (status) => {
     const base = "px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 w-fit";
-    switch(status) {
+    switch (status) {
       case 'completed':
         return `${base} bg-green-100 text-green-700`;
       case 'processing':
@@ -327,7 +340,7 @@ const CancelledOrders = () => {
 
   const getPaymentStatusStyle = (status) => {
     const base = "px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 w-fit";
-    switch(status) {
+    switch (status) {
       case 'paid':
         return `${base} bg-green-100 text-green-700`;
       case 'pending':
@@ -340,7 +353,7 @@ const CancelledOrders = () => {
   };
 
   const getStatusIcon = (status) => {
-    switch(status) {
+    switch (status) {
       case 'completed':
         return <CheckCircle className="w-3 h-3" />;
       case 'processing':
@@ -369,10 +382,10 @@ const CancelledOrders = () => {
     setShowDetailsModal(true);
   };
 
-  const handleDownloadInvoice = (orderId,selectedOrder) => {
+  const handleDownloadInvoice = (orderId, selectedOrder) => {
     toast.success(`📄 Invoice for ${orderId} downloaded`);
-    navigate(`/user/dashboard/invoice/${orderId}`,{state:selectedOrder},);  
-    console.log(orderId,selectedOrder);
+    navigate(`/user/dashboard/invoice/${orderId}`, { state: selectedOrder },);
+    console.log(orderId, selectedOrder);
   };
 
   const handlePrintInvoice = () => {
@@ -397,25 +410,25 @@ const CancelledOrders = () => {
   };
 
   const statsCards = [
-    { 
+    {
       label: 'Total Orders',
       value: cancelledOrders.length,
       bgColor: 'bg-amber-50',
       icon: <ShoppingBag className="text-amber-600" size={20} />
     },
-    { 
+    {
       label: 'Cancelled',
       value: cancelledOrders.filter(o => o.status === 'cancelled').length,
       bgColor: 'bg-red-50',
       icon: <XCircle className="text-red-600" size={20} />
     },
-    { 
+    {
       label: 'Refunded',
       value: cancelledOrders.filter(o => o.paymentStatus === 'refunded').length,
       bgColor: 'bg-purple-50',
       icon: <RefreshCw className="text-purple-600" size={20} />
     },
-    { 
+    {
       label: 'Total Amount',
       value: formatCurrency(cancelledOrders.reduce((sum, o) => sum + o.amount, 0)),
       bgColor: 'bg-amber-50',
@@ -477,8 +490,8 @@ const CancelledOrders = () => {
         {/* ========== STATS CARDS ========== */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {statsCards.map((stat, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className="bg-white rounded-lg border border-gray-200 hover:border-amber-300 transition-colors p-3 cursor-pointer"
               onClick={() => {
                 if (stat.label === 'Cancelled') setPaymentFilter('cancelled');
@@ -564,32 +577,32 @@ const CancelledOrders = () => {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service/Product</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-7 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Status</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-7 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
-                        <div className="w-10 h-10 border-4 border-amber-200 border-t-amber-600 rounded-full animate-spin mx-auto mb-3"></div>
-                        <p className="text-sm font-medium text-gray-600">Loading cancelled orders...</p>
-                      </td>
-                    </tr>
-                  ) : filteredOrders.length === 0 ? (
-                    <tr>
-                      <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
-                        <XCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                        <p className="text-sm font-medium text-gray-600">No cancelled orders found</p>
-                        <p className="text-xs text-gray-500 mt-1">Try changing your filters</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    currentOrders.map((order) => ( // Changed from filteredOrders to currentOrders
-                    <tr 
-                      key={order.id} 
+                {isLoading ? (
+                  <tr>
+                    <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
+                      <div className="w-10 h-10 border-4 border-amber-200 border-t-amber-600 rounded-full animate-spin mx-auto mb-3"></div>
+                      <p className="text-sm font-medium text-gray-600">Loading cancelled orders...</p>
+                    </td>
+                  </tr>
+                ) : filteredOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
+                      <XCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-sm font-medium text-gray-600">No cancelled orders found</p>
+                      <p className="text-xs text-gray-500 mt-1">Try changing your filters</p>
+                    </td>
+                  </tr>
+                ) : (
+                  currentOrders.map((order) => ( // Changed from filteredOrders to currentOrders
+                    <tr
+                      key={order.id}
                       className="hover:bg-amber-50/30 transition-colors "
                     >
                       <td className="px-4 py-3 text-sm font-medium text-amber-600">{order.id}</td>
@@ -631,13 +644,20 @@ const CancelledOrders = () => {
                             onClick={() => {
                               setSelectedOrder(order);
                               setTimeout(() => {
-                                handleDownloadInvoice(order.id,order);
+                                handleDownloadInvoice(order.id, order);
                               }, 500);
                             }}
                             className="p-1 text-amber-600 hover:bg-amber-50 rounded"
                             title="Download Invoice"
                           >
                             <Download className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteOrder(order.dbId)}
+                            className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors"
+                            title="Delete Order"
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -659,16 +679,15 @@ const CancelledOrders = () => {
                 <button
                   onClick={() => paginate(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className={`px-3 py-1 text-xs rounded-lg flex items-center gap-1 transition-colors ${
-                    currentPage === 1
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-600'
-                  }`}
+                  className={`px-3 py-1 text-xs rounded-lg flex items-center gap-1 transition-colors ${currentPage === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-600'
+                    }`}
                 >
                   <ChevronLeft className="w-3 h-3" />
                   Previous
                 </button>
-                
+
                 {/* Page Numbers with Ellipsis */}
                 {getPageNumbers().map((page, index) => {
                   if (page === 'ellipsis1' || page === 'ellipsis2') {
@@ -681,31 +700,29 @@ const CancelledOrders = () => {
                       </span>
                     );
                   }
-                  
+
                   return (
                     <button
                       key={index}
                       onClick={() => paginate(page)}
-                      className={`px-3 py-1 text-xs rounded-lg transition-colors ${
-                        currentPage === page
-                          ? 'bg-amber-500 text-white hover:bg-amber-600'
-                          : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-600'
-                      }`}
+                      className={`px-3 py-1 text-xs rounded-lg transition-colors ${currentPage === page
+                        ? 'bg-amber-500 text-white hover:bg-amber-600'
+                        : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-600'
+                        }`}
                     >
                       {page}
                     </button>
                   );
                 })}
-                
+
                 {/* Next Button */}
                 <button
                   onClick={() => paginate(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className={`px-3 py-1 text-xs rounded-lg flex items-center gap-1 transition-colors ${
-                    currentPage === totalPages
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-600'
-                  }`}
+                  className={`px-3 py-1 text-xs rounded-lg flex items-center gap-1 transition-colors ${currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-600'
+                    }`}
                 >
                   Next
                   <ChevronRight className="w-3 h-3" />
@@ -725,8 +742,8 @@ const CancelledOrders = () => {
                 <p className="text-xs text-gray-600">Contact support for refund assistance</p>
               </div>
             </div>
-            
-            <button 
+
+            <button
               className="px-3 py-1.5 text-xs bg-white text-gray-800 rounded-lg border border-gray-300 hover:bg-gray-50 flex items-center gap-1 cursor-pointer transition-colors"
               onClick={handleContactSupport}
             >
@@ -859,7 +876,7 @@ const CancelledOrders = () => {
               {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-2 pt-2 print:hidden">
                 <button
-                  onClick={() => handleDownloadInvoice(selectedOrder.id,selectedOrder)}
+                  onClick={() => handleDownloadInvoice(selectedOrder.id, selectedOrder)}
                   className="bg-amber-500 text-white py-2 rounded-lg hover:bg-amber-600 flex items-center justify-center gap-2"
                 >
                   <Download className="w-4 h-4" />

@@ -1,11 +1,13 @@
 import React, { useRef, useState } from 'react';
-import { 
+import {
   Wallet,
   CreditCard,
   Smartphone,
   Globe,
   IndianRupee,
+  ChevronLeft,
   ChevronRight,
+  MoreHorizontal,
   Download,
   Gift,
   RotateCcw,
@@ -37,8 +39,10 @@ import {
   Landmark,
 } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
+import QRCode from "react-qr-code";
 import html2pdf from 'html2pdf.js';
 import { useGetUserDashboardQuery, useGetUserHistoryQuery } from '../../../services/userApi';
+import { toast } from 'react-toastify';
 
 const UserPayments = () => {
   // ========== STATE MANAGEMENT ==========
@@ -52,17 +56,20 @@ const UserPayments = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5);
-  
+  const [itemsPerPage] = useState(4);
+
   // Add Money States
   const [addMoneyAmount, setAddMoneyAmount] = useState('');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('razorpay');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [invoiceToDownload, setInvoiceToDownload] = useState(null);
   const printRef = useRef();
+  const statementRef = useRef();
+  const invoiceRef = useRef();
 
   // ========== RTK QUERY ==========
-  const { data: dashboardResponse, isLoading: isDashboardLoading } = useGetUserDashboardQuery(undefined, { pollingInterval: 3000 });
-  const { data: historyResponse, isLoading: isHistoryLoading } = useGetUserHistoryQuery(undefined, { pollingInterval: 3000 });
+  const { data: dashboardResponse, isLoading: isDashboardLoading } = useGetUserDashboardQuery(selectedTime, { pollingInterval: 3000 });
+  const { data: historyResponse, isLoading: isHistoryLoading } = useGetUserHistoryQuery(selectedTime, { pollingInterval: 3000 });
 
   const dashboardData = dashboardResponse?.data;
   const historyData = historyResponse?.data || [];
@@ -79,27 +86,27 @@ const UserPayments = () => {
 
   // ========== PAYMENT METHODS ==========
   const paymentMethods = [
-    { 
-      id: 'razorpay', 
-      name: 'Razorpay', 
+    {
+      id: 'razorpay',
+      name: 'Razorpay',
       icon: <CreditCard className="w-5 h-5" />,
       description: 'Credit/Debit Card, UPI, NetBanking'
     },
-    { 
-      id: 'upi', 
-      name: 'UPI', 
+    {
+      id: 'upi',
+      name: 'UPI',
       icon: <Smartphone className="w-5 h-5" />,
       description: 'Google Pay, PhonePe, Paytm'
     },
-    { 
-      id: 'card', 
-      name: 'Credit/Debit Card', 
+    {
+      id: 'card',
+      name: 'Credit/Debit Card',
       icon: <CreditCard className="w-5 h-5" />,
       description: 'Visa, Mastercard, RuPay'
     },
-    { 
-      id: 'netbanking', 
-      name: 'Net Banking', 
+    {
+      id: 'netbanking',
+      name: 'Net Banking',
       icon: <Landmark className="w-5 h-5" />,
       description: 'All major banks'
     }
@@ -117,8 +124,8 @@ const UserPayments = () => {
       amount: item.amount,
       type: 'credit', // In history, we currently show bookings as payments (credits to the system)
       method: item.details?.method || 'N/A',
-      methodType: (item.details?.method || '').toLowerCase().includes('upi') ? 'upi' : 
-                  (item.details?.method || '').toLowerCase().includes('card') ? 'card' : 'razorpay',
+      methodType: (item.details?.method || '').toLowerCase().includes('upi') ? 'upi' :
+        (item.details?.method || '').toLowerCase().includes('card') ? 'card' : 'razorpay',
       status: item.status,
       balance: item.details?.balance || 0,
       category: item.type,
@@ -156,15 +163,15 @@ const UserPayments = () => {
   const filteredPayments = paymentHistory.filter(payment => {
     // Status filter
     if (filterStatus !== 'all' && payment.status !== filterStatus) return false;
-    
+
     // Method filter
     if (filterMethod !== 'all' && payment.methodType !== filterMethod) return false;
-    
+
     // Date filter
     if (dateFilter !== 'all') {
       const paymentDate = new Date(payment.date.split(' ').reverse().join('-'));
       const today = new Date();
-      
+
       if (dateFilter === 'today') {
         if (paymentDate.toDateString() !== today.toDateString()) return false;
       } else if (dateFilter === 'week') {
@@ -175,7 +182,7 @@ const UserPayments = () => {
         if (paymentDate < monthAgo) return false;
       }
     }
-    
+
     // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
@@ -185,7 +192,7 @@ const UserPayments = () => {
         payment.id.toLowerCase().includes(term)
       );
     }
-    
+
     return true;
   });
 
@@ -205,17 +212,17 @@ const UserPayments = () => {
   const getPageNumbers = () => {
     const pageNumbers = [];
     const maxVisiblePages = 5;
-    
+
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
         pageNumbers.push(i);
       }
     } else {
       pageNumbers.push(1);
-      
+
       let start = Math.max(2, currentPage - 1);
       let end = Math.min(totalPages - 1, currentPage + 1);
-      
+
       if (currentPage <= 3) {
         start = 2;
         end = 4;
@@ -223,29 +230,29 @@ const UserPayments = () => {
         start = totalPages - 3;
         end = totalPages - 1;
       }
-      
+
       if (start > 2) {
         pageNumbers.push('ellipsis1');
       }
-      
+
       for (let i = start; i <= end; i++) {
         pageNumbers.push(i);
       }
-      
+
       if (end < totalPages - 1) {
         pageNumbers.push('ellipsis2');
       }
-      
+
       pageNumbers.push(totalPages);
     }
-    
+
     return pageNumbers;
   };
 
   // ========== STATUS STYLING FUNCTIONS ==========
   const getStatusStyle = (status) => {
     const base = "px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 w-fit";
-    switch(status) {
+    switch (status) {
       case 'success':
         return `${base} bg-green-100 text-green-700`;
       case 'pending':
@@ -258,7 +265,7 @@ const UserPayments = () => {
   };
 
   const getStatusIcon = (status) => {
-    switch(status) {
+    switch (status) {
       case 'success':
         return <CheckCircle className="w-3 h-3" />;
       case 'pending':
@@ -271,7 +278,7 @@ const UserPayments = () => {
   };
 
   const getMethodIcon = (methodType) => {
-    switch(methodType) {
+    switch (methodType) {
       case 'razorpay':
       case 'card':
         return <CreditCard className="w-4 h-4" />;
@@ -303,33 +310,6 @@ const UserPayments = () => {
     setShowTransactionModal(true);
   };
 
- const handleDownloadInvoice = (txId) => {
-  if (!printRef.current) {
-    toast.error("Invoice not ready. Open transaction first.");
-    return;
-  }
-
-  const element = printRef.current;
-
-  const opt = {
-    margin: 10,
-    filename: `Invoice-${txId}.pdf`,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-  };
-
-  html2pdf()
-    .set(opt)
-    .from(element)
-    .save()
-    .then(() => {
-      toast.success(`📄 Invoice ${txId} downloaded`);
-    })
-    .catch(() => {
-      toast.error("PDF generation failed");
-    });
-};
 
 
   const handlePrintInvoice = (txId) => {
@@ -339,9 +319,9 @@ const UserPayments = () => {
 
   // print logic
   const handlePrint = useReactToPrint({
-      contentRef:printRef,
-      documentTitle:"Invoice PDF print",
-    });
+    contentRef: printRef,
+    documentTitle: "Invoice PDF print",
+  });
 
   const handleMakePayment = () => {
     setShowPaymentModal(true);
@@ -354,7 +334,7 @@ const UserPayments = () => {
     }
 
     setIsProcessing(true);
-    
+
     setTimeout(() => {
       setIsProcessing(false);
       setShowAddMoneyModal(false);
@@ -374,7 +354,7 @@ const UserPayments = () => {
     }
 
     setIsProcessing(true);
-    
+
     setTimeout(() => {
       setIsProcessing(false);
       setShowPaymentModal(false);
@@ -385,13 +365,13 @@ const UserPayments = () => {
 
   const handleCopyTransactionId = (txId) => {
     navigator.clipboard.writeText(txId)
-    .then(()=>{
-     toast.success('✅ Transaction ID copied!');
-    })
-    .catch(()=>{
-      toast.error("Failed to copy!");
-    })
-    
+      .then(() => {
+        toast.success('✅ Transaction ID copied!');
+      })
+      .catch(() => {
+        toast.error("Failed to copy!");
+      })
+
   };
 
   const handleClearFilters = () => {
@@ -401,6 +381,78 @@ const UserPayments = () => {
     setSearchTerm('');
     setCurrentPage(1); // Reset to first page
     toast.info('Filters cleared');
+  };
+
+  const handleDownloadStatement = () => {
+    if (filteredPayments.length === 0) {
+      toast.error("No transactions to include in statement");
+      return;
+    }
+
+    const loadingToast = toast.loading("Preparing your spiritual statement...");
+
+    // Slight delay to ensure the hidden template is ready
+    setTimeout(() => {
+      const element = statementRef.current;
+      const opt = {
+        margin: 10,
+        filename: `Statement-${dashboardData?.user?.name || 'User'}-${selectedTime}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf()
+        .set(opt)
+        .from(element)
+        .save()
+        .then(() => {
+          toast.dismiss(loadingToast);
+          toast.success("Statement downloaded successfully!");
+        })
+        .catch(err => {
+          toast.dismiss(loadingToast);
+          toast.error("Failed to generate PDF");
+          console.error(err);
+        });
+    }, 500);
+  };
+
+  const handleDownloadInvoice = (payment) => {
+    setInvoiceToDownload(payment);
+    const loadingToast = toast.loading(`Generating invoice for ${payment.id}...`);
+    
+    // Increased delay and added html2canvas specific options for SVG support
+    setTimeout(() => {
+      const element = invoiceRef.current;
+      const opt = {
+        margin: 0,
+        filename: `Invoice-${payment.id}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 3, 
+          useCORS: true, 
+          logging: true,
+          letterRendering: true,
+          allowTaint: false
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf()
+        .set(opt)
+        .from(element)
+        .save()
+        .then(() => {
+          toast.dismiss(loadingToast);
+          toast.success("Invoice downloaded!");
+        })
+        .catch(err => {
+          toast.dismiss(loadingToast);
+          toast.error("Failed to generate PDF");
+          console.error(err);
+        });
+    }, 2000);
   };
 
   // Loading Spinner
@@ -438,8 +490,8 @@ const UserPayments = () => {
                 onClick={() => setSelectedTime(time)}
                 className={`
                   px-3 py-1 text-xs font-medium rounded-md transition-all capitalize cursor-pointer
-                  ${selectedTime === time 
-                    ? 'bg-amber-500 text-white' 
+                  ${selectedTime === time
+                    ? 'bg-amber-500 text-white'
                     : 'text-gray-600 hover:bg-gray-100'
                   }
                 `}
@@ -661,8 +713,8 @@ const UserPayments = () => {
                   </tr>
                 ) : (
                   currentPayments.map((payment) => ( // Changed from filteredPayments to currentPayments
-                    <tr 
-                      key={payment.id} 
+                    <tr
+                      key={payment.id}
                       className="hover:bg-amber-50/30 transition-colors cursor-pointer"
                       onClick={() => handleViewTransaction(payment)}
                     >
@@ -718,15 +770,13 @@ const UserPayments = () => {
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          {payment.invoiceAvailable && (
-                            <button
-                              onClick={() => handleDownloadInvoice(payment.id)}
-                              className="p-1 text-amber-600 hover:bg-amber-50 rounded"
-                              title="Download Invoice"
-                            >
-                              <Download className="w-4 h-4" />
-                            </button>
-                          )}
+                          <button
+                            onClick={() => handleDownloadInvoice(payment)}
+                            className="p-1 text-amber-600 hover:bg-amber-50 rounded"
+                            title="Download Invoice"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -747,16 +797,15 @@ const UserPayments = () => {
                 <button
                   onClick={() => paginate(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className={`px-3 py-1 text-xs rounded-lg flex items-center gap-1 transition-colors ${
-                    currentPage === 1
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-600'
-                  }`}
+                  className={`px-3 py-1 text-xs rounded-lg flex items-center gap-1 transition-colors ${currentPage === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-600'
+                    }`}
                 >
                   <ChevronLeft className="w-3 h-3" />
                   Previous
                 </button>
-                
+
                 {/* Page Numbers with Ellipsis */}
                 {getPageNumbers().map((page, index) => {
                   if (page === 'ellipsis1' || page === 'ellipsis2') {
@@ -769,31 +818,29 @@ const UserPayments = () => {
                       </span>
                     );
                   }
-                  
+
                   return (
                     <button
                       key={index}
                       onClick={() => paginate(page)}
-                      className={`px-3 py-1 text-xs rounded-lg transition-colors ${
-                        currentPage === page
-                          ? 'bg-amber-500 text-white hover:bg-amber-600'
-                          : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-600'
-                      }`}
+                      className={`px-3 py-1 text-xs rounded-lg transition-colors ${currentPage === page
+                        ? 'bg-amber-500 text-white hover:bg-amber-600'
+                        : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-600'
+                        }`}
                     >
                       {page}
                     </button>
                   );
                 })}
-                
+
                 {/* Next Button */}
                 <button
                   onClick={() => paginate(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className={`px-3 py-1 text-xs rounded-lg flex items-center gap-1 transition-colors ${
-                    currentPage === totalPages
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-600'
-                  }`}
+                  className={`px-3 py-1 text-xs rounded-lg flex items-center gap-1 transition-colors ${currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-600'
+                    }`}
                 >
                   Next
                 </button>
@@ -803,39 +850,39 @@ const UserPayments = () => {
         </div>
 
         {/* ========== PAYMENT METHODS SUMMARY ========== */}
-       <div className="bg-white rounded-lg border border-gray-200 hover:border-amber-300 transition-colors p-2 sm:p-3">
-  <h3 className="text-sm sm:text-[15px] font-bold text-gray-800 mb-2 flex items-center gap-1 sm:gap-2">
-    <CreditCard className="w-3 h-3 sm:w-4 sm:h-4 text-amber-600" />
-    <span>Available Payment Methods</span>
-  </h3>
-  
-  {/* Grid - Mobile: 1 column, Tablet: 2 columns, Desktop: 4 columns (UNCHANGED) */}
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-    {paymentMethods.map((method) => (
-      <div key={method.id} className="p-1.5 border border-gray-200 rounded-lg hover:border-amber-300 transition-colors">
-        <div className="flex items-center gap-2">
-          {/* Icon - slightly smaller on mobile */}
-          <div className="p-1 sm:p-1.5 bg-amber-50 rounded-lg shrink-0">
-            <div className="[&>svg]:w-3 [&>svg]:h-3 sm:[&>svg]:w-4 sm:[&>svg]:h-4">
-              {method.icon}
-            </div>
-          </div>
-          
-          {/* Text - stack on mobile, side by side on desktop */}
-          <div className="flex-1 min-w-0">
-            <p className="text-xs sm:text-sm font-semibold text-gray-800 truncate">{method.name}</p>
-            {/* Hide description on mobile, show on tablet/desktop */}
-            <p className="hidden sm:block text-xs text-gray-500 truncate">{method.description}</p>
-            {/* Show shortened description on mobile? Optional */}
-            <p className="sm:hidden text-[10px] text-gray-500 truncate">
-              {method.description.split(',')[0]}
-            </p>
+        <div className="bg-white rounded-lg border border-gray-200 hover:border-amber-300 transition-colors p-2 sm:p-3">
+          <h3 className="text-sm sm:text-[15px] font-bold text-gray-800 mb-2 flex items-center gap-1 sm:gap-2">
+            <CreditCard className="w-3 h-3 sm:w-4 sm:h-4 text-amber-600" />
+            <span>Available Payment Methods</span>
+          </h3>
+
+          {/* Grid - Mobile: 1 column, Tablet: 2 columns, Desktop: 4 columns (UNCHANGED) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+            {paymentMethods.map((method) => (
+              <div key={method.id} className="p-1.5 border border-gray-200 rounded-lg hover:border-amber-300 transition-colors">
+                <div className="flex items-center gap-2">
+                  {/* Icon - slightly smaller on mobile */}
+                  <div className="p-1 sm:p-1.5 bg-amber-50 rounded-lg shrink-0">
+                    <div className="[&>svg]:w-3 [&>svg]:h-3 sm:[&>svg]:w-4 sm:[&>svg]:h-4">
+                      {method.icon}
+                    </div>
+                  </div>
+
+                  {/* Text - stack on mobile, side by side on desktop */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm font-semibold text-gray-800 truncate">{method.name}</p>
+                    {/* Hide description on mobile, show on tablet/desktop */}
+                    <p className="hidden sm:block text-xs text-gray-500 truncate">{method.description}</p>
+                    {/* Show shortened description on mobile? Optional */}
+                    <p className="sm:hidden text-[10px] text-gray-500 truncate">
+                      {method.description.split(',')[0]}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
-    ))}
-  </div>
-</div>
 
         {/* ========== SECURITY FOOTER ========== */}
         <div className="bg-gradient-to-r from-amber-100/50 via-amber-200/30 to-amber-300/40 rounded-lg border border-amber-200 p-3">
@@ -847,10 +894,10 @@ const UserPayments = () => {
                 <p className="text-xs text-gray-600">Your payment information is encrypted and secure</p>
               </div>
             </div>
-            
-            <button 
+
+            <button
               className="px-3 py-1.5 text-xs bg-white text-gray-800 rounded-lg border border-gray-300 hover:bg-gray-50 flex items-center gap-1 cursor-pointer transition-colors"
-              onClick={() => toast.info('Downloading payment statement...')}
+              onClick={handleDownloadStatement}
             >
               <Download className="w-3 h-3" />
               Download Statement
@@ -909,11 +956,10 @@ const UserPayments = () => {
                   <button
                     key={method.id}
                     onClick={() => setSelectedPaymentMethod(method.id)}
-                    className={`p-2 border rounded-lg flex items-center justify-center gap-2 text-xs ${
-                      selectedPaymentMethod === method.id
-                        ? 'border-amber-300 bg-amber-50 text-amber-700'
-                        : 'border-gray-200 hover:border-amber-300'
-                    }`}
+                    className={`p-2 border rounded-lg flex items-center justify-center gap-2 text-xs ${selectedPaymentMethod === method.id
+                      ? 'border-amber-300 bg-amber-50 text-amber-700'
+                      : 'border-gray-200 hover:border-amber-300'
+                      }`}
                   >
                     {method.icon}
                     {method.name}
@@ -991,11 +1037,10 @@ const UserPayments = () => {
                   <button
                     key={method.id}
                     onClick={() => setSelectedPaymentMethod(method.id)}
-                    className={`p-2 border rounded-lg flex items-center justify-center gap-2 text-xs ${
-                      selectedPaymentMethod === method.id
-                        ? 'border-amber-300 bg-amber-50 text-amber-700'
-                        : 'border-gray-200 hover:border-amber-300'
-                    }`}
+                    className={`p-2 border rounded-lg flex items-center justify-center gap-2 text-xs ${selectedPaymentMethod === method.id
+                      ? 'border-amber-300 bg-amber-50 text-amber-700'
+                      : 'border-gray-200 hover:border-amber-300'
+                      }`}
                   >
                     {method.icon}
                     {method.name}
@@ -1047,8 +1092,8 @@ const UserPayments = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className={`p-2 ${selectedTransaction.type === 'credit' ? 'bg-green-50' : 'bg-red-50'} rounded-lg`}>
-                    {selectedTransaction.type === 'credit' ? 
-                      <ArrowDownLeft className="w-4 h-4 text-green-600" /> : 
+                    {selectedTransaction.type === 'credit' ?
+                      <ArrowDownLeft className="w-4 h-4 text-green-600" /> :
                       <ArrowUpRight className="w-4 h-4 text-red-600" />
                     }
                   </div>
@@ -1137,9 +1182,9 @@ const UserPayments = () => {
               <div className="grid grid-cols-2 gap-2 pt-2 print:hidden">
                 {selectedTransaction.invoiceAvailable && (
                   <button
-                 onClick={() => {
-                 handleDownloadInvoice(selectedTransaction.id);
-               }}
+                    onClick={() => {
+                      handleDownloadInvoice(selectedTransaction);
+                    }}
                     className="bg-amber-500 text-white py-2 rounded-lg hover:bg-amber-600 flex items-center justify-center gap-2"
                   >
                     <Download className="w-4 h-4" />
@@ -1158,8 +1203,343 @@ const UserPayments = () => {
           </div>
         </div>
       )}
+      {/* ========== HIDDEN PREMIUM PAYMENT STATEMENT TEMPLATE ========== */}
+      <div className="hidden">
+        <div ref={statementRef} className="p-4 bg-white text-gray-800" style={{ width: '190mm', margin: '0 auto' }}>
+          
+          {/* Header Table */}
+          <table className="w-full mb-8 border-b-2 border-amber-500 pb-4">
+            <tbody>
+              <tr>
+                <td className="align-middle" style={{ width: '65%' }}>
+                  <table className="border-collapse">
+                    <tbody>
+                      <tr>
+                        <td className="pr-4 align-middle">
+                          <img src="/logo.png" alt="Logo" className="w-[70px] h-[60px] object-contain" />
+                        </td>
+                        <td className="align-middle border-l border-amber-200 pl-4">
+                          <h1 className="text-3xl font-bold text-amber-900 tracking-wider text-left m-0 leading-none">ACHARYA JI</h1>
+                          <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1 text-left m-0">Official Payment Statement</p>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </td>
+                <td className="text-right align-middle" style={{ width: '35%' }}>
+                  <p className="font-bold text-gray-700 text-sm m-0">ACCOUNT STATEMENT</p>
+                  <p className="text-[9px] text-gray-500 mt-1">Generated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                  <div className="mt-2 inline-block px-2 py-0.5 bg-amber-50 border border-amber-100 rounded text-[9px] text-amber-700 font-bold uppercase">
+                    Period: {selectedTime.toUpperCase()}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* User & Wallet Data Table */}
+          <table className="w-full mb-8 border-collapse" style={{ tableLayout: 'fixed' }}>
+            <tbody>
+              <tr>
+                <td className="p-1" style={{ width: '50%' }}>
+                  <div className="bg-gray-50 p-3 rounded border border-gray-100 text-left h-full">
+                    <p className="text-[9px] text-gray-400 uppercase font-bold mb-1">Account Holder</p>
+                    <p className="text-sm font-bold text-gray-800 m-0">{dashboardData?.user?.name || 'Valued User'}</p>
+                    <p className="text-[10px] text-gray-600">{dashboardData?.user?.email}</p>
+                    <p className="text-[10px] text-gray-600">ID: {dashboardData?.user?._id || 'N/A'}</p>
+                  </div>
+                </td>
+                <td className="p-1" style={{ width: '50%' }}>
+                  <div className="bg-amber-50 p-3 rounded border border-amber-100 text-left h-full">
+                    <p className="text-[9px] text-amber-600 uppercase font-bold mb-1">Wallet Summary</p>
+                    <table className="w-full text-[10px]">
+                      <tbody>
+                        <tr>
+                          <td className="text-gray-600">Closing Balance</td>
+                          <td className="text-right font-bold text-amber-900">{formatCurrency(walletData.availableBalance)}</td>
+                        </tr>
+                        <tr>
+                          <td className="text-gray-600">Total Spent</td>
+                          <td className="text-right font-bold text-red-600">-{formatCurrency(walletData.totalSpent)}</td>
+                        </tr>
+                        <tr>
+                          <td className="text-gray-600">Total Credits</td>
+                          <td className="text-right font-bold text-green-600">+{formatCurrency(walletData.totalCredits)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* Payments List Table */}
+          <table className="w-full text-[10px] border-collapse" style={{ tableLayout: 'fixed' }}>
+            <thead>
+              <tr className="bg-amber-100 border-y border-amber-200 text-amber-900">
+                <th className="p-2 text-left" style={{ width: '15%' }}>DATE</th>
+                <th className="p-2 text-left" style={{ width: '20%' }}>TRANSACTION ID</th>
+                <th className="p-2 text-left" style={{ width: '30%' }}>DESCRIPTION</th>
+                <th className="p-2 text-left" style={{ width: '15%' }}>METHOD</th>
+                <th className="p-2 text-left" style={{ width: '10%' }}>STATUS</th>
+                <th className="p-2 text-right" style={{ width: '10%' }}>AMOUNT</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 bg-white">
+              {filteredPayments.map((p) => (
+                <tr key={p.id}>
+                  <td className="p-2 text-gray-600 text-left">
+                    {p.date}
+                    <p className="text-[7px] text-gray-400 m-0">{p.time}</p>
+                  </td>
+                  <td className="p-2 font-mono font-bold text-amber-700 text-left text-[9px]">{p.transactionId}</td>
+                  <td className="p-2 text-left">
+                    <p className="font-bold m-0 text-gray-800">{p.description}</p>
+                    <p className="text-[8px] text-gray-400 uppercase m-0">{p.type}</p>
+                  </td>
+                  <td className="p-2 text-left uppercase text-[9px]">{p.method}</td>
+                  <td className="p-2 text-left">
+                    <span className={`uppercase font-bold text-[8px] px-1 rounded ${p.status === 'success' ? 'text-green-600' : 'text-amber-600'}`}>
+                      {p.status}
+                    </span>
+                  </td>
+                  <td className={`p-2 text-right font-bold ${p.type === 'credit' ? 'text-green-600' : 'text-gray-800'}`}>
+                    {p.type === 'credit' ? '+' : '-'}{formatCurrency(p.amount).replace('₹', '')}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="bg-gray-50 font-bold text-[11px]">
+                <td colSpan="5" className="p-3 text-right text-gray-600 uppercase tracking-wider">Statement Grand Total</td>
+                <td className="p-3 text-right text-amber-900 border-b-2 border-amber-500">
+                  {formatCurrency(filteredPayments.reduce((sum, p) => sum + p.amount, 0))}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+
+          {/* Verification & Legal Footer */}
+          <table className="w-full mt-10 border-t border-gray-100 pt-4 opacity-70">
+            <tbody>
+              <tr>
+                <td className="text-left">
+                  <p className="text-[8px] font-bold text-amber-900 uppercase">Computer-Generated Official Statement</p>
+                  <p className="text-[7px] text-gray-400 mt-0.5 uppercase tracking-widest">Acharya Ji Spiritual Services Platform • 2026</p>
+                </td>
+                <td className="text-right">
+                  <p className="text-[7px] text-gray-400">© Acharya Ji Online Dashboard. All rights reserved.</p>
+                  <p className="text-[7px] text-gray-400 font-bold">Portrait Layout Optimized for A4</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {/* ========== HIDDEN TAX INVOICE TEMPLATE (EXACT CLONE OF CONFIRMED ORDER) ========== */}
+      <div style={{ position: 'absolute', top: '-10000px', left: '-10000px', pointerEvents: 'none' }}>
+        {invoiceToDownload && (
+          <div ref={invoiceRef} className="max-w-4xl mx-auto bg-white p-6 text-gray-800 text-sm font-sans" style={{ width: '210mm' }}>
+            {/* Watermark */}
+            <div className="absolute opacity-5 text-8xl font-bold rotate-[-30deg] top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+              ACHARYA JI
+            </div>
+
+            <table className="w-full border-collapse">
+              <tbody>
+                {/* Header */}
+                <tr>
+                  <td className="p-1 pl-4 align-top w-1/2">
+                    <table className="w-full">
+                      <tbody>
+                        <tr>
+                          <td className="pr-2 w-20">
+                            <img src="/logo.png" alt="Logo" className="w-[64px] h-[56px] object-fill" />
+                          </td>
+                          <td>
+                            <p className="text-xl font-bold text-amber-700">Acharya Ji</p>
+                            <p className="text-[10px] text-gray-600">Online Spiritual Services</p>
+                            <p className="text-[10px] text-gray-500 mt-1">Since 2020</p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                  <td className="text-right p-4 align-top w-1/2">
+                    <p className="text-[24px] font-bold tracking-widest text-amber-700">TAX INVOICE</p>
+                    <p className="text-[10px] text-gray-500 mt-1">Original for Recipient</p>
+                  </td>
+                </tr>
+
+                <tr><td colSpan="2"><hr className="my-2 border-t-2 border-amber-200" /></td></tr>
+
+                {/* Sold By / Supply */}
+                <tr>
+                  <td colSpan="2" className="px-4 py-2">
+                    <table className="w-full">
+                      <tbody>
+                        <tr>
+                          <td className="w-1/3 align-top">
+                            <p className="font-semibold text-amber-700 mb-1 text-xs">Sold By:</p>
+                            <p className="font-medium text-xs">Acharya Ji Online Services</p>
+                            <p className="text-[10px] text-gray-600">123, Spiritual Complex</p>
+                            <p className="text-[10px] text-gray-600">Sector 62, Noida</p>
+                            <p className="text-[10px] text-gray-600">Uttar Pradesh - 201309</p>
+                            <p className="text-[10px] text-gray-600 mt-1 font-semibold">GSTIN: 09ABCDE1234F1Z5</p>
+                            <p className="text-[10px] text-gray-600 font-semibold">PAN: ABCDE1234F</p>
+                          </td>
+                          <td className="w-1/3 align-top text-center">
+                            <p className="font-semibold text-amber-700 mb-1 text-xs">Place of Supply:</p>
+                            <p className="text-[10px] text-gray-600">Uttar Pradesh</p>
+                            <p className="text-[10px] text-gray-600">State Code: 09</p>
+                          </td>
+                          <td className="w-1/3 align-top text-end">
+                            <div className="w-[100px] h-[100px] bg-gray-50 border border-gray-100 flex items-center justify-center p-1 rounded ml-auto">
+                              <div style={{ height: "auto", maxWidth: "100%", width: "100%" }}>
+                                <QRCode 
+                                  value={`https://acharyaji.com/verify/${invoiceToDownload.transactionId}`} 
+                                  size={90}
+                                  style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                                  viewBox={`0 0 90 90`}
+                                />
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr><td colSpan="2"><hr className="my-2 border-t border-gray-200" /></td></tr>
+
+                {/* Billing / Shipping */}
+                <tr>
+                  <td className="p-4 w-1/2 border-r border-gray-200 align-top">
+                    <p className="font-semibold text-amber-700 mb-2 flex items-center gap-1 text-xs">
+                      <span className="w-1 h-4 bg-amber-500 rounded-full"></span>
+                      Billing Address:
+                    </p>
+                    <p className="font-medium text-xs">{dashboardData?.user?.name || 'Customer'}</p>
+                    <p className="text-[10px] text-gray-600">{dashboardData?.user?.email}</p>
+                    <p className="text-[10px] text-gray-600">{dashboardData?.user?.phone}</p>
+                    <p className="text-[10px] text-gray-600">Address: Uttar Pradesh, India - 201301</p>
+                  </td>
+                  <td className="p-4 w-1/2 align-top">
+                    <p className="font-semibold text-amber-700 mb-2 flex items-center gap-1 text-xs">
+                      <span className="w-1 h-4 bg-amber-500 rounded-full"></span>
+                      Shipping Address:
+                    </p>
+                    <p className="font-medium text-xs">{dashboardData?.user?.name || 'Customer'}</p>
+                    <p className="text-[10px] text-gray-600">Same as Billing Address</p>
+                  </td>
+                </tr>
+
+                <tr><td colSpan="2"><hr className="my-2 border-t border-gray-200" /></td></tr>
+
+                {/* Order Info */}
+                <tr>
+                  <td className="px-4 py-2 align-top w-1/2 border-r border-gray-200">
+                    <table className="w-full text-[10px]">
+                      <tbody>
+                        <tr><td className="text-gray-500">Invoice No:</td><td className="font-bold text-right text-gray-800">INV-{invoiceToDownload.id}</td></tr>
+                        <tr><td className="text-gray-500">Order Date:</td><td className="font-medium text-right">{invoiceToDownload.date}</td></tr>
+                        <tr><td className="text-gray-500">Order Time:</td><td className="font-medium text-right">{invoiceToDownload.time}</td></tr>
+                      </tbody>
+                    </table>
+                  </td>
+                  <td className="px-4 py-2 align-top w-1/2">
+                    <table className="w-full text-[10px]">
+                      <tbody>
+                        <tr><td className="text-gray-500">Payment Status:</td><td className="font-bold text-right text-green-600 uppercase">{invoiceToDownload.status}</td></tr>
+                        <tr><td className="text-gray-500">Invoice Date:</td><td className="font-medium text-right">{new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</td></tr>
+                        <tr><td className="text-gray-500">Method:</td><td className="font-medium text-right">{invoiceToDownload.method}</td></tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr><td colSpan="2"><hr className="my-2 border-t border-gray-200" /></td></tr>
+
+                {/* Items Table */}
+                <tr>
+                  <td colSpan="2" className="px-4 py-2">
+                    <p className="font-semibold text-amber-700 mb-2 flex items-center gap-1 text-xs">
+                      <span className="w-1 h-4 bg-amber-500 rounded-full"></span>
+                      Service Details:
+                    </p>
+                    <table className="w-full border border-gray-200 border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-amber-50">
+                          <th className="border p-2 text-left text-gray-700">#</th>
+                          <th className="border p-2 text-left text-gray-700">Service Description</th>
+                          <th className="border p-2 text-center text-gray-700">Qty</th>
+                          <th className="border p-2 text-right text-gray-700">Rate (₹)</th>
+                          <th className="border p-2 text-right text-gray-700">Total (₹)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="border p-2 text-center">1</td>
+                          <td className="border p-2">
+                            <p className="font-bold">{invoiceToDownload.description}</p>
+                            <p className="text-[9px] text-gray-400 font-mono">ID: {invoiceToDownload.transactionId}</p>
+                          </td>
+                          <td className="border p-2 text-center">1</td>
+                          <td className="border p-2 text-right">{formatCurrency(invoiceToDownload.amount).replace('₹', '')}</td>
+                          <td className="border p-2 text-right">{formatCurrency(invoiceToDownload.amount).replace('₹', '')}</td>
+                        </tr>
+                        {/* Subtotal / GST */}
+                        <tr className="bg-gray-50">
+                          <td colSpan="4" className="border p-2 text-right font-medium">Subtotal:</td>
+                          <td className="border p-2 text-right font-medium">{formatCurrency(invoiceToDownload.amount).replace('₹', '')}</td>
+                        </tr>
+                        <tr>
+                          <td colSpan="4" className="border p-2 text-right">GST (Included 18%):</td>
+                          <td className="border p-2 text-right">0.00</td>
+                        </tr>
+                        <tr className="bg-amber-50">
+                          <td colSpan="4" className="border p-2 text-right font-bold">Total Amount Payable:</td>
+                          <td className="border p-2 text-right font-bold text-amber-700">{formatCurrency(invoiceToDownload.amount).replace('₹', '')}</td>
+                        </tr>
+                        <tr>
+                          <td colSpan="5" className="border p-2 text-[10px] italic text-gray-500">
+                             Amount in Words: {convertNumberToWords(invoiceToDownload.amount)} Rupees only
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr><td colSpan="2" className="text-center text-gray-500 px-4 py-8">
+                  <p className="text-[10px]">This is a computer-generated invoice and does not require a physical signature.</p>
+                  <p className="text-[9px] mt-2">Certified Official Document of Acharya Ji Online Spiritual Services</p>
+                  <p className="text-[8px] mt-4 tracking-widest uppercase opacity-30">Acharya Ji • Digitalized Spiritual Platform • 2026</p>
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
+
+// Helper function to convert number to words (Simplified)
+function convertNumberToWords(num) {
+  if (num === 0) return 'Zero';
+  const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  const numToWords = (n) => {
+    if (n < 20) return ones[n];
+    if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 ? ' ' + ones[n % 10] : '');
+    if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' ' + numToWords(n % 100) : '');
+    if (n < 100000) return numToWords(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 ? ' ' + numToWords(n % 1000) : '');
+    return '';
+  };
+  return numToWords(Math.floor(num));
+}
 
 export default UserPayments;

@@ -26,7 +26,7 @@ import {
 } from "react-icons/fi";
 
 import { useGetUsersQuery, useGetUserStatsQuery, useUpdateUserStatusMutation } from '../../../../../services/userApi';
-
+import { BACKEND_URL } from "../../../../../config/apiConfig";
 const BlockedUsers = () => {
   // ========== STATE MANAGEMENT ==========
   const [searchTerm, setSearchTerm] = useState('');
@@ -505,7 +505,15 @@ const BlockedUsers = () => {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-semibold text-sm">
-                            {user.avatar}
+                            <img
+                              src={`${BACKEND_URL}${user.avatar.startsWith('/') ? '' : '/'}${user.avatar}`}
+                              alt={user.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`;
+                              }}
+                            />
                           </div>
                           <div>
                             <p className="text-sm font-medium text-gray-900">{user.name}</p>

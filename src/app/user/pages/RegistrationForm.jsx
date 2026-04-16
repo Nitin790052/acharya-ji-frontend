@@ -16,7 +16,9 @@ import {
   ChevronDown,
   Shield,
   Sparkles,
-  ArrowLeft
+  ArrowLeft,
+  Camera,
+  Trash
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useRegisterUserMutation, useSendOtpMutation, useVerifyOtpMutation } from '../../../services/userApi';
@@ -39,6 +41,8 @@ const RegistrationForm = () => {
     confirmPassword: '',
     terms: false
   });
+  const [profileImage, setProfileImage] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -183,6 +187,23 @@ const RegistrationForm = () => {
     }));
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        return toast.error("File size should be less than 5MB");
+      }
+      setProfileImage(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
+  };
+
+  const removeImage = () => {
+    setProfileImage(null);
+    setPreviewUrl(null);
+  };
+
   const isFormValid = () => {
     const requiredFields = ['fullName', 'mobile', 'email', 'password', 'confirmPassword', 'terms'];
     const fieldsTouched = requiredFields.every(field => {
@@ -202,7 +223,7 @@ const RegistrationForm = () => {
         setEmailOtpStep('sent');
         setEmailTimer(30);
       }
-      if (response.debugOtp) toast.info(`OTP: ${response.debugOtp}`);
+      if (response.debugOtp && type === 'mobile') toast.info(`OTP: ${response.debugOtp}`);
       toast.success(response.message || `OTP sent to ${type}`);
     } catch (err) {
       toast.error(err.data?.message || `Failed to send OTP to ${type}`);
@@ -246,15 +267,21 @@ const RegistrationForm = () => {
         return toast.warning('Please verify both Mobile and Email first');
       }
 
+      // Prepare FormData for multipart/form-data support (for image upload)
+      const submitData = new FormData();
+      submitData.append('name', formData.fullName);
+      submitData.append('email', formData.email);
+      submitData.append('phone', formData.mobile);
+      submitData.append('password', formData.password);
+      submitData.append('location', `${formData.city}, ${formData.state}, ${formData.country}`);
+
+      if (profileImage) {
+        submitData.append('avatar', profileImage);
+      }
+
       // Submit form using RTK Mutation
       toast.promise(
-        registerUser({
-          name: formData.fullName,
-          email: formData.email,
-          phone: formData.mobile,
-          password: formData.password,
-          location: `${formData.city}, ${formData.state}, ${formData.country}`
-        }).unwrap(),
+        registerUser(submitData).unwrap(),
         {
           pending: 'Creating your account...',
           success: {
@@ -324,6 +351,8 @@ const RegistrationForm = () => {
                 <Sparkles size={14} className="text-amber-500" />
                 <span className="text-xs font-medium text-gray-700">Premium Registration</span>
               </div>
+
+
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-8">
@@ -702,6 +731,63 @@ const RegistrationForm = () => {
                     )}
                   </div>
                 )}
+              </div>
+
+              {/* Personal Profile Picture */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-6 bg-gradient-to-b from-amber-400 to-orange-500 rounded-full"></div>
+                  <h3 className="text-lg font-medium text-gray-800">Personal Profile Picture</h3>
+                </div>
+                <div className="space-y-1">
+                  <label className="flex items-center gap-1 text-xs font-medium text-gray-600 uppercase tracking-wider ml-1">
+                    <User size={14} className="text-amber-500" />
+                    Profile Picture <span className="text-gray-400 text-[10px] normal-case">(Optional)</span>
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type="file"
+                      name="profilePicture"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      onFocus={() => setFocusedField('profilePicture')}
+                      onBlur={() => {
+                        setFocusedField(null);
+                        handleBlur('profilePicture');
+                      }}
+                      className={`w-full bg-white border-2 ${touched.profilePicture && errors.profilePicture
+                        ? 'border-red-300 focus:border-red-400'
+                        : focusedField === 'profilePicture'
+                          ? 'border-amber-300 shadow-lg shadow-amber-100'
+                          : 'border-gray-200 hover:border-gray-300'
+                        } rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none transition-all duration-300 appearance-none`}
+                    />
+                    {touched.profilePicture && errors.profilePicture && (
+                      <p className="text-red-500 text-xs mt-1">{errors.profilePicture}</p>
+                    )}
+                  </div>
+
+                  {/* Image Preview Area */}
+                  {previewUrl && (
+                    <div className="relative mt-4 inline-block group">
+                      <div className="w-32 h-32 rounded-2xl overflow-hidden border-2 border-amber-200 shadow-md">
+                        <img
+                          src={previewUrl}
+                          alt="Profile Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        className="absolute -top-1 -right-2 p-1.5 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-all duration-300 hover:scale-110"
+                        title="Remove Image"
+                      >
+                        < Trash size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Security Section */}
