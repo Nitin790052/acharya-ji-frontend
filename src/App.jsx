@@ -36,6 +36,8 @@ const Login = lazy(() => import("../src/app/vendor/login/Login"));
 const VendorRegister = lazy(() => import("../src/app/vendor/pages/VendorRegister"));
 const PujaDetails = lazy(() => import("./pages/PujaDetails"));
 const UniversalPage = lazy(() => import("./pages/UniversalPage"));
+const CartCheckout = lazy(() => import("./pages/CartCheckout"));
+const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 
 // Vendor Pages
 const MyPujaServices = lazy(() => import("../src/app/vendor/pages/vendors/pandit/MyPujaServices"));
@@ -214,6 +216,8 @@ const App = () => (
                                     <Route path="/learn/:slug" element={<CommonLearningPage />} />
                                     <Route path="/learn/:slug/:itemSlug" element={<CourseDetail />} />
                                     <Route path="/p/:slug" element={<UniversalPage />} />
+                                    <Route path="/cart" element={<CartCheckout />} />
+                                    <Route path="/payment-success" element={<PaymentSuccess />} />
 
                                     <Route path="/user_login" element={<UserLogin />} />
                                     <Route path="/user_login/registeration" element={<RegistrationForm />} />

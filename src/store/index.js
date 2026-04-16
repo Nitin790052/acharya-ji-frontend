@@ -30,10 +30,12 @@ import { courseApi } from '../services/courseApi';
 import { learningContentApi } from '../services/learningContentApi';
 import { universalContentApi } from '../services/universalContentApi';
 import { userApi } from '../services/userApi';
+import cartReducer from './slices/cartSlice';
 
 export const store = configureStore({
 
     reducer: {
+        cart: cartReducer,
         [navbarApi.reducerPath]: navbarApi.reducer,
         [heroBannerApi.reducerPath]: heroBannerApi.reducer,
         [aboutUsApi.reducerPath]: aboutUsApi.reducer,

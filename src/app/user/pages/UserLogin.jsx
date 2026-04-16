@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Eye,
   EyeOff,
@@ -29,6 +29,7 @@ const UserLogin = () => {
   const [otp, setOtp] = useState("");
   const [otpTimer, setOtpTimer] = useState(0);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { login } = useUserAuth();
   const [loginUser, { isLoading: isLoginLoading }] = useLoginUserMutation();
@@ -97,7 +98,12 @@ const UserLogin = () => {
     localStorage.setItem("token", token);
     login(data);
     toast.success(`Welcome back, ${data.name}!`);
-    navigate("/user/dashboard");
+
+    if (location.state?.returnTo) {
+      navigate(location.state.returnTo, { state: location.state });
+    } else {
+      navigate("/user/dashboard");
+    }
   };
 
 
@@ -331,7 +337,7 @@ const UserLogin = () => {
             <p className="text-center text-xs text-gray-600">
               Don't have an account?{" "}
               <button
-                onClick={() => navigate("/user_login/registeration")}
+                onClick={() => navigate("/user_login/registeration", { state: location.state })}
                 className="text-orange-600 font-semibold hover:text-orange-800"
               >
                 Register Now

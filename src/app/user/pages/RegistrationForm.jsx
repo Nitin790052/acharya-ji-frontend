@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   User,
   Mail,
@@ -25,6 +25,7 @@ import { useRegisterUserMutation, useSendOtpMutation, useVerifyOtpMutation } fro
 
 const RegistrationForm = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
@@ -32,8 +33,6 @@ const RegistrationForm = () => {
     fullName: '',
     mobile: '',
     email: '',
-    dob: '',
-    gender: '',
     country: '',
     state: '',
     city: '',
@@ -41,8 +40,6 @@ const RegistrationForm = () => {
     confirmPassword: '',
     terms: false
   });
-  const [profileImage, setProfileImage] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
 
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -122,11 +119,7 @@ const RegistrationForm = () => {
     return locationData[formData.country]?.[formData.state] || [];
   };
 
-  const genders = [
-    { value: 'male', label: 'Male' },
-    { value: 'female', label: 'Female' },
-    { value: 'other', label: 'Other' }
-  ];
+
 
   const validateField = (name, value) => {
     switch (name) {
@@ -187,22 +180,7 @@ const RegistrationForm = () => {
     }));
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        return toast.error("File size should be less than 5MB");
-      }
-      setProfileImage(file);
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-    }
-  };
 
-  const removeImage = () => {
-    setProfileImage(null);
-    setPreviewUrl(null);
-  };
 
   const isFormValid = () => {
     const requiredFields = ['fullName', 'mobile', 'email', 'password', 'confirmPassword', 'terms'];
@@ -275,9 +253,6 @@ const RegistrationForm = () => {
       submitData.append('password', formData.password);
       submitData.append('location', `${formData.city}, ${formData.state}, ${formData.country}`);
 
-      if (profileImage) {
-        submitData.append('avatar', profileImage);
-      }
 
       // Submit form using RTK Mutation
       toast.promise(
@@ -286,7 +261,13 @@ const RegistrationForm = () => {
           pending: 'Creating your account...',
           success: {
             render: ({ data }) => {
-              setTimeout(() => navigate('/user_login'), 2000);
+              setTimeout(() => {
+                if (location.state?.returnTo) {
+                  navigate('/user_login', { state: location.state });
+                } else {
+                  navigate('/user_login');
+                }
+              }, 2000);
               return 'Registration successful! Please login.';
             }
           },
@@ -565,67 +546,10 @@ const RegistrationForm = () => {
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <div className="w-1 h-6 bg-gradient-to-b from-amber-400 to-orange-500 rounded-full"></div>
-                  <h3 className="text-lg font-medium text-gray-800">Personal Details</h3>
+                  <h3 className="text-lg font-medium text-gray-800">Address Details</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Date of Birth */}
-                  <div className="space-y-1">
-                    <label className="flex items-center gap-1 text-xs font-medium text-gray-600 uppercase tracking-wider ml-1">
-                      <Calendar size={14} className="text-amber-500" />
-                      Date of Birth
-                    </label>
-                    <input
-                      type="date"
-                      name="dob"
-                      value={formData.dob}
-                      onChange={handleChange}
-                      onFocus={() => setFocusedField('dob')}
-                      onBlur={() => setFocusedField(null)}
-                      className={`w-full bg-white border-2 ${focusedField === 'dob'
-                        ? 'border-amber-300 shadow-lg shadow-amber-100'
-                        : 'border-gray-200 hover:border-gray-300'
-                        } rounded-xl px-4 py-2.5 text-sm text-gray-600 focus:outline-none transition-all duration-300`}
-                    />
-                  </div>
-
-                  {/* Gender - Radio Buttons */}
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-1 text-xs font-medium text-gray-600 uppercase tracking-wider ml-1">
-                      <User size={14} className="text-amber-500" />
-                      Gender
-                    </label>
-                    <div className="flex gap-6 items-center h-10 px-1">
-                      {genders.map((gender) => (
-                        <label key={gender.value} className="flex items-center gap-2 cursor-pointer group">
-                          <div className="relative flex items-center">
-                            <input
-                              type="radio"
-                              name="gender"
-                              value={gender.value}
-                              checked={formData.gender === gender.value}
-                              onChange={handleChange}
-                              className="peer sr-only"
-                            />
-                            <div className={`w-4 h-4 rounded-full border-2 transition-all ${formData.gender === gender.value
-                              ? 'border-amber-500'
-                              : 'border-gray-300 group-hover:border-amber-300'
-                              }`}>
-                              {formData.gender === gender.value && (
-                                <div className="w-2 h-2 bg-amber-500 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
-                              )}
-                            </div>
-                          </div>
-                          <span className={`text-sm ${formData.gender === gender.value
-                            ? 'text-amber-600 font-medium'
-                            : 'text-gray-600'
-                            }`}>
-                            {gender.label}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
 
                   {/* Country */}
                   <div className="space-y-1">
@@ -733,62 +657,6 @@ const RegistrationForm = () => {
                 )}
               </div>
 
-              {/* Personal Profile Picture */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-1 h-6 bg-gradient-to-b from-amber-400 to-orange-500 rounded-full"></div>
-                  <h3 className="text-lg font-medium text-gray-800">Personal Profile Picture</h3>
-                </div>
-                <div className="space-y-1">
-                  <label className="flex items-center gap-1 text-xs font-medium text-gray-600 uppercase tracking-wider ml-1">
-                    <User size={14} className="text-amber-500" />
-                    Profile Picture <span className="text-gray-400 text-[10px] normal-case">(Optional)</span>
-                  </label>
-                  <div className="relative group">
-                    <input
-                      type="file"
-                      name="profilePicture"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      onFocus={() => setFocusedField('profilePicture')}
-                      onBlur={() => {
-                        setFocusedField(null);
-                        handleBlur('profilePicture');
-                      }}
-                      className={`w-full bg-white border-2 ${touched.profilePicture && errors.profilePicture
-                        ? 'border-red-300 focus:border-red-400'
-                        : focusedField === 'profilePicture'
-                          ? 'border-amber-300 shadow-lg shadow-amber-100'
-                          : 'border-gray-200 hover:border-gray-300'
-                        } rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none transition-all duration-300 appearance-none`}
-                    />
-                    {touched.profilePicture && errors.profilePicture && (
-                      <p className="text-red-500 text-xs mt-1">{errors.profilePicture}</p>
-                    )}
-                  </div>
-
-                  {/* Image Preview Area */}
-                  {previewUrl && (
-                    <div className="relative mt-4 inline-block group">
-                      <div className="w-32 h-32 rounded-2xl overflow-hidden border-2 border-amber-200 shadow-md">
-                        <img
-                          src={previewUrl}
-                          alt="Profile Preview"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={removeImage}
-                        className="absolute -top-1 -right-2 p-1.5 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-all duration-300 hover:scale-110"
-                        title="Remove Image"
-                      >
-                        < Trash size={14} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
 
               {/* Security Section */}
               <div className="space-y-3">

@@ -3,11 +3,9 @@ import { Navigate } from 'react-router-dom';
 import { useUserAuth } from './auth/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading,user } = useUserAuth();
-  console.log("User:", user);
-console.log("Auth:", isAuthenticated);
-console.log("Loading:", loading);
-//   console.log("User:", user);
+  const { isAuthenticated, loading, user } = useUserAuth();
+  const token = localStorage.getItem('token');
+  const savedUser = localStorage.getItem('authUser');
 
   if (loading) {
     return (
@@ -17,7 +15,8 @@ console.log("Loading:", loading);
     );
   }
 
-  if (!isAuthenticated) {
+  // Allow access if EITHER AuthContext says authenticated OR token exists in localStorage
+  if (!isAuthenticated && !token && !savedUser) {
     return <Navigate to="/user_login" replace />;
   }
 

@@ -5,6 +5,8 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { addToCart } from "@/store/slices/cartSlice";
 import { Layout } from '@/components/layout/Layout';
 import { usePageBanner } from "@/hooks/usePageBanner";
 import { useGetAllOfferingsQuery } from "@/services/pujaOfferingApi";
@@ -67,6 +69,7 @@ export default function BookPuja() {
     { title: "On-Time Arrival", subtitle: "घर पर उपलब्धता", description: "Materials delivered to your doorstep 1 hour before the puja." }
   ];
 
+  const dispatch = useDispatch();
   const [selectedPuja, setSelectedPuja] = useState(null);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -126,11 +129,21 @@ export default function BookPuja() {
   };
 
   const handlePujaSelect = (puja) => {
-    setSelectedPuja(puja);
-    setFormData(prev => ({ ...prev, pujaType: puja.title, mode: puja.serviceModes?.[0]?.mode || '' }));
-    setErrors({});
-    setCurrentStep(2);
-    setShowBookingForm(true);
+    const token = localStorage.getItem("token");
+    const cartItem = {
+      id: puja._id,
+      title: puja.title,
+      price: puja.price || 1100,
+      description: puja.shortDescription || puja.description,
+      imageUrl: puja.imageUrl?.startsWith('http') ? puja.imageUrl : `${BACKEND_URL}${puja.imageUrl}`
+    };
+
+    if (token) {
+      dispatch(addToCart(cartItem));
+      navigate('/cart');
+    } else {
+      navigate('/user_login', { state: { returnTo: '/cart', addPujaToCart: cartItem } });
+    }
   };
 
   const handleChange = (e) => {

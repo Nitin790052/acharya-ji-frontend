@@ -1,5 +1,7 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { addToCart } from '../../store/slices/cartSlice';
 import { Sparkles, Home, Video, Star, Package, Truck, Gift, ArrowRight, Flame, Moon, ScrollText, Shield, Leaf, ShoppingCart } from 'lucide-react';
 import SectionHeader from '../common/SectionHeader';
 import { useGetActiveServicesQuery } from '../../services/serviceApi';
@@ -42,10 +44,34 @@ const imageFallbackMap = {
 };
 
 export function Services() {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  
   const { data: servicesData, isLoading, isError } = useGetActiveServicesQuery(undefined, {
     pollingInterval: 3000,
     refetchOnMountOrArgChange: true
   });
+
+  const handleBookNow = (e, service) => {
+    e.preventDefault();
+    const token = localStorage.getItem("token");
+    const displayImage = service.imageUrl ? `${BACKEND_URL}${service.imageUrl}` : (imageFallbackMap[service.title] || OnlinePuja);
+    
+    const cartItem = {
+      id: service._id,
+      title: service.title,
+      price: service.price || 1100, // Fallback if no price field directly
+      description: service.description,
+      imageUrl: displayImage
+    };
+
+    if (token) {
+      dispatch(addToCart(cartItem));
+      navigate('/cart');
+    } else {
+      navigate('/user_login', { state: { returnTo: '/cart', addPujaToCart: cartItem } });
+    }
+  };
 
   if (isLoading || isError || !servicesData) {
     return null;
@@ -158,9 +184,9 @@ export function Services() {
               const displayImage = service.imageUrl ? `${BACKEND_URL}${service.imageUrl}` : (imageFallbackMap[service.title] || OnlinePuja);
               return (
                 <div key={service._id} className="animate-fade-in-up" style={{ animationDelay: `${index * 0.15}s`, animationFillMode: 'both' }}>
-                  <Link
-                    to={service.href}
-                    className="relative block h-full bg-[#FFFCF5] rounded-3xl overflow-hidden border-2 border-[#FFC107]/20 hover:border-[#FFC107]/50 shadow-sm hover:shadow-[0_22px_50px_-12px_rgba(255,193,7,0.25)] transition-all duration-500 group"
+                  <div
+                    onClick={(e) => handleBookNow(e, service)}
+                    className="relative block h-full bg-[#FFFCF5] rounded-3xl overflow-hidden border-2 border-[#FFC107]/20 hover:border-[#FFC107]/50 shadow-sm hover:shadow-[0_22px_50px_-12px_rgba(255,193,7,0.25)] transition-all duration-500 group cursor-pointer"
                   >
                     <div className="relative p-3 pb-0">
                       <div className="relative h-44 md:h-52 rounded-2xl overflow-hidden shadow-md">
@@ -200,7 +226,7 @@ export function Services() {
                     <div className="absolute -bottom-10 -right-10 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity duration-700 pointer-events-none">
                       <Sparkles className="w-40 h-40 text-[#FFC107]" />
                     </div>
-                  </Link>
+                  </div>
                 </div>
               );
             })}
