@@ -14,7 +14,7 @@ import { useGetAllOfferingsQuery } from "@/services/pujaOfferingApi";
 import { useRegisterUserMutation } from "@/services/userApi";
 import { toast } from "react-toastify";
 
-const BookPoojaDrawer = ({ open, onClose }) => {
+const BookPoojaDrawer = ({ open, onClose, initialService }) => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { data: offerings = [] } = useGetAllOfferingsQuery();
@@ -36,7 +36,6 @@ const BookPoojaDrawer = ({ open, onClose }) => {
         mode: 'Home Visit'
     });
 
-    // Update formData when drawer opens, pulling freshly from localStorage
     React.useEffect(() => {
         if (open) {
             try {
@@ -55,8 +54,30 @@ const BookPoojaDrawer = ({ open, onClose }) => {
             } catch(e) {
                 console.error("Failed to fetch fresh user data:", e);
             }
+
+            // Pre-select initial service if a full service object is passed
+            console.log('[DRAWER DEBUG] open:', open, 'initialService:', initialService, 'type:', typeof initialService);
+            if (initialService && typeof initialService === 'object' && initialService.title) {
+                console.log('[DRAWER DEBUG] ✅ Pre-selecting service:', initialService.title);
+                setSelectedService(initialService);
+                setFormData(prev => ({ ...prev, pujaType: initialService.title }));
+            } else if (initialService && typeof initialService === 'string' && offerings.length > 0) {
+                // Fallback: try to match by name string
+                const searchKey = initialService.toLowerCase().trim();
+                const matchedService = offerings.find(s => {
+                    const title = (s.title || '').toLowerCase().trim();
+                    const name = (s.name || '').toLowerCase().trim();
+                    return title === searchKey || name === searchKey 
+                        || title.includes(searchKey) || searchKey.includes(title)
+                        || name.includes(searchKey) || searchKey.includes(name);
+                });
+                if (matchedService) {
+                    setSelectedService(matchedService);
+                    setFormData(prev => ({ ...prev, pujaType: matchedService.title || matchedService.name }));
+                }
+            }
         }
-    }, [open]);
+    }, [open, initialService, offerings]);
 
     React.useEffect(() => {
         if (!open) {
@@ -65,16 +86,25 @@ const BookPoojaDrawer = ({ open, onClose }) => {
                 setSubmitted(false);
             }, 300);
             return () => clearTimeout(timer);
+        } else {
+            // When drawer opens, if initialService is an object, pre-select it immediately
+            if (initialService && typeof initialService === 'object' && initialService.title) {
+                // Use setTimeout to ensure this runs AFTER any pending reset
+                setTimeout(() => {
+                    setSelectedService(initialService);
+                    setFormData(prev => ({ ...prev, pujaType: initialService.title }));
+                }, 50);
+            }
         }
-    }, [open]);
+    }, [open, initialService]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        let userId = savedUser?._id || savedUser?.id;
+        let userId = localUser?._id || localUser?.id;
 
         // Auto-Register if user is a guest
-        if (!savedUser) {
+        if (!localUser) {
             try {
                 const generatedPassword = `${formData.mobile}@AJI`;
                 const regPayload = {
@@ -104,7 +134,9 @@ const BookPoojaDrawer = ({ open, onClose }) => {
                         description: selectedService.shortDescription,
                         imageUrl: selectedService.imageUrl,
                         date: formData.date,
-                        mode: formData.time || 'Morning',
+                        time: formData.time || 'Morning',
+                        mode: formData.mode || 'Home Visit',
+                        location: formData.location || '',
                     };
                     
                     navigate('/user_login', { state: { returnTo: '/cart', addPujaToCart: cartItemObj } });
@@ -123,7 +155,9 @@ const BookPoojaDrawer = ({ open, onClose }) => {
            description: selectedService.shortDescription,
            imageUrl: selectedService.imageUrl,
            date: formData.date,
-           mode: formData.time || 'Morning',
+           time: formData.time || 'Morning',
+           mode: formData.mode || 'Home Visit',
+           location: formData.location || '',
         };
         
         dispatch(addToCart(cartItem));

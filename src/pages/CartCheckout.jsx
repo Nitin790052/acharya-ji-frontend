@@ -49,13 +49,17 @@ const CartCheckout = () => {
 
             // Create backend records for each cart item so they appear in Dashboard!
             for (const item of cartItems) {
+                const validModes = ['Online', 'Home Visit', 'Muhurat'];
+                const safeMode = validModes.includes(item.mode) ? item.mode : 'Home Visit';
+
                 await createBooking({
                     pujaType: item.title,
                     date: item.date || new Date().toISOString().split('T')[0],
-                    mode: item.mode || 'Online',
+                    time: item.time || undefined,
+                    mode: safeMode,
                     name: savedUser?.name || 'Checkout User',
-                    mobile: savedUser?.phone || 'Attached to Token',
-                    city: 'Not Provided',
+                    mobile: savedUser?.phone || 'Not Provided',
+                    city: item.location || 'Not Provided',
                     message: item.description,
                     amount: item.price,
                 }).unwrap();

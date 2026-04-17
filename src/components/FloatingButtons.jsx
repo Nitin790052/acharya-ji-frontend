@@ -4,9 +4,17 @@ import BookPoojaDrawer from "./home/BookPoojaDrawer";
 
 const FloatingButtons = ({ isHomePage }) => {
   const [poojaOpen, setPoojaOpen] = useState(false);
+  const [initialService, setInitialService] = useState(null);
   
   React.useEffect(() => {
-    const handleOpen = () => setPoojaOpen(true);
+    const handleOpen = (e) => {
+        setPoojaOpen(true);
+        if (e.detail) {
+            setInitialService(e.detail);
+        } else {
+            setInitialService(null);
+        }
+    };
     window.addEventListener('openPoojaDrawer', handleOpen);
     return () => window.removeEventListener('openPoojaDrawer', handleOpen);
   }, []);
@@ -44,7 +52,7 @@ const FloatingButtons = ({ isHomePage }) => {
         </button>
       </div>
 
-      <BookPoojaDrawer open={poojaOpen} onClose={() => setPoojaOpen(false)} />
+      <BookPoojaDrawer open={poojaOpen} onClose={() => setPoojaOpen(false)} initialService={initialService} />
     </>
   );
 };

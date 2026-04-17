@@ -117,7 +117,7 @@ const PopularPujaServices = () => {
 
                     {/* Vedic Button */}
                     <button 
-                      onClick={() => window.dispatchEvent(new CustomEvent('openPoojaDrawer'))}
+                      onClick={() => window.dispatchEvent(new CustomEvent('openPoojaDrawer', { detail: { _id: puja._id, title: puja.name, price: parseInt(puja.price?.replace(/[^0-9]/g, '')) || 1100, shortDescription: puja.description, imageUrl: puja.imageUrl } }))}
                       className="relative px-8 py-2.5 w-full bg-white border border-[#FFC107] text-[#E8453C] rounded-full font-bold text-[10px] md:text-xs uppercase tracking-[0.2em] shadow-sm group-hover:bg-[#E8453C] group-hover:text-white group-hover:border-[#E8453C] transition-all duration-300">
                       <div className="flex items-center justify-center gap-2">
                         <span>Book Now</span>
@@ -203,7 +203,7 @@ const PopularPujaServices = () => {
 
                         {/* Vedic Button */}
                         <button 
-                          onClick={() => window.dispatchEvent(new CustomEvent('openPoojaDrawer'))}
+                          onClick={() => window.dispatchEvent(new CustomEvent('openPoojaDrawer', { detail: { _id: puja._id, title: puja.name, price: parseInt(puja.price?.replace(/[^0-9]/g, '')) || 1100, shortDescription: puja.description, imageUrl: puja.imageUrl } }))}
                           className="relative px-8 py-2.5 w-full bg-white border border-[#FFC107] text-[#E8453C] rounded-full font-bold text-[10px] uppercase tracking-[0.2em] shadow-sm group-hover:bg-[#E8453C] group-hover:text-white transition-all duration-300">
                           <div className="flex items-center justify-center gap-2">
                             <span>Book Now</span>
