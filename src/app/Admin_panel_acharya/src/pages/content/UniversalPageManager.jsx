@@ -33,7 +33,7 @@ import {
 } from '../../../../../services/universalContentApi';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { BACKEND_URL } from '../../../../../config/apiConfig';
+import { BACKEND_URL, getImageUrl } from '../../../../../config/apiConfig';
 
 const UniversalPageManager = () => {
     const [selectedSlug, setSelectedSlug] = useState('');
@@ -406,9 +406,9 @@ const UniversalPageManager = () => {
                                                     {localData?.heroSection?.image ? (
                                                         <>
                                                             {localData.heroSection.image.endsWith('.mp4') ? (
-                                                                <video src={localData.heroSection.image.startsWith('http') ? localData.heroSection.image : `${BACKEND_URL}${localData.heroSection.image}`} className="w-full h-full object-cover" />
+                                                                <video src={getImageUrl(localData.heroSection.image)} className="w-full h-full object-cover" />
                                                             ) : (
-                                                                <img src={localData.heroSection.image.startsWith('http') ? localData.heroSection.image : `${BACKEND_URL}${localData.heroSection.image}`} alt="Hero" className="w-full h-full object-cover" />
+                                                                <img src={getImageUrl(localData.heroSection.image)} alt="Hero" className="w-full h-full object-cover" />
                                                             )}
                                                             <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity gap-4">
                                                                 <button 
@@ -537,7 +537,7 @@ const UniversalPageManager = () => {
                                                             <div className="aspect-square bg-[#0f172a] rounded-3xl border-2 border-dashed border-slate-700 hover:border-indigo-500 transition-all flex flex-col items-center justify-center relative group overflow-hidden shadow-inner">
                                                                 {section.image ? (
                                                                     <>
-                                                                        <img src={section.image.startsWith('http') ? section.image : `${BACKEND_URL}${section.image}`} className="w-full h-full object-cover rounded-[inherit]" alt="" />
+                                                                        <img src={getImageUrl(section.image)} className="w-full h-full object-cover rounded-[inherit]" alt="" />
                                                                         <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                                                                             <button 
                                                                                 onClick={() => handlePurgeMedia(section.image, 'sections', idx)}

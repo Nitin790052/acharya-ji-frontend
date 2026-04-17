@@ -8,7 +8,7 @@ import {
 import { Layout } from '@/components/layout/Layout';
 import { Link } from 'react-router-dom';
 import { usePageBanner } from "@/hooks/usePageBanner";
-import { BACKEND_URL } from "@/config/apiConfig";
+import { BACKEND_URL, getImageUrl } from "@/config/apiConfig";
 
 import rudrakshaImg from '../../assets/vastuRamadies/Rudraksha.webp';
 import gemstoneImg from '../../assets/vastuRamadies/Gemstones.webp';
@@ -24,7 +24,7 @@ const CourseCard = ({ id, title, duration, price, level, rating, students, image
                 {/* Image */}
                 <div className="relative m-2.5 mb-3 rounded-2xl overflow-hidden shadow-lg h-48 z-10">
                     <img
-                        src={image || rudrakshaImg}
+                        src={getImageUrl(image) || rudrakshaImg}
                         alt={title}
                         className="w-full h-full object-cover transition-all duration-[2.5s] group-hover/card:scale-110"
                     />
@@ -197,7 +197,7 @@ const categoryFilters = [
 // ─── Main Component ──────────────────────────────────────────────────────────
 const AstrologyCourses = () => {
     const banner = usePageBanner({ pollingInterval: 3000 });
-    const bannerImage = banner?.imageUrl ? (banner.imageUrl.startsWith('http') ? banner.imageUrl : `${BACKEND_URL}${banner.imageUrl}`) : null;
+    const bannerImage = getImageUrl(banner?.imageUrl);
     const [activeCategory, setActiveCategory] = useState('all');
 
     const filteredCourses = activeCategory === 'all'

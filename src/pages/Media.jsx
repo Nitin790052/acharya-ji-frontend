@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { usePageBanner } from "@/hooks/usePageBanner";
-import { BACKEND_URL } from "@/config/apiConfig";
+import { BACKEND_URL, getImageUrl } from "@/config/apiConfig";
 import { useGetAllMediaQuery, useGetMediaSettingsQuery } from "@/services/mediaApi";
 import SEO from "@/components/layout/SEO";
 
@@ -133,7 +133,7 @@ const Media = () => {
           <div className="absolute top-0 right-0 w-48 h-48 bg-amber-100/40 rounded-full blur-[80px] -mr-24 -mt-24 group-hover/card:bg-amber-400/20 transition-all duration-1000" />
 
           <div className="relative m-2.5 mb-3 rounded-2xl overflow-hidden shadow-lg h-44 z-10">
-            <img src={item.image?.startsWith('http') ? item.image : `${BACKEND_URL}${item.image}`} alt={item.title} className="w-full h-full bg-cover transition-all duration-[2.5s] group-hover/card:scale-110" />
+            <img src={getImageUrl(item.image)} alt={item.title} className="w-full h-full bg-cover transition-all duration-[2.5s] group-hover/card:scale-110" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
             <div className="absolute top-3 left-3 px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg border border-white/30 text-[10px] text-white font-bold uppercase tracking-wider">
               {item.publication}
@@ -184,13 +184,13 @@ const Media = () => {
         <div className="relative flex-grow bg-[#FCFBF7] rounded-[1.4rem] overflow-hidden flex flex-col group-hover/card:bg-white transition-all duration-500">
           <div className="relative m-2.5 mb-3 rounded-2xl overflow-hidden shadow-lg h-44 z-10 group/video">
             {(item.image && item.image.trim().length > 5) ? (
-              <img src={item.image.startsWith('http') ? item.image : `${BACKEND_URL}${item.image}`} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110" onError={(e) => { e.target.style.display = 'none'; if (item.videoId) e.target.nextSibling.style.display = 'block'; }} />
+              <img src={getImageUrl(item.image)} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110" onError={(e) => { e.target.style.display = 'none'; if (item.videoId) e.target.nextSibling.style.display = 'block'; }} />
             ) : item.videoId ? (
               <img src={`https://img.youtube.com/vi/${item.videoId}/maxresdefault.jpg`} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110" onError={(e) => e.target.src = `https://img.youtube.com/vi/${item.videoId}/hqdefault.jpg`} />
             ) : item.video ? (
               <div className="w-full h-full bg-black relative">
                 <video
-                  src={`${BACKEND_URL}${item.video}#t=0.1`}
+                  src={getImageUrl(item.video) + "#t=0.1"}
                   className="w-full h-full object-cover opacity-60 transition-transform duration-[2s] group-hover:scale-110"
                   muted
                   preload="metadata"
@@ -252,7 +252,7 @@ const Media = () => {
       <div className="relative h-full p-[1.5px] rounded-3xl bg-amber-400/40 hover:bg-amber-500 transition-all duration-700 shadow-xl shadow-amber-200/10 flex flex-col">
         <div className="relative flex-grow bg-[#FCFBF7] rounded-[1.4rem] overflow-hidden flex flex-col group-hover/card:bg-white transition-all duration-500">
           <div className="relative m-2.5 mb-3 rounded-2xl overflow-hidden shadow-lg h-44 z-10">
-            <img src={item.image?.startsWith('http') ? item.image : `${BACKEND_URL}${item.image}`} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110" />
+            <img src={getImageUrl(item.image)} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
             <div className="absolute top-3 left-3 px-3 py-1 bg-orange-600 text-white text-[10px] font-bold rounded-full border border-orange-400 shadow-lg uppercase tracking-wider">
               {item.attendees} attendees
@@ -343,7 +343,7 @@ const Media = () => {
         <div className="relative h-full p-[1.5px] rounded-3xl bg-amber-400/40 hover:bg-amber-500 transition-all duration-700 shadow-xl flex flex-col">
           <div className="relative flex-grow bg-[#FCFBF7] rounded-[1.4rem] overflow-hidden flex flex-col group-hover/card:bg-white transition-all duration-500">
             <div className="relative m-2.5 mb-3 rounded-2xl overflow-hidden shadow-lg h-44 z-10">
-              <img src={item.image?.startsWith('http') ? item.image : `${BACKEND_URL}${item.image}`} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110" />
+              <img src={getImageUrl(item.image)} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110" />
               <div className="absolute inset-0 bg-black/30 group-hover/card:bg-black/40 transition-all" />
               <div className="absolute top-3 right-3 w-8 h-8 bg-white/20 backdrop-blur-md rounded-lg border border-white/30 flex items-center justify-center">
                 <PlatformIcon className="w-4 h-4 text-white" />
@@ -403,7 +403,7 @@ const Media = () => {
         <section className="relative h-[320px] sm:h-[320px] md:h-[360px] lg:h-[370px] flex items-center py-[20px] text-white overflow-hidden">
           <div className="absolute inset-0">
             {banner.imageUrl ? (
-              <img src={`${BACKEND_URL}${banner.imageUrl}`} alt="Background" className="w-full h-full object-cover object-top " />
+              <img src={getImageUrl(banner.imageUrl)} alt="Background" className="w-full h-full object-cover object-top " />
             ) : (
               <div className="absolute inset-0 bg-[#2A1D13]/90" />
             )}
@@ -599,7 +599,7 @@ const Media = () => {
                     autoPlay
                     playsInline
                     className="w-full h-full"
-                    src={selectedVideo.video.startsWith('http') ? selectedVideo.video : `${BACKEND_URL}${selectedVideo.video}`}
+                    src={getImageUrl(selectedVideo.video)}
                     onError={(e) => {
                       console.error('Video loading failed:', e);
                       const parent = e.target.parentElement;

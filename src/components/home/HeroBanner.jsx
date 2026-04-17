@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { ArrowRight, Sparkles, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useGetActiveBannersQuery } from '../../services/heroBannerApi';
-import { BACKEND_URL } from '../../config/apiConfig';
+import { BACKEND_URL, getImageUrl } from '../../config/apiConfig';
 
 const HeroBanner = () => {
     const location = useLocation();
@@ -94,8 +94,7 @@ const HeroBanner = () => {
     };
 
     const activeBanner = banners.length > 0 ? banners[currentSlide] : getDefaultContent(location.pathname);
-
-    const imageUrl = activeBanner.imageUrl ? `${BACKEND_URL}${activeBanner.imageUrl}` : null;
+    const imageUrl = getImageUrl(activeBanner.imageUrl);
 
     return (
         <section className="relative w-full h-[60vh] min-h-[500px] lg:h-[75vh] flex items-start overflow-hidden bg-[#FAF9F6]">
@@ -107,7 +106,7 @@ const HeroBanner = () => {
                         className={`absolute inset-0 z-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100' : 'opacity-0'}`}
                     >
                         <img
-                            src={banner.imageUrl ? `${BACKEND_URL}${banner.imageUrl}` : null}
+                            src={getImageUrl(banner.imageUrl)}
                             alt="Vedic Temple Banner"
                             className="w-full h-full object-cover object-right lg:object-center bg-gray-200"
                         />

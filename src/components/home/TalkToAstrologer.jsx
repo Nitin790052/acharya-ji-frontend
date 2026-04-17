@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Phone, MessageCircle, Star, Award, TrendingUp, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import SectionHeader from '../common/SectionHeader';
 import { useGetActiveAstrologersQuery, useGetSettingsQuery } from '../../services/astrologerApi';
-import { BACKEND_URL } from '../../config/apiConfig';
+import { BACKEND_URL, getImageUrl } from '../../config/apiConfig';
 
 const RED = '#E8453C';
 
@@ -28,10 +28,6 @@ const TalkToAstrologer = () => {
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % astrologers.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + astrologers.length) % astrologers.length);
 
-  const getImageSrc = (imageUrl) => {
-    if (!imageUrl) return '';
-    return imageUrl.startsWith('http') ? imageUrl : `${BACKEND_URL}${imageUrl}`;
-  };
 
   if (isAstrologersLoading || isSettingsLoading) {
     return (
@@ -89,7 +85,7 @@ const TalkToAstrologer = () => {
                   <div className="relative p-2 pb-0">
                     <div className="relative h-52 rounded-2xl overflow-hidden shadow-md bg-[#2A1D13]">
                       <img
-                        src={getImageSrc(astrologer.imageUrl)}
+                        src={getImageUrl(astrologer.imageUrl)}
                         alt={astrologer.name}
                         className="w-full h-full object-cover object-top transition-transform duration-1000 group-hover/card:scale-110"
                       />
@@ -186,7 +182,7 @@ const TalkToAstrologer = () => {
                       <div className="relative bg-[#FFFCF5] rounded-[2rem] overflow-hidden border-2 border-[#FFC107]/20 shadow-lg flex flex-col">
                         <div className="relative p-2.5 pb-0">
                           <div className="relative h-48 rounded-2xl overflow-hidden shadow-md bg-[#2A1D13]">
-                            <img src={getImageSrc(astrologer.imageUrl)} alt={astrologer.name} className="w-full h-full object-cover" />
+                            <img src={getImageUrl(astrologer.imageUrl)} alt={astrologer.name} className="w-full h-full object-cover" />
                             <div className="absolute inset-0 bg-gradient-to-t from-[#2A1D13] via-transparent to-transparent opacity-60" />
                           </div>
                         </div>

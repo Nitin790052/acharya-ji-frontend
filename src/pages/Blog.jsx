@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { Layout } from '@/components/layout/Layout';
 import { usePageBanner } from "@/hooks/usePageBanner";
-import { BACKEND_URL } from "@/config/apiConfig";
+import { BACKEND_URL, getImageUrl } from "@/config/apiConfig";
 import { useGetActiveBlogsQuery, useGetBlogSettingsQuery } from "@/services/blogApi";
 
 const Blog = () => {
@@ -59,7 +59,7 @@ const Blog = () => {
           <div className="absolute top-0 right-0 w-48 h-48 bg-amber-100/40 rounded-full blur-[80px] -mr-24 -mt-24 group-hover/card:bg-amber-400/20 transition-all duration-1000" />
 
           <div className={`relative m-2.5 mb-3 rounded-2xl overflow-hidden shadow-lg ${isFeatured ? 'h-48' : 'h-40'} z-10`}>
-            <img src={blog.imageUrl ? `${BACKEND_URL}${blog.imageUrl}` : 'https://placehold.co/600x400/FFF8F0/D97706?text=Blog+Image'} alt={blog.title} className="w-full h-full object-cover transition-all duration-[2.5s] group-hover/card:scale-110" />
+            <img src={blog.imageUrl ? getImageUrl(blog.imageUrl) : 'https://placehold.co/600x400/FFF8F0/D97706?text=Blog+Image'} alt={blog.title} className="w-full h-full object-cover transition-all duration-[2.5s] group-hover/card:scale-110" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
             <div className="absolute top-3 left-3 px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg border border-white/30 text-[10px] text-white font-medium uppercase tracking-wider">
               {blog.category}
@@ -109,7 +109,7 @@ const Blog = () => {
           <div className="absolute inset-0">
             {banner?.imageUrl ? (
               <img
-                src={`${BACKEND_URL}${banner.imageUrl}`}
+                src={getImageUrl(banner.imageUrl)}
                 alt="Background"
                 className="w-full h-full object-cover object-center"
               />
@@ -292,7 +292,7 @@ const Blog = () => {
             </button>
             <div onClick={(e) => e.stopPropagation()} className="bg-[#FCFBF7] rounded-[2rem] w-full max-w-4xl overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.5)] border border-amber-200 animate-scale-in">
               <div className="relative h-64 sm:h-80 md:h-[400px]">
-                <img src={selectedMedia.imageUrl ? `${BACKEND_URL}${selectedMedia.imageUrl}` : 'https://placehold.co/1200x800/FFF8F0/D97706?text=Blog+Image'} alt={selectedMedia.title} className="w-full h-full object-cover" />
+                <img src={selectedMedia.imageUrl ? getImageUrl(selectedMedia.imageUrl) : 'https://placehold.co/1200x800/FFF8F0/D97706?text=Blog+Image'} alt={selectedMedia.title} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#2A1D13] to-transparent" />
                 <div className="absolute bottom-10 left-10 right-10">
                   <span className="bg-amber-500 text-white px-3 py-1 text-[10px] font-medium uppercase tracking-widest mb-4 inline-block rounded-full">Vedic Insight</span>

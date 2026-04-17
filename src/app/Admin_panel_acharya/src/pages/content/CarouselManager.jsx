@@ -9,7 +9,7 @@ import {
   useSeedBannersMutation
 } from "../../../../../services/heroBannerApi";
 import { useGetNavbarItemsQuery } from "../../../../../services/navbarApi";
-import { BACKEND_URL } from "../../../../../config/apiConfig";
+import { BACKEND_URL, getImageUrl } from "../../../../../config/apiConfig";
 
 const CarouselManager = () => {
   const { data: banners = [], isLoading: bannersLoading } = useGetAllBannersQuery();
@@ -417,7 +417,7 @@ const CarouselManager = () => {
                   <td className="px-6 py-4">
                     {banner.imageUrl && (
                       <img
-                        src={`${BACKEND_URL}${banner.imageUrl}`}
+                        src={getImageUrl(banner.imageUrl)}
                         alt="Banner"
                         className="w-16 h-10 object-cover rounded shadow-sm"
                       />
@@ -488,7 +488,7 @@ const CarouselManager = () => {
             <div className="p-6 max-h-[70vh] overflow-y-auto">
               {viewBanner.imageUrl && (
                 <div className="mb-6 rounded-xl overflow-hidden shadow-sm border border-gray-100">
-                  <img src={`${BACKEND_URL}${viewBanner.imageUrl}`} alt="Banner" className="w-full h-48 object-cover object-center" />
+                  <img src={getImageUrl(viewBanner.imageUrl)} alt="Banner" className="w-full h-48 object-cover object-center" />
                 </div>
               )}
 

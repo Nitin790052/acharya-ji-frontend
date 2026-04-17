@@ -12,7 +12,7 @@ import {
     useDeleteAboutUsMutation,
     useActivateAboutUsMutation,
 } from '../../../../../services/aboutUsApi';
-import { API_URL as BASE_API_URL } from '../../../../../config/apiConfig';
+import { API_URL as BASE_API_URL, getImageUrl } from '../../../../../config/apiConfig';
 
 const BACKEND_URL = BASE_API_URL.replace(/\/api\/?$/, '');
 
@@ -100,7 +100,7 @@ const AboutUsManager = () => {
             button2Link: rec.button2Link || '',
         });
         setImageFile(null);
-        setImagePreview((rec.imageUrl || rec.image) ? `${BACKEND_URL}${rec.imageUrl || rec.image}` : null);
+        setImagePreview(getImageUrl(rec.imageUrl || rec.image));
         formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
@@ -397,7 +397,7 @@ const AboutUsManager = () => {
                                             {(rec.imageUrl || rec.image) ? (
                                                 <div className="relative group mx-auto w-24 h-16 rounded-xl overflow-hidden border border-gray-200 shadow-sm transition-all hover:border-blue-900/30">
                                                     <img
-                                                        src={`${BACKEND_URL}${rec.imageUrl || rec.image}`}
+                                                        src={getImageUrl(rec.imageUrl || rec.image)}
                                                         alt="About"
                                                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                                     />
@@ -475,7 +475,7 @@ const AboutUsManager = () => {
                             <div className="relative group rounded-2xl overflow-hidden border border-gray-100 shadow-sm transition-transform duration-500 hover:scale-[1.01]">
                                 {(viewRecord.imageUrl || viewRecord.image) ? (
                                     <img
-                                        src={`${BACKEND_URL}${viewRecord.imageUrl || viewRecord.image}`}
+                                        src={getImageUrl(viewRecord.imageUrl || viewRecord.image)}
                                         alt="About Banner"
                                         className="w-full aspect-[21/9] object-cover"
                                     />

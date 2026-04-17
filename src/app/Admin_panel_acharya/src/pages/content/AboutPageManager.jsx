@@ -3,7 +3,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Layout, Save, Plus, Trash2, Edit, Eye, Database, Check, X } from 'lucide-react';
 import RichTextEditor from '../../components/RichTextEditor';
-import { BACKEND_URL } from '../../../../../config/apiConfig';
+import { BACKEND_URL, getImageUrl } from '../../../../../config/apiConfig';
 import { 
     useGetAboutPageSettingsQuery, 
     useUpdateAboutPageSettingsMutation, 
@@ -292,7 +292,7 @@ function ItemsManager({ tag }) {
                                     <td className="p-4">
                                         {it.image ? (
                                             <img
-                                                src={it.image.startsWith('/uploads') ? `${BACKEND_URL}${it.image}` : `/aboutPage/${it.image}`}
+                                                src={getImageUrl(it.image)}
                                                 alt={it.title}
                                                 className="w-12 h-12 object-cover rounded-md shadow-sm"
                                             />
@@ -326,7 +326,7 @@ function ItemsManager({ tag }) {
                         {tag === 'service' && viewData.image && (
                             <div className="relative w-full h-48 bg-gray-100 shrink-0">
                                 <img
-                                    src={viewData.image.startsWith('/uploads') ? `${BACKEND_URL}${viewData.image}` : `/aboutPage/${viewData.image}`}
+                                    src={getImageUrl(viewData.image)}
                                     alt={viewData.title}
                                     className="w-full h-full object-cover"
                                 />

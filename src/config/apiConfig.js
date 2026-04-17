@@ -48,3 +48,15 @@ const getBackendUrl = () => {
 
 export const API_URL = getApiUrl();
 export const BACKEND_URL = getBackendUrl();
+
+/**
+ * Utility to get the correct URL for an image.
+ * If the image path is already an absolute URL (e.g. Cloudinary), it returns it as is.
+ * Otherwise, it prepends the backend URL.
+ */
+export const getImageUrl = (path) => {
+  if (!path) return "";
+  if (typeof path !== 'string') return "";
+  if (path.startsWith("http")) return path;
+  return `${BACKEND_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+};

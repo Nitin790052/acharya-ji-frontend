@@ -7,7 +7,7 @@ import {
 import { Layout } from '@/components/layout/Layout';
 import { Link, useParams } from 'react-router-dom';
 import { useGetLearningPageBySlugQuery } from '@/services/learningContentApi';
-import { BACKEND_URL } from '@/config/apiConfig';
+import { BACKEND_URL, getImageUrl } from '@/config/apiConfig';
 
 import acharya from '../../assets/aboutImage/acharyaji.webp';
 
@@ -57,7 +57,7 @@ const CourseDetail = () => {
                 <section className="relative h-[320px] sm:h-[340px] md:h-[360px] lg:h-[380px] flex items-center text-white overflow-hidden">
                     <div className="absolute inset-0">
                         {(() => {
-                            const mediaSrc = course.image ? (course.image.startsWith('http') ? course.image : `${BACKEND_URL}${course.image}`) : null;
+                            const mediaSrc = getImageUrl(course.image);
                             const isVideo = mediaSrc?.match(/\.(mp4|webm|ogg)$/i);
                             return isVideo ? (
                                 <video src={mediaSrc} autoPlay loop muted playsInline className="w-full h-full object-cover object-top" />
@@ -152,7 +152,7 @@ const CourseDetail = () => {
                                 <div className="sticky top-24 bg-white border-b-[6px] border-orange-500 shadow-2xl p-8">
                                     <div className="relative mb-5 rounded-xl overflow-hidden h-44">
                                         {(() => {
-                                            const mediaSrc = course.image ? (course.image.startsWith('http') ? course.image : `${BACKEND_URL}${course.image}`) : null;
+                                            const mediaSrc = getImageUrl(course.image);
                                             const isVideo = mediaSrc?.match(/\.(mp4|webm|ogg)$/i);
                                             return isVideo ? (
                                                 <video src={mediaSrc} autoPlay loop muted playsInline className="w-full h-full object-cover" />

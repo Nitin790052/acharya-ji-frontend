@@ -14,9 +14,7 @@ import {
     useSeedServicesMutation
 } from '../../../../../services/serviceApi';
 import { toast } from 'react-toastify';
-import { API_URL } from '../../../../../config/apiConfig';
-
-const BACKEND_URL = API_URL.replace(/\/api\/?$/, '');
+import { BACKEND_URL, getImageUrl } from '../../../../../config/apiConfig';
 
 const ServiceManager = () => {
     const { data: services = [], isLoading, isError } = useGetAllServicesQuery(undefined, { pollingInterval: 3000 });
@@ -136,7 +134,7 @@ const ServiceManager = () => {
             canonicalUrl: service.canonicalUrl || '',
             imageAlt: service.imageAlt || ''
         });
-        setImagePreview(service.imageUrl ? `${BACKEND_URL}${service.imageUrl}` : null);
+        setImagePreview(service.imageUrl ? getImageUrl(service.imageUrl) : null);
         setEditingId(service._id);
     };
 
@@ -242,7 +240,7 @@ const ServiceManager = () => {
                         <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Service Overview (HTML Description)</label>
                         <RichTextEditor
                             value={formData.description}
-                            onChange={(content) => setFormData(p => ({ ...prev, description: content }))}
+                            onChange={(content) => setFormData(p => ({ ...p, description: content }))}
                             placeholder="Enter service overview..."
                         />
                     </div>
@@ -407,7 +405,7 @@ const ServiceManager = () => {
                                         <div className="flex items-center gap-3">
                                             {service.imageUrl ? (
                                                 <img
-                                                    src={service.imageUrl.startsWith('http') ? service.imageUrl : `${BACKEND_URL}${service.imageUrl}`}
+                                                    src={getImageUrl(service.imageUrl)}
                                                     className="w-10 h-10 rounded-lg object-cover border border-gray-100"
                                                 />
                                             ) : (
@@ -464,7 +462,7 @@ const ServiceManager = () => {
                         <div className="relative h-48">
                             {selectedService.imageUrl ? (
                                 <img
-                                    src={selectedService.imageUrl.startsWith('http') ? selectedService.imageUrl : `${BACKEND_URL}${selectedService.imageUrl}`}
+                                    src={getImageUrl(selectedService.imageUrl)}
                                     className="w-full h-full object-cover"
                                 />
                             ) : (

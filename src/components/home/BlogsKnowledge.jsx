@@ -11,13 +11,12 @@ import Navgraha_Shanti_Planetary_Harmony from "../../assets/blogs/Navgraha Shant
 import Vastu_Shastra_Modern_Applications from "../../assets/blogs/Vastu Shastra_ Modern Applications.webp"
 
 import { useGetActiveBlogsQuery, useGetBlogSettingsQuery } from '../../services/blogApi';
-import { BACKEND_URL } from '../../config/apiConfig';
+import { BACKEND_URL, getImageUrl } from '../../config/apiConfig';
 
 const BlogsKnowledge = () => {
   const { data: blogs = [], isLoading } = useGetActiveBlogsQuery(undefined, { pollingInterval: 5000 });
   const { data: settings } = useGetBlogSettingsQuery();
 
-  const getImg = (url) => !url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`;
 
   const categoryIcons = {
     'Astrology Knowledge': Sparkles,
@@ -71,7 +70,7 @@ const BlogsKnowledge = () => {
                 {/* IMAGE */}
                 <div className="relative h-48 overflow-hidden">
                     <img
-                        src={getImg(blog.imageUrl)}
+                        src={getImageUrl(blog.imageUrl)}
                         alt={blog.title}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                         loading="lazy"

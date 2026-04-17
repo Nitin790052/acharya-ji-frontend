@@ -12,7 +12,7 @@ import {
     ArrowRight, ChevronRight, HelpCircle, AlertCircle,
     Sparkles, Award, Heart, Phone, Users, Sparkle, X, Star, Home, MessageCircle
 } from 'lucide-react';
-import { API_URL, BACKEND_URL } from '../config/apiConfig';
+import { API_URL, BACKEND_URL, getImageUrl } from '../config/apiConfig';
 import { usePageBanner } from '../hooks/usePageBanner';
 import SEO from '../components/layout/SEO';
 
@@ -114,7 +114,7 @@ const PujaDetails = () => {
                     <div className="absolute inset-0">
                         {banner.imageUrl ? (
                             <img
-                                src={banner.imageUrl.startsWith('http') ? banner.imageUrl : `${BACKEND_URL}${banner.imageUrl}`}
+                                src={getImageUrl(banner.imageUrl)}
                                 alt={banner.imageAlt || offering.title}
                                 className="w-full h-full object-cover"
                             />
@@ -194,7 +194,7 @@ const PujaDetails = () => {
                             <div className="relative group flex justify-center animate-fade-in-right">
                                 <div className="relative w-[96%] max-w-lg mx-auto p-1.5 md:p-2 bg-gradient-to-br from-amber-100 to-amber-300 rounded-[2rem] shadow-[0_20px_50px_-15px_rgba(217,119,6,0.25)]">
                                     <div className="w-full h-[315px] sm:h-[375px] md:h-[445px] rounded-3xl overflow-hidden border-[3px] border-white relative z-10">
-                                        <img src={offering.imageUrl.startsWith('http') ? offering.imageUrl : `${BACKEND_URL}${offering.imageUrl}`} alt={title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
+                                        <img src={getImageUrl(offering.imageUrl)} alt={title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
                                         <div className="absolute inset-0 bg-gradient-to-t from-[#2A1D13]/60 via-transparent to-transparent opacity-80" />
                                     </div>
                                     <div className="absolute -bottom-4 -left-4 md:-bottom-6 md:-left-6 bg-white p-2.5 md:p-3 rounded-2xl shadow-xl border border-amber-100 z-20 flex items-center gap-3">
@@ -231,7 +231,7 @@ const PujaDetails = () => {
                             {(offering.serviceModes && offering.serviceModes.length > 0
                                 ? offering.serviceModes.map(m => ({
                                     title: m.title,
-                                    img: m.imageUrl ? (m.imageUrl.startsWith('http') ? m.imageUrl : `${BACKEND_URL}${m.imageUrl}`) : (m.mode?.toLowerCase().includes('online') ? onlineImg : m.mode?.toLowerCase().includes('muhurat') ? muhuratImg : homeImg),
+                                    img: m.imageUrl ? getImageUrl(m.imageUrl) : (m.mode?.toLowerCase().includes('online') ? onlineImg : m.mode?.toLowerCase().includes('muhurat') ? muhuratImg : homeImg),
                                     items: m.points
                                 }))
                                 : [

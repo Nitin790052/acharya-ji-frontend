@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import * as PhosphorIcons from "lucide-react";
 import { Layout } from '@/components/layout/Layout';
 import { usePageBanner } from "@/hooks/usePageBanner";
-import { BACKEND_URL } from "@/config/apiConfig";
+import { BACKEND_URL, getImageUrl } from "@/config/apiConfig";
 import { useGetAboutPageSettingsQuery, useGetActiveAboutPageItemsQuery } from "@/services/aboutPageApi";
 import { useGetActiveTestimonialsQuery } from "@/services/testimonialApi";
 import SEO from "@/components/layout/SEO";
@@ -54,7 +54,7 @@ const AboutUs = () => {
           <section className="relative h-[320px] sm:h-[320px] md:h-[360px] lg:h-[370px] flex items-center py-[20px] text-white overflow-hidden">
             <div className="absolute inset-0">
               {banner.imageUrl ? (
-                <img src={`${BACKEND_URL}${banner.imageUrl}`} alt={banner.imageAlt || "About Acharya Ji Online"} className="w-full h-full object-cover object-top" />
+                <img src={getImageUrl(banner.imageUrl)} alt={banner.imageAlt || "About Acharya Ji Online"} className="w-full h-full object-cover object-top" />
               ) : (
                 <div className="absolute inset-0 bg-[#2A1D13]/90" />
               )}
@@ -169,7 +169,7 @@ const AboutUs = () => {
                           {/* Note: since image strings are being used, you might want to properly host them or map them here */}
                           {service.image && (
                             <img
-                              src={service.image?.startsWith('/uploads') ? `${BACKEND_URL}${service.image}` : `/aboutPage/${service.image}`}
+                              src={getImageUrl(service.image)}
                               alt={service.title}
                               onError={(e) => { e.target.src = fallbackAbout }}
                               className="w-full h-full object-cover transition-all duration-[2.5s] group-hover/card:scale-110 group-hover/card:rotate-1"

@@ -23,6 +23,7 @@ import { useUserAuth } from '../auth/AuthContext';
 import { toast } from 'react-toastify';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGetUserDashboardQuery } from '../../../services/userApi';
+import { API_URL, getImageUrl } from '../../../config/apiConfig';
 
 const Header = ({ toggleSidebar, sidebarOpen, isCollapsed, toggleCollapse, isMobile }) => {
   const { data: dashboardData } = useGetUserDashboardQuery(undefined, { pollingInterval: 3000 });
@@ -37,6 +38,7 @@ const Header = ({ toggleSidebar, sidebarOpen, isCollapsed, toggleCollapse, isMob
   const unreadMessagesCount = dashboardData?.data?.unreadMessagesCount || 0;
   const userData = dashboardData?.data?.user || {};
   const userInitials = userData.name ? userData.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
+  const userAvatar = getImageUrl(userData.avatar);
 
   const profileRef = useRef();
 
@@ -231,8 +233,12 @@ const handleLogout =()=>{
               >
                 <div className="w-8 h-8 rounded-full bg-gradient-to-r 
                                 from-orange-500 to-orange-600 
-                                flex items-center justify-center shadow-md">
-                  <span className="text-white text-xs font-semibold">{userInitials}</span>
+                                flex items-center justify-center shadow-md overflow-hidden">
+                  {userAvatar ? (
+                    <img src={userAvatar} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-white text-xs font-semibold">{userInitials}</span>
+                  )}
                 </div>
                 <ChevronDown size={16} className="text-gray-400 hidden lg:block" />
               </button>

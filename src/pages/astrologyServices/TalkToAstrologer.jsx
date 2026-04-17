@@ -50,7 +50,7 @@ import {
     X
 } from "lucide-react";
 import { usePageBanner } from "@/hooks/usePageBanner";
-import { BACKEND_URL } from "@/config/apiConfig";
+import { BACKEND_URL, getImageUrl } from "@/config/apiConfig";
 import { Layout } from '@/components/layout/Layout';
 
 // Import Astrologer Images from assets
@@ -62,7 +62,7 @@ import lakshmiDeviImg from "../../assets/astrologors/AcharyaVikramJoshi.webp";
 const TalkToAstrologer = () => {
     const navigate = useNavigate();
     const banner = usePageBanner({ pollingInterval: 3000 });
-    const bannerImage = banner?.imageUrl ? (banner.imageUrl.startsWith('http') ? banner.imageUrl : `${BACKEND_URL}${banner.imageUrl}`) : null;
+    const bannerImage = getImageUrl(banner?.imageUrl);
 
     const [selectedFaq, setSelectedFaq] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -440,7 +440,7 @@ const TalkToAstrologer = () => {
                                                 {/* Image Area with Badge - Height reduced */}
                                                 <div className="relative m-2 mb-2 rounded-2xl overflow-hidden shadow-lg h-44 z-10 flex items-center justify-center bg-amber-50 group-hover/card:bg-white transition-all duration-500">
                                                     <img
-                                                        src={astrologer.photo}
+                                                        src={getImageUrl(astrologer.photo)}
                                                         alt={astrologer.name}
                                                         className="absolute inset-0 w-full h-full object-cover group-hover/card:scale-110 transition-transform duration-[1.5s]"
                                                     />

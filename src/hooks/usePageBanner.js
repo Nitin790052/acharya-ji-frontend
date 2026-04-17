@@ -158,7 +158,11 @@ export const usePageBanner = (options = {}) => {
         }
     };
 
-    const banner = bannersData?.find(b => b.pagePath === location.pathname) || defaultContent[location.pathname] || {
+    const normalizedPath = location.pathname.replace(/\/+$/, '') || '/';
+    const banner = bannersData?.find(b => {
+        const bPath = (b.pagePath || '').replace(/\/+$/, '') || '/';
+        return bPath === normalizedPath;
+    }) || defaultContent[normalizedPath] || defaultContent[location.pathname] || {
         badge: 'DIVINE SERVICES HUB',
         titleHighlight1: 'Welcome to',
         titleHighlight2: 'Divine',

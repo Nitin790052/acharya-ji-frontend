@@ -4,9 +4,8 @@ import { CheckCircle } from 'lucide-react';
 import aboutFallback from "../../assets/aboutImage/acharyaji.webp"
 import SectionHeader from '../common/SectionHeader';
 import { useGetActiveAboutUsQuery } from '../../services/aboutUsApi';
-import { API_URL } from '../../config/apiConfig';
+import { API_URL, getImageUrl } from '../../config/apiConfig';
 
-const BACKEND_URL = API_URL.replace(/\/api\/?$/, '');
 
 export function About() {
   const { data: aboutData, isLoading, isError } = useGetActiveAboutUsQuery(undefined, {
@@ -31,7 +30,7 @@ export function About() {
     button2Link
   } = aboutData;
 
-  const displayImage = imageUrl ? `${BACKEND_URL}${imageUrl}` : aboutFallback;
+  const displayImage = getImageUrl(imageUrl) || aboutFallback;
 
   return (
     <section className="py-14 overflow-hidden bg-white">

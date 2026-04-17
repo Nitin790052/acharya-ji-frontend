@@ -3,7 +3,7 @@ import { Home, Book, Droplets, Star, Users, ArrowRight, Sparkles, Clock, IndianR
 import { Link } from 'react-router-dom';
 import SectionHeader from '../common/SectionHeader';
 import { useGetActivePujasQuery, useGetSettingsQuery } from '../../services/popularPujaApi';
-import { BACKEND_URL } from '../../config/apiConfig';
+import { BACKEND_URL, getImageUrl } from '../../config/apiConfig';
 
 const RED = '#E8453C';
 
@@ -54,9 +54,7 @@ const PopularPujaServices = () => {
         <div className="hidden lg:grid lg:grid-cols-3 gap-6 md:gap-8 mb-8">
           {pujaServices.map((puja, index) => {
             const Icon = iconMap[puja.iconName] || Star;
-            const imageUrl = puja.imageUrl.startsWith('http') 
-              ? puja.imageUrl 
-              : `${BACKEND_URL}${puja.imageUrl}`;
+            const imageUrl = getImageUrl(puja.imageUrl);
 
             return (
               <div key={puja._id} className="animate-fade-in-up" style={{ animationDelay: `${index * 0.15}s`, animationFillMode: 'both' }}>
@@ -144,9 +142,7 @@ const PopularPujaServices = () => {
             <div className="flex transition-transform duration-300 ease-out" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
               {pujaServices.map((puja) => {
                 const Icon = iconMap[puja.iconName] || Star;
-                const imageUrl = puja.imageUrl.startsWith('http') 
-                  ? puja.imageUrl 
-                  : `${BACKEND_URL}${puja.imageUrl}`;
+                const imageUrl = getImageUrl(puja.imageUrl);
 
                 return (
                   <div key={puja._id} className="w-full flex-shrink-0 px-3">

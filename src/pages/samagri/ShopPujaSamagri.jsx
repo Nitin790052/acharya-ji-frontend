@@ -28,7 +28,7 @@ import {
 import { Layout } from '@/components/layout/Layout';
 import { useCart } from "@/contexts/CartContext";
 import { usePageBanner } from "@/hooks/usePageBanner";
-import { BACKEND_URL } from "@/config/apiConfig";
+import { BACKEND_URL, getImageUrl } from "@/config/apiConfig";
 import SEO from "@/components/layout/SEO";
 
 // Assets (Using available assets where possible)
@@ -55,7 +55,7 @@ const ShopPujaSamagri = ({ shopTypeOverride }) => {
 
     // Core Layout Hooks
     const banner = usePageBanner({ pollingInterval: 3000 });
-    const bannerImage = banner?.imageUrl ? (banner.imageUrl.startsWith('http') ? banner.imageUrl : `${BACKEND_URL}${banner.imageUrl}`) : null;
+    const bannerImage = getImageUrl(banner?.imageUrl);
 
     // Component State
     const [searchTerm, setSearchTerm] = useState("");
@@ -339,7 +339,7 @@ const ShopPujaSamagri = ({ shopTypeOverride }) => {
                                         {/* Framed Image Area - Smaller with Border */}
                                         <div className="p-2 bg-[#FAF9F6]">
                                             <div className="relative aspect-square overflow-hidden rounded-xl border border-gray-100 bg-white group-hover:border-orange-50 transition-colors duration-500">
-                                                <img src={product.image?.startsWith('http') ? product.image : (product.image?.startsWith('/') ? `${BACKEND_URL}${product.image}` : gemstoneImg)} alt={product.name} loading="lazy" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                                                <img src={getImageUrl(product.image) || gemstoneImg} alt={product.name} loading="lazy" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                                                 <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                                 <div className="absolute top-2 right-2 flex flex-col gap-1.5 transform translate-x-12 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-500">
                                                     <button className="w-7 h-7 bg-white text-gray-900 shadow-md rounded-full flex items-center justify-center hover:bg-orange-600 hover:text-white transition-colors">
@@ -413,7 +413,7 @@ const ShopPujaSamagri = ({ shopTypeOverride }) => {
                             {pujaKits.map((kit, i) => (
                                 <div key={i} className="group bg-[#FAF9F6] border border-gray-100 p-5 md:p-6 hover:border-orange-200 hover:shadow-xl transition-all duration-500 relative flex flex-col items-center text-center rounded-2xl">
                                     <div className="w-full aspect-[16/9] overflow-hidden mb-6 relative rounded-xl border border-white shadow-sm">
-                                        <img src={kit.image?.startsWith('http') ? kit.image : (kit.image?.startsWith('/') ? `${BACKEND_URL}${kit.image}` : gemstoneImg)} alt={kit.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" />
+                                        <img src={getImageUrl(kit.image) || gemstoneImg} alt={kit.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                                         <div className="absolute bottom-3 left-0 w-full text-center">
                                             <span className="text-xl font-extrabold text-white drop-shadow-md">₹{kit.price}</span>
@@ -543,7 +543,7 @@ const ShopPujaSamagri = ({ shopTypeOverride }) => {
                             </button>
                             <div className="grid md:grid-cols-2">
                                 <div className="aspect-[4/5] bg-[#FAF9F6] flex items-center justify-center overflow-hidden border-r border-gray-50 p-6">
-                                    <img src={selectedProduct.image?.startsWith('http') ? selectedProduct.image : (selectedProduct.image?.startsWith('/') ? `${BACKEND_URL}${selectedProduct.image}` : gemstoneImg)} alt={selectedProduct.name} className="w-full h-full object-cover rounded-2xl shadow-lg border border-white" />
+                                    <img src={getImageUrl(selectedProduct.image) || gemstoneImg} alt={selectedProduct.name} className="w-full h-full object-cover rounded-2xl shadow-lg border border-white" />
                                 </div>
                                 <div className="p-8 md:p-12 flex flex-col h-full bg-white relative">
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50/50 rounded-full blur-3xl -z-10" />

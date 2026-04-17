@@ -36,7 +36,7 @@ import {
 import { Layout } from '@/components/layout/Layout';
 import { Link } from "react-router-dom";
 import { usePageBanner } from "@/hooks/usePageBanner";
-import { BACKEND_URL } from "@/config/apiConfig";
+import { BACKEND_URL, getImageUrl } from "@/config/apiConfig";
 
 import homeVastuImg from "../../assets/vastuRamadies/Home Vastu.webp";
 import officeVastuImg from "../../assets/vastuRamadies/Office Vastu.webp";
@@ -48,7 +48,7 @@ import vastueAbout from "../../assets/vastuRamadies/vastueAbout.webp";
 
 const VastuConsultation = () => {
     const banner = usePageBanner({ pollingInterval: 3000 });
-    const bannerImage = banner?.imageUrl ? (banner.imageUrl.startsWith('http') ? banner.imageUrl : `${BACKEND_URL}${banner.imageUrl}`) : null;
+    const bannerImage = getImageUrl(banner?.imageUrl);
     const [selectedFaq, setSelectedFaq] = useState(null);
 
     // Benefits data

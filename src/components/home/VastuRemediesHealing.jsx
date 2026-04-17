@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import SectionHeader from '../common/SectionHeader';
 import { useGetActiveVastuServicesQuery, useGetVastuSettingsQuery } from '../../services/vastuApi';
-import { BACKEND_URL } from '../../config/apiConfig';
+import { BACKEND_URL, getImageUrl } from '../../config/apiConfig';
 
 const IconMap = {
   Home, Building2, Gem, Circle, Leaf, Shield, Sparkles, Star,
@@ -23,7 +23,6 @@ const VastuRemediesHealing = () => {
     setTimeout(() => setIsVisible(true), 150);
   }, []);
 
-  const getImg = (url) => !url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`;
 
   if (isServicesLoading || isSettingsLoading) {
     return <div className="py-20 text-center text-gray-400">Loading services...</div>;
@@ -65,7 +64,7 @@ const VastuRemediesHealing = () => {
                     <div className="relative h-44 md:h-52 rounded-2xl overflow-hidden shadow-md bg-[#2A1D13]">
                       <div
                         className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
-                        style={{ backgroundImage: `url('${getImg(service.imageUrl)}')` }}
+                        style={{ backgroundImage: `url('${getImageUrl(service.imageUrl)}')` }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-[#2A1D13]/60 via-transparent to-transparent opacity-80" />
 

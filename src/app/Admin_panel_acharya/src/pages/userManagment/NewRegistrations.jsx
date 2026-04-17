@@ -24,6 +24,7 @@ import {
 } from "react-icons/fi";
 
 import { useGetUsersQuery, useGetUserStatsQuery } from '../../../../../services/userApi';
+import { getImageUrl } from "../../../../../config/apiConfig";
 
 const NewRegistrations = () => {
   const [timeRange, setTimeRange] = useState('7days');
@@ -474,12 +475,12 @@ const NewRegistrations = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {paginatedRegistrations.map((user) => (
-                    <tr key={user.id} className="table-row-hover even:bg-orange-50/20">
+                    <tr key={user._id || user.id} className="table-row-hover even:bg-orange-50/20">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center text-blue-900 font-bold text-sm overflow-hidden border border-blue-100 shadow-sm">
-                            {user.profileImage ? (
-                              <img src={user.profileImage} alt="" className="w-full h-full object-cover" />
+                            {user.avatar ? (
+                              <img src={getImageUrl(user.avatar)} alt="" className="w-full h-full object-cover" />
                             ) : (
                               user.name.charAt(0)
                             )}

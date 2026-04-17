@@ -4,7 +4,7 @@ import { Layout } from "@/components/layout/Layout";
 import { usePageBanner } from "@/hooks/usePageBanner";
 import SEO from "@/components/layout/SEO";
 import { useGetAstrologyPageBySlugQuery } from "@/services/astrologyContentApi";
-import { BACKEND_URL } from "@/config/apiConfig";
+import { BACKEND_URL, getImageUrl } from "@/config/apiConfig";
 import {
     Target, TrendingUp, Shield, Navigation, Star, Compass, CheckCircle, ArrowRight,
     Trophy, Heart, Clock, Users, Activity, Calendar, Leaf, Brain, Hash, Edit,
@@ -124,7 +124,7 @@ const AstrologyServicePage = ({ slug: propSlug }) => {
                     <div className="absolute inset-0">
                         {activeHero.imageUrl ? (
                             <img
-                                src={activeHero.imageUrl.startsWith('http') ? activeHero.imageUrl : `${BACKEND_URL}${activeHero.imageUrl}`}
+                                src={getImageUrl(activeHero.imageUrl)}
                                 alt={activeHero.titleHighlight1}
                                 className="w-full h-full object-cover object-top"
                             />
@@ -186,7 +186,7 @@ const AstrologyServicePage = ({ slug: propSlug }) => {
                                     <div className="absolute inset-0 bg-[#F59E0B] scale-95 opacity-10 group-hover:scale-100 transition-transform duration-700 rounded-sm"></div>
                                     {deepDive.imageUrl && (
                                         <img
-                                            src={deepDive.imageUrl.startsWith('http') ? deepDive.imageUrl : `${BACKEND_URL}${deepDive.imageUrl}`}
+                                            src={getImageUrl(deepDive.imageUrl)}
                                             alt={deepDive.title}
                                             className="relative z-10 w-full object-cover h-[450px] shadow-2xl border-b-[10px] border-[#F59E0B] rounded-sm"
                                         />

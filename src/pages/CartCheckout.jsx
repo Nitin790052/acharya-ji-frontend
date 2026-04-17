@@ -17,6 +17,8 @@ const CartCheckout = () => {
     
     // Auth Check
     const token = localStorage.getItem("token");
+    const savedUserString = localStorage.getItem("authUser");
+    const savedUser = savedUserString ? JSON.parse(savedUserString) : null;
 
     useEffect(() => {
         if (!token) {
@@ -51,8 +53,8 @@ const CartCheckout = () => {
                     pujaType: item.title,
                     date: item.date || new Date().toISOString().split('T')[0],
                     mode: item.mode || 'Online',
-                    name: 'Checkout User',
-                    mobile: 'Attached to Token',
+                    name: savedUser?.name || 'Checkout User',
+                    mobile: savedUser?.phone || 'Attached to Token',
                     city: 'Not Provided',
                     message: item.description,
                     amount: item.price,

@@ -26,6 +26,7 @@ import {
 } from "react-icons/fi";
 
 import { useGetUsersQuery, useGetUserStatsQuery } from '../../../../../services/userApi';
+import { getImageUrl } from "../../../../../config/apiConfig";
 
 const ActiveUsers = () => {
   const [timeRange, setTimeRange] = useState('7days');
@@ -304,12 +305,16 @@ const ActiveUsers = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {paginatedUsers.map((user) => (
-                    <tr key={user.id} className="table-row-hover even:bg-orange-50/20 hover:bg-orange-50/50">
+                    <tr key={user._id || user.id} className="table-row-hover even:bg-orange-50/20 hover:bg-orange-50/50">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="relative">
-                            <div className="w-10 h-10 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 rounded-full flex items-center justify-center text-blue-900 font-semibold text-sm shadow-md">
-                              {user.avatar}
+                            <div className="w-10 h-10 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 rounded-full flex items-center justify-center text-blue-900 font-semibold text-sm shadow-md overflow-hidden">
+                              {user.avatar ? (
+                                <img src={getImageUrl(user.avatar)} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                user.name.charAt(0)
+                              )}
                             </div>
                             {user.status === 'online' && (
                               <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full status-pulse"></span>
@@ -465,7 +470,7 @@ const ActiveUsers = () => {
                 .sort((a, b) => b.loginCount - a.loginCount)
                 .slice(0, 5)
                 .map((user, index) => (
-                  <div key={user.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                  <div key={user._id || user.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm
                         ${index === 0 ? 'bg-yellow-500' :
@@ -495,7 +500,7 @@ const ActiveUsers = () => {
                 .sort((a, b) => b.totalSpend - a.totalSpend)
                 .slice(0, 5)
                 .map((user, index) => (
-                  <div key={user.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                  <div key={user._id || user.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-semibold text-sm">
                         {index + 1}

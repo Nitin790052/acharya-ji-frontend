@@ -5,9 +5,8 @@ import { addToCart } from '../../store/slices/cartSlice';
 import { Sparkles, Home, Video, Star, Package, Truck, Gift, ArrowRight, Flame, Moon, ScrollText, Shield, Leaf, ShoppingCart } from 'lucide-react';
 import SectionHeader from '../common/SectionHeader';
 import { useGetActiveServicesQuery } from '../../services/serviceApi';
-import { API_URL } from '../../config/apiConfig';
+import { API_URL, getImageUrl } from '../../config/apiConfig';
 
-const BACKEND_URL = API_URL.replace(/\/api\/?$/, '');
 
 // Import local assets for fallbacks
 import Puja_Services from "../../assets/coreServices/poojaServices.webp"
@@ -55,7 +54,7 @@ export function Services() {
   const handleBookNow = (e, service) => {
     e.preventDefault();
     const token = localStorage.getItem("token");
-    const displayImage = service.imageUrl ? `${BACKEND_URL}${service.imageUrl}` : (imageFallbackMap[service.title] || OnlinePuja);
+    const displayImage = getImageUrl(service.imageUrl) || (imageFallbackMap[service.title] || OnlinePuja);
     
     const cartItem = {
       id: service._id,
@@ -117,7 +116,7 @@ export function Services() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-5">
             {coreServices.map((service, index) => {
               const IconComp = iconMap[service.icon] || Sparkles;
-              const displayImage = service.imageUrl ? `${BACKEND_URL}${service.imageUrl}` : (imageFallbackMap[service.title] || Puja_Services);
+              const displayImage = getImageUrl(service.imageUrl) || (imageFallbackMap[service.title] || Puja_Services);
               return (
                 <div
                   key={service._id}
@@ -181,7 +180,7 @@ export function Services() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {detailedServices.map((service, index) => {
               const IconComp = iconMap[service.icon] || Sparkles;
-              const displayImage = service.imageUrl ? `${BACKEND_URL}${service.imageUrl}` : (imageFallbackMap[service.title] || OnlinePuja);
+              const displayImage = getImageUrl(service.imageUrl) || (imageFallbackMap[service.title] || OnlinePuja);
               return (
                 <div key={service._id} className="animate-fade-in-up" style={{ animationDelay: `${index * 0.15}s`, animationFillMode: 'both' }}>
                   <div

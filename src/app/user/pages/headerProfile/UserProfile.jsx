@@ -33,7 +33,7 @@ import {
   useChangePasswordMutation,
   useUploadAvatarMutation
 } from '../../../../services/userApi';
-import { API_URL } from '../../../../config/apiConfig';
+import { API_URL, getImageUrl } from '../../../../config/apiConfig';
 import { getTranslation } from '../../../../utils/translations';
 
 const UserProfile = () => {
@@ -118,7 +118,7 @@ const UserProfile = () => {
       };
 
       const formattedProfile = {
-        photo: userData.avatar ? `${baseUrl}${userData.avatar}` : null,
+        photo: getImageUrl(userData.avatar),
         fullName: userData.name || '',
         email: userData.email || '',
         phone: userData.phone || '',

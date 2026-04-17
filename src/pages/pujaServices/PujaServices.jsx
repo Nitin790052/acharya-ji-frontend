@@ -10,11 +10,11 @@ import { usePageBanner } from "@/hooks/usePageBanner";
 import { useGetAllOfferingsQuery } from "@/services/pujaOfferingApi";
 import { useGetActivePujasQuery } from "@/services/popularPujaApi";
 import { useGetActiveServicesQuery } from "@/services/serviceApi";
-import { BACKEND_URL } from "@/config/apiConfig";
+import { BACKEND_URL, getImageUrl } from "@/config/apiConfig";
 
 const PujaServices = () => {
   const banner = usePageBanner({ pollingInterval: 3000 });
-  const bannerImage = banner?.imageUrl ? (banner.imageUrl.startsWith('http') ? banner.imageUrl : `${BACKEND_URL}${banner.imageUrl}`) : null;
+  const bannerImage = getImageUrl(banner?.imageUrl);
 
   // --- FETCHING FROM ALL RELEVANT APIs ---
   const { data: offerings = [], isLoading: isOfferingsLoading } = useGetAllOfferingsQuery();
@@ -265,7 +265,7 @@ const PujaServices = () => {
                           <div className="absolute top-0 right-0 w-64 h-64 bg-amber-100/30 rounded-full blur-[90px] -mr-32 -mt-32 pointer-events-none" />                          {/* Top Image Area - REDUCED HEIGHT */}
                           <div className="relative m-2.5 mb-3 rounded-2xl overflow-hidden shadow-md h-44 md:h-52 z-10 flex items-center justify-center bg-amber-50 group-hover/card:bg-white transition-all duration-500">
                             <img
-                              src={puja.imageUrl?.startsWith('http') ? puja.imageUrl : `${BACKEND_URL}${puja.imageUrl}`}
+                              src={getImageUrl(puja.imageUrl)}
                               alt={puja.title}
                               className="absolute inset-0 w-full h-full object-cover group-hover/card:scale-110 transition-transform duration-[2.5s]"
                             />

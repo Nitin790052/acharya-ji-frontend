@@ -7,30 +7,56 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { addToCart } from "@/store/slices/cartSlice";
 import { useGetAllOfferingsQuery } from "@/services/pujaOfferingApi";
-import { useCreateBookingMutation } from "@/services/bookingApi";
+import { useRegisterUserMutation } from "@/services/userApi";
 import { toast } from "react-toastify";
 
 const BookPoojaDrawer = ({ open, onClose }) => {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
     const { data: offerings = [] } = useGetAllOfferingsQuery();
-    const [createBooking, { isLoading: isBooking }] = useCreateBookingMutation();
+    const [registerUser, { isLoading: isRegistering }] = useRegisterUserMutation();
     
-    // Get logged in user from dashboard data if needed, or from localStorage
-    const savedUserString = localStorage.getItem('user');
-    const savedUser = savedUserString ? JSON.parse(savedUserString) : null;
+    // We will track the local user state when the drawer opens to ensure fresh data
+    const [localUser, setLocalUser] = useState(null);
 
     const [submitted, setSubmitted] = useState(false);
     const [selectedService, setSelectedService] = useState(null);
     const [formData, setFormData] = useState({
-        name: savedUser?.name || '',
-        mobile: savedUser?.phone || '',
-        email: savedUser?.email || '',
+        name: '',
+        mobile: '',
+        email: '',
         date: '',
         time: '',
         location: '',
         message: '',
         mode: 'Home Visit'
     });
+
+    // Update formData when drawer opens, pulling freshly from localStorage
+    React.useEffect(() => {
+        if (open) {
+            try {
+                const freshUserStr = localStorage.getItem('authUser');
+                const freshUser = freshUserStr ? JSON.parse(freshUserStr) : null;
+                setLocalUser(freshUser);
+                
+                if (freshUser) {
+                    setFormData(prev => ({
+                        ...prev,
+                        name: freshUser.name || prev.name,
+                        mobile: freshUser.phone || prev.mobile,
+                        email: freshUser.email || prev.email
+                    }));
+                }
+            } catch(e) {
+                console.error("Failed to fetch fresh user data:", e);
+            }
+        }
+    }, [open]);
 
     React.useEffect(() => {
         if (!open) {
@@ -45,21 +71,64 @@ const BookPoojaDrawer = ({ open, onClose }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        const payload = {
-            ...formData,
-            user: savedUser?._id || savedUser?.id,
-            pujaType: selectedService.title,
-            amount: selectedService.price || 0,
-            city: formData.location // Mapping location to city for backend compatibility
-        };
+        let userId = savedUser?._id || savedUser?.id;
 
-        try {
-            await createBooking(payload).unwrap();
-            setSubmitted(true);
-            toast.success("Puja booked successfully!");
-        } catch (err) {
-            toast.error(err.data?.message || "Booking failed. Please try again.");
+        // Auto-Register if user is a guest
+        if (!savedUser) {
+            try {
+                const generatedPassword = `${formData.mobile}@AJI`;
+                const regPayload = {
+                    name: formData.name,
+                    phone: formData.mobile,
+                    email: formData.email || `${formData.mobile}@acharyaji.com`,
+                    password: generatedPassword,
+                    location: formData.location
+                };
+                const regRes = await registerUser(regPayload).unwrap();
+                
+                if (regRes.token && regRes.data) {
+                    localStorage.setItem("token", regRes.token);
+                    localStorage.setItem("authUser", JSON.stringify(regRes.data));
+                    userId = regRes.data._id;
+                }
+                toast.success("Account securely created! Redirecting to cart...");
+            } catch (err) {
+                if (err.status === 400 && err.data?.message?.toLowerCase().includes('exists')) {
+                    toast.info("Account already exists. Please login to continue to cart.");
+                    onClose();
+                    
+                    const cartItemObj = {
+                        id: selectedService._id,
+                        title: selectedService.title,
+                        price: selectedService.price || 1100,
+                        description: selectedService.shortDescription,
+                        imageUrl: selectedService.imageUrl,
+                        date: formData.date,
+                        mode: formData.time || 'Morning',
+                    };
+                    
+                    navigate('/user_login', { state: { returnTo: '/cart', addPujaToCart: cartItemObj } });
+                    return;
+                } else {
+                    toast.error(err.data?.message || "Registration failed. Try logging in.");
+                    return;
+                }
+            }
         }
+
+        const cartItem = {
+           id: selectedService._id,
+           title: selectedService.title,
+           price: selectedService.price || 1100,
+           description: selectedService.shortDescription,
+           imageUrl: selectedService.imageUrl,
+           date: formData.date,
+           mode: formData.time || 'Morning',
+        };
+        
+        dispatch(addToCart(cartItem));
+        onClose();
+        navigate('/cart');
     };
 
     const handleServiceSelect = (service) => {
@@ -72,7 +141,7 @@ const BookPoojaDrawer = ({ open, onClose }) => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const inputClasses = "rounded-none border-slate-200 h-10 focus:border-[#E8453C] focus:ring-[#E8453C]/10 transition-all font-inter text-sm bg-white";
+    const inputClasses = "rounded-none border-slate-200 h-10 focus:border-[#E8453C] focus:ring-[#E8453C]/10 transition-all font-inter text-sm bg-white disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed";
     const labelClasses = "text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1.5 block font-inter";
 
     if (!open) return null;
@@ -220,6 +289,7 @@ const BookPoojaDrawer = ({ open, onClose }) => {
                                             className={inputClasses} 
                                             value={formData.name}
                                             onChange={handleChange}
+                                            disabled={!!localUser}
                                         />
                                     </div>
                                 </div>
@@ -234,6 +304,7 @@ const BookPoojaDrawer = ({ open, onClose }) => {
                                             className={inputClasses} 
                                             value={formData.mobile}
                                             onChange={handleChange}
+                                            disabled={!!localUser}
                                         />
                                     </div>
                                     <div>
@@ -245,6 +316,7 @@ const BookPoojaDrawer = ({ open, onClose }) => {
                                             className={inputClasses} 
                                             value={formData.email}
                                             onChange={handleChange}
+                                            disabled={!!localUser}
                                         />
                                     </div>
                                 </div>
@@ -337,11 +409,11 @@ const BookPoojaDrawer = ({ open, onClose }) => {
 
                             <Button
                                 type="submit"
-                                disabled={isBooking}
+                                disabled={isRegistering}
                                 className="h-12 rounded-none bg-[#E8453C] hover:bg-[#D43F37] text-white font-bold text-sm uppercase tracking-widest transition-all shadow-xl shadow-[#E8453C]/20 flex items-center justify-center gap-3 mb-6 group"
                             >
-                                {isBooking ? "Processing Ritual..." : "Submit Booking"} 
-                                {!isBooking && <Send className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />}
+                                {isRegistering ? "Processing Ritual..." : "Proceed to Cart"} 
+                                {!isRegistering && <Send className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />}
                             </Button>
                         </form>
                     )}

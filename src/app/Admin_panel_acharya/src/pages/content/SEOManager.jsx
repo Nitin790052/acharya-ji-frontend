@@ -7,6 +7,7 @@ import {
     useGetSEOByPageNameQuery,
     useUpdatePageSEOMutation
 } from '../../../../../services/seoApi';
+import { getImageUrl } from '../../../../../config/apiConfig';
 
 // Define the pages available for SEO management
 export const SEO_PAGES = [
@@ -227,7 +228,17 @@ const SEOManager = () => {
                                     </div>
                                     {formData.ogImage && (
                                         <div className="mt-2 w-full h-32 rounded-xl overflow-hidden border border-gray-200 relative">
-                                            <img src={(formData.ogImage.startsWith('http') || formData.ogImage.startsWith('/')) ? formData.ogImage : `http://${formData.ogImage}`} alt="OG Preview" className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = ''; e.target.parentNode.classList.add('bg-gray-100', 'flex', 'items-center', 'justify-center'); e.target.style.display = 'none'; e.target.insertAdjacentHTML('afterend', '<span class="text-gray-400 text-sm font-semibold">Image Preview Unavailable</span>'); }} />
+                                            <img 
+                                                src={getImageUrl(formData.ogImage)} 
+                                                alt="OG Preview" 
+                                                className="w-full h-full object-cover" 
+                                                onError={(e) => { 
+                                                    e.target.onerror = null; 
+                                                    e.target.parentNode.classList.add('bg-gray-100', 'flex', 'items-center', 'justify-center'); 
+                                                    e.target.style.display = 'none'; 
+                                                    e.target.insertAdjacentHTML('afterend', '<span class="text-gray-400 text-sm font-semibold">Image Preview Unavailable</span>'); 
+                                                }} 
+                                            />
                                         </div>
                                     )}
                                 </div>

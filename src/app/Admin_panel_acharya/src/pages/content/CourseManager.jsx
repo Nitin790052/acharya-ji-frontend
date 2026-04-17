@@ -17,7 +17,7 @@ import {
     useDeleteLearningMediaMutation
 } from '../../../../../services/learningContentApi';
 import { toast } from 'react-toastify';
-import { BACKEND_URL } from '../../../../../config/apiConfig';
+import { BACKEND_URL, getImageUrl } from '../../../../../config/apiConfig';
 
 const COURSE_CATEGORIES = [
     { id: 'astrology', label: 'Astrology Courses' },
@@ -306,7 +306,7 @@ const CourseManager = () => {
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-20 h-20 rounded-xl overflow-hidden border-2 border-orange-200 shadow-md flex-shrink-0 bg-white">
                                                         {(() => {
-                                                            const mediaSrc = brandingForm.image?.startsWith('http') ? brandingForm.image : `${BACKEND_URL}${brandingForm.image}`;
+                                                            const mediaSrc = getImageUrl(brandingForm.image);
                                                             return brandingForm.image?.match(/\.(mp4|webm|ogg)$/i)
                                                                 ? <video src={mediaSrc} autoPlay loop muted playsInline className="w-full h-full object-cover" />
                                                                 : <img src={mediaSrc} alt={brandingForm.imageAlt || "Portal Preview"} className="w-full h-full object-cover" />;
@@ -406,8 +406,8 @@ const CourseManager = () => {
                                                             : <img src={URL.createObjectURL(itemImage)} alt="Preview" className="w-full h-full object-cover" />
                                                     ) : (
                                                         itemForm.image.match(/\.(mp4|webm|ogg)$/i)
-                                                            ? <video src={`${BACKEND_URL}${itemForm.image}`} className="w-full h-full object-cover" muted />
-                                                            : <img src={`${BACKEND_URL}${itemForm.image}`} alt="Preview" className="w-full h-full object-cover" />
+                                                            ? <video src={getImageUrl(itemForm.image)} className="w-full h-full object-cover" controls />
+                                                            : <img src={getImageUrl(itemForm.image)} alt="Preview" className="w-full h-full object-cover" />
                                                     )}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
@@ -475,7 +475,7 @@ const CourseManager = () => {
                                         <div key={item._id} className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm group relative flex items-center gap-4 transition-all hover:ring-2 hover:ring-orange-100">
                                             <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-50 flex-shrink-0">
                                                 {(() => {
-                                                    const mediaSrc = item.image?.startsWith('http') ? item.image : `${BACKEND_URL}${item.image}`;
+                                                    const mediaSrc = getImageUrl(item.image);
                                                     return item.image?.match(/\.(mp4|webm|ogg)$/i)
                                                         ? <video src={mediaSrc} autoPlay loop muted playsInline className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                                                         : <img src={mediaSrc} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />;
@@ -606,7 +606,7 @@ const CourseManager = () => {
                                         'mantra': 'https://images.unsplash.com/photo-1544924405-45968d904435?auto=format&fit=crop&q=80&w=600'
                                     };
                                     if (hubImage) {
-                                        const src = hubImage.startsWith('http') ? hubImage : `${BACKEND_URL}${hubImage}`;
+                                        const src = getImageUrl(hubImage);
                                         return hubImage.match(/\.(mp4|webm|ogg)$/i)
                                             ? <video src={src} controls className="w-full h-full object-cover" />
                                             : <img src={src} alt={viewData.imageAlt || "Portal Identity"} className="w-full h-full object-cover" />;
@@ -682,7 +682,7 @@ const CourseManager = () => {
                                                         'mantra': 'https://images.unsplash.com/photo-1544924405-45968d904435?auto=format&fit=crop&q=80&w=200'
                                                     };
                                                     if (hubImage) {
-                                                        const src = hubImage.startsWith('http') ? hubImage : `${BACKEND_URL}${hubImage}`;
+                                                        const src = getImageUrl(hubImage);
                                                         return hubImage.match(/\.(mp4|webm|ogg)$/i)
                                                             ? <video src={src} muted className="w-full h-full object-cover" />
                                                             : <img src={src} alt={portal.imageAlt || "Portal Thumbnail"} className="w-full h-full object-cover" />;

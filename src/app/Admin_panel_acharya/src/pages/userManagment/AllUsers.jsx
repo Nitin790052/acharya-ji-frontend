@@ -34,7 +34,7 @@ import {
   useDeleteUserMutation
 } from "../../../../../services/userApi";
 import { toast } from "react-toastify";
-import { BACKEND_URL } from "../../../../../config/apiConfig";
+import { BACKEND_URL, getImageUrl } from "../../../../../config/apiConfig";
 
 const maskEmail = (email) => {
   if (!email) return '';
@@ -496,7 +496,7 @@ const AllUsers = () => {
                           <div className="w-8 h-8 shrink-0 bg-blue-50 rounded-full flex items-center justify-center text-blue-900 font-semibold text-sm overflow-hidden border border-gray-100 shadow-sm">
                             {user.avatar ? (
                               <img
-                                src={`${BACKEND_URL}${user.avatar.startsWith('/') ? '' : '/'}${user.avatar}`}
+                                src={getImageUrl(user.avatar)}
                                 alt={user.name}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
@@ -679,7 +679,7 @@ const AllUsers = () => {
                       <div className="w-16 h-16 shrink-0 bg-blue-50 rounded-full flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
                         {selectedUser.avatar ? (
                           <img
-                            src={`${BACKEND_URL}${selectedUser.avatar.startsWith('/') ? '' : '/'}${selectedUser.avatar}`}
+                            src={getImageUrl(selectedUser.avatar)}
                             alt={selectedUser.name}
                             className="w-full h-full object-cover"
                             onError={(e) => {

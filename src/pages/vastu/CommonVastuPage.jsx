@@ -37,7 +37,7 @@ import {
 import { Layout } from '@/components/layout/Layout';
 import { Link } from "react-router-dom";
 import { usePageBanner } from "@/hooks/usePageBanner";
-import { BACKEND_URL } from "@/config/apiConfig";
+import { BACKEND_URL, getImageUrl } from "@/config/apiConfig";
 import { useGetVastuPageBySlugQuery } from "@/services/vastuContentApi";
 import SEO from "@/components/layout/SEO";
 
@@ -52,7 +52,7 @@ const CommonVastuPage = ({ slugOverride }) => {
     const banner = usePageBanner({ pollingInterval: 3000 });
     const { data: pageData, isLoading, isError } = useGetVastuPageBySlugQuery(slug, { pollingInterval: 3000 });
 
-    const bannerImage = banner?.imageUrl ? (banner.imageUrl.startsWith('http') ? banner.imageUrl : `${BACKEND_URL}${banner.imageUrl}`) : null;
+    const bannerImage = getImageUrl(banner?.imageUrl);
 
     if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-[#FAF9F6] font-black uppercase text-[10px] tracking-widest text-orange-900 text-center">Consulting Ancient Scripts...</div>;
     if (isError || !pageData) return <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-[#FAF9F6] text-center"><button onClick={() => navigate('/')} className="bg-orange-600 text-white px-8 py-3 font-bold uppercase tracking-widest text-xs">Wisdom Not Found - Return Home</button></div>;
@@ -75,7 +75,7 @@ const CommonVastuPage = ({ slugOverride }) => {
                 {/* Hero Section */}
                 <section className="relative h-[320px] sm:h-[320px] md:h-[360px] lg:h-[370px] flex items-center py-[20px] text-white overflow-hidden">
                     <div className="absolute inset-0">
-                        <img src={hero.imageUrl ? (hero.imageUrl.startsWith('http') ? hero.imageUrl : `${BACKEND_URL}${hero.imageUrl}`) : bannerImage} alt="Background" className="w-full h-full object-cover object-top" />
+                        <img src={getImageUrl(hero.imageUrl) || bannerImage} alt="Background" className="w-full h-full object-cover object-top" />
                         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60" />
                         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_50%,rgba(217,119,6,0.2),transparent_50%)]" />
                     </div>
@@ -148,7 +148,7 @@ const CommonVastuPage = ({ slugOverride }) => {
                                     <div className="relative w-full max-w-lg p-2 bg-gradient-to-br from-amber-100 to-amber-300 rounded-[2rem] shadow-2xl">
                                         <div className="w-full h-[300px] md:h-[400px] rounded-3xl overflow-hidden border-[4px] border-white relative z-10">
                                             <img
-                                                src={about.image ? (about.image.startsWith('http') ? about.image : `${BACKEND_URL}${about.image}`) : ""}
+                                                src={getImageUrl(about.image)}
                                                 alt="Vastu Alignment"
                                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                                             />
@@ -193,7 +193,7 @@ const CommonVastuPage = ({ slugOverride }) => {
                                         <div className="relative h-full p-[1.5px] rounded-3xl bg-amber-400/40 hover:bg-amber-500 transition-all duration-700 shadow-xl flex flex-col">
                                             <div className="relative flex-grow bg-[#FCFBF7] rounded-[1.4rem] overflow-hidden flex flex-col group-hover/card:bg-white transition-all duration-500">
                                                 <div className="relative m-2.5 mb-3 rounded-2xl overflow-hidden shadow-lg h-48 z-10">
-                                                    <img src={service.image ? (service.image.startsWith('http') ? service.image : `${BACKEND_URL}${service.image}`) : ""} alt={service.title} className="w-full h-full object-cover transition-all duration-[2.5s] group-hover/card:scale-110" />
+                                                    <img src={getImageUrl(service.image)} alt={service.title} className="w-full h-full object-cover transition-all duration-[2.5s] group-hover/card:scale-110" />
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90" />
                                                     <div className="absolute top-4 right-4 bg-orange-600 text-white px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] shadow-lg flex items-center gap-1.5">
                                                         <Award className="w-3 h-3 fill-white" /> Vastu

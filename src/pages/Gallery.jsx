@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { X, Play, MapPin, Calendar, ChevronRight, MessageCircle, Phone, Star, Search, Award, Sparkles, Camera, Video, Clock, Leaf, Loader2 } from "lucide-react";
 import { Layout } from '@/components/layout/Layout';
 import { usePageBanner } from "@/hooks/usePageBanner";
-import { BACKEND_URL } from "@/config/apiConfig";
+import { BACKEND_URL, getImageUrl } from "@/config/apiConfig";
 import { useGetAllGalleryQuery, useGetGallerySettingsQuery } from "@/services/galleryApi";
 import image1 from "../assets/mediaPage/imageM1.webp";
 import image2 from "../assets/mediaPage/imageM2.webp";
@@ -59,7 +59,7 @@ const Gallery = () => {
   const getImageSrc = (item, index) => {
     // 1. Custom uploaded thumbnail
     if (item.image) {
-      return item.image.startsWith('http') ? item.image : `${BACKEND_URL}${item.image}`;
+      return getImageUrl(item.image);
     }
     // 2. Auto YouTube thumbnail from videoLink
     if (item.videoLink) {
@@ -89,7 +89,7 @@ const Gallery = () => {
         <section className="relative h-[320px] sm:h-[320px] md:h-[360px] lg:h-[370px] flex items-center py-[20px] text-white overflow-hidden">
           <div className="absolute inset-0">
             {banner.imageUrl ? (
-              <img src={`${BACKEND_URL}${banner.imageUrl}`} alt="Background" className="w-full h-full object-cover object-top" />
+              <img src={getImageUrl(banner.imageUrl)} alt="Background" className="w-full h-full object-cover object-top" />
             ) : (
               <div className="absolute inset-0 bg-[#2A1D13]/90" />
             )}
@@ -288,7 +288,7 @@ const Gallery = () => {
                     controls
                     autoPlay
                     className="w-full h-full object-contain bg-black"
-                    src={`${BACKEND_URL}${selectedMedia.video}`}
+                    src={getImageUrl(selectedMedia.video)}
                   >
                     Your browser does not support the video tag.
                   </video>

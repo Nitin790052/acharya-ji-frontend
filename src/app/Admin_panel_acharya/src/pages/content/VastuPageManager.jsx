@@ -8,7 +8,7 @@ import {
     useUpdateVastuPageStatusMutation
 } from '../../../../../services/vastuContentApi';
 import { useGetNavbarItemsQuery } from '../../../../../services/navbarApi';
-import { BACKEND_URL } from '../../../../../config/apiConfig';
+import { BACKEND_URL, getImageUrl } from '../../../../../config/apiConfig';
 import {
     FiPlus, FiEdit2, FiTrash2, FiSave, FiX, FiDatabase, FiRefreshCw,
     FiChevronDown, FiChevronUp, FiEye, FiImage, FiCheckSquare,
@@ -259,7 +259,7 @@ const VastuPageManager = () => {
                                                 </>
                                             ) : form.hero.imageUrl ? (
                                                 <>
-                                                    <img src={form.hero.imageUrl.startsWith('http') ? form.hero.imageUrl : `${BACKEND_URL}${form.hero.imageUrl}`} className="w-full h-full object-cover" />
+                                                    <img src={getImageUrl(form.hero.imageUrl)} className="w-full h-full object-cover" />
                                                     <button type="button" onClick={() => setForm({...form, hero: {...form.hero, imageUrl: ''}})} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-all shadow-sm"><FiX size={12}/></button>
                                                 </>
                                             ) : (
@@ -292,7 +292,7 @@ const VastuPageManager = () => {
                                                 </>
                                             ) : form.about.image ? (
                                                 <>
-                                                    <img src={form.about.image.startsWith('http') ? form.about.image : `${BACKEND_URL}${form.about.image}`} className="w-full h-full object-cover" />
+                                                    <img src={getImageUrl(form.about.image)} className="w-full h-full object-cover" />
                                                     <button type="button" onClick={() => setForm({...form, about: {...form.about, image: ''}})} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-all shadow-sm"><FiX size={12}/></button>
                                                 </>
                                             ) : (
@@ -338,7 +338,7 @@ const VastuPageManager = () => {
                                                                 </>
                                                             ) : svc.image ? (
                                                                 <>
-                                                                    <img src={svc.image.startsWith('http') ? svc.image : `${BACKEND_URL}${svc.image}`} className="w-full h-full object-cover" />
+                                                                    <img src={getImageUrl(svc.image)} className="w-full h-full object-cover" />
                                                                     <button type="button" onClick={() => updateArrayItem('servicesSection', idx, 'image', '')} className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-all shadow-sm"><FiX size={10}/></button>
                                                                 </>
                                                             ) : (

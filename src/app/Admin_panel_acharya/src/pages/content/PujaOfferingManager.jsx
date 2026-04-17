@@ -13,9 +13,7 @@ import {
     useSeedOfferingsMutation
 } from '../../../../../services/pujaOfferingApi';
 import { toast } from 'react-toastify';
-import { API_URL } from '../../../../../config/apiConfig';
-
-const BACKEND_URL = API_URL.replace(/\/api\/?$/, '');
+import { BACKEND_URL, getImageUrl } from '../../../../../config/apiConfig';
 
 const PujaOfferingManager = () => {
     const { data: offerings = [], isLoading } = useGetAllOfferingsQuery();
@@ -87,13 +85,13 @@ const PujaOfferingManager = () => {
             imageAlt: item.imageAlt || ''
         });
         setEditId(item._id);
-        setImagePreview(item.imageUrl.startsWith('http') ? item.imageUrl : `${BACKEND_URL}${item.imageUrl}`);
+        setImagePreview(getImageUrl(item.imageUrl));
 
         // Load previews for modes
         const newPrevs = {};
         item.serviceModes?.forEach((sm, idx) => {
             if (sm.imageUrl) {
-                newPrevs[idx] = sm.imageUrl.startsWith('http') ? sm.imageUrl : `${BACKEND_URL}${sm.imageUrl}`;
+                newPrevs[idx] = getImageUrl(sm.imageUrl);
             }
         });
         setServiceModePreviews(newPrevs);
@@ -566,7 +564,7 @@ const PujaOfferingManager = () => {
                     <div key={item._id} className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden group hover:shadow-2xl hover:shadow-blue-900/10 transition-all">
                         <div className="h-44 relative overflow-hidden">
                             <img
-                                src={item.imageUrl.startsWith('http') ? item.imageUrl : `${BACKEND_URL}${item.imageUrl}`}
+                                src={getImageUrl(item.imageUrl)}
                                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                             />
                             <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-2 shadow-sm">

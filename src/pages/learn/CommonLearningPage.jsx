@@ -8,7 +8,7 @@ import {
 import { Layout } from '@/components/layout/Layout';
 import { Link } from 'react-router-dom';
 import { usePageBanner } from "@/hooks/usePageBanner";
-import { BACKEND_URL } from "@/config/apiConfig";
+import { BACKEND_URL, getImageUrl } from "@/config/apiConfig";
 import { useGetLearningPageBySlugQuery } from '@/services/learningContentApi';
 import SEO from '@/components/layout/SEO';
 
@@ -35,7 +35,7 @@ const CourseCard = ({ title, duration, price, level, rating, students, image, is
                 {/* Image / Video */}
                 <div className="relative m-2.5 mb-3 rounded-2xl overflow-hidden shadow-lg h-48 z-10">
                     {(() => {
-                        const mediaSrc = image ? (image.startsWith('http') ? image : `${BACKEND_URL}${image}`) : null;
+                        const mediaSrc = getImageUrl(image);
                         const isVideo = mediaSrc?.match(/\.(mp4|webm|ogg)$/i);
                         return isVideo ? (
                             <video src={mediaSrc} autoPlay loop muted playsInline className="w-full h-full object-cover transition-all duration-[2.5s] group-hover/card:scale-110" />
@@ -108,7 +108,7 @@ const CommonLearningPage = ({ slug: slugOverride }) => {
     const validSlug = slug;
 
     const banner = usePageBanner({ pollingInterval: 3000 });
-    const bannerImage = banner?.imageUrl ? (banner.imageUrl.startsWith('http') ? banner.imageUrl : `${BACKEND_URL}${banner.imageUrl}`) : null;
+    const bannerImage = getImageUrl(banner?.imageUrl);
 
     const { data: pageData, isLoading, isError } = useGetLearningPageBySlugQuery(validSlug, {
         skip: validSlug === 'undefined' || !validSlug,
@@ -281,7 +281,7 @@ const CommonLearningPage = ({ slug: slugOverride }) => {
                                 <div className="relative w-full max-w-lg p-2 bg-gradient-to-br from-amber-100 to-amber-300 rounded-[2rem] shadow-2xl">
                                     <div className="w-full h-[300px] md:h-[400px] rounded-3xl overflow-hidden border-[4px] border-white relative z-10">
                                         {(() => {
-                                            const mediaSrc = pageData.introSection?.image ? (pageData.introSection.image.startsWith('http') ? pageData.introSection.image : `${BACKEND_URL}${pageData.introSection.image}`) : null;
+                                            const mediaSrc = getImageUrl(pageData.introSection?.image);
                                             const isVideo = mediaSrc?.match(/\.(mp4|webm|ogg)$/i);
                                             return isVideo ? (
                                                 <video src={mediaSrc} autoPlay loop muted playsInline className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />

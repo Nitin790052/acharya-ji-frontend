@@ -8,7 +8,7 @@ import {
 import { Layout } from '@/components/layout/Layout';
 import { usePageBanner } from "@/hooks/usePageBanner";
 import { useGetCareerContentQuery } from "@/services/careerContentApi";
-import { BACKEND_URL } from "@/config/apiConfig";
+import { BACKEND_URL, getImageUrl } from "@/config/apiConfig";
 import SEO from "@/components/layout/SEO";
 
 // Static fallback images for eligibility cards when no backend image is uploaded
@@ -131,7 +131,7 @@ export default function Career() {
         <section className="relative h-[320px] sm:h-[320px] md:h-[360px] lg:h-[370px] flex items-center py-[20px] text-white overflow-hidden">
           <div className="absolute inset-0">
             {banner.imageUrl ? (
-              <img src={banner.imageUrl.startsWith('http') ? banner.imageUrl : `${BACKEND_URL}${banner.imageUrl}`} alt={banner.imageAlt || "Divine Career Opportunity"} className="w-full h-full object-cover object-top" />
+              <img src={getImageUrl(banner.imageUrl)} alt={banner.imageAlt || "Divine Career Opportunity"} className="w-full h-full object-cover object-top" />
             ) : (
               <div className="absolute inset-0 bg-[#2A1D13]/90" />
             )}
@@ -183,7 +183,7 @@ export default function Career() {
                       <div className="relative m-2.5 mb-3 rounded-2xl overflow-hidden shadow-lg h-36 md:h-40 z-10 bg-orange-50">
                         {/* Use backend image if uploaded, else use static fallback based on card position */}
                         <img
-                          src={service.image ? `${BACKEND_URL}${service.image}` : ELIGIBILITY_FALLBACK_IMAGES[idx % ELIGIBILITY_FALLBACK_IMAGES.length]}
+                          src={service.image ? getImageUrl(service.image) : ELIGIBILITY_FALLBACK_IMAGES[idx % ELIGIBILITY_FALLBACK_IMAGES.length]}
                           alt={service.title}
                           className="w-full h-full object-cover transition-all duration-[2.5s] group-hover/card:scale-110 group-hover/card:rotate-1"
                         />

@@ -11,13 +11,14 @@ import { Layout } from '@/components/layout/Layout';
 import { usePageBanner } from "@/hooks/usePageBanner";
 import { useGetAllOfferingsQuery } from "@/services/pujaOfferingApi";
 import { useCreateBookingMutation } from "@/services/bookingApi";
+import { useRegisterUserMutation } from "@/services/userApi";
 import {
   useGetStepsQuery,
   useGetExpertsQuery,
   useGetSamagriQuery,
   useGetFAQsQuery
 } from "@/services/bookPujaContentApi";
-import { API_URL } from '@/config/apiConfig';
+import { API_URL, getImageUrl } from '@/config/apiConfig';
 import { toast } from 'react-toastify';
 
 const BACKEND_URL = API_URL.replace(/\/api\/?$/, '');
@@ -33,6 +34,7 @@ export default function BookPuja() {
   const { data: dbSamagri = [] } = useGetSamagriQuery();
   const { data: dbFAQs = [] } = useGetFAQsQuery();
   const [createBooking] = useCreateBookingMutation();
+  const [registerUser] = useRegisterUserMutation();
 
   // Mapping DB Steps to local format
   const bookingSteps = useMemo(() => {
@@ -70,10 +72,18 @@ export default function BookPuja() {
   ];
 
   const dispatch = useDispatch();
+  const savedUserString = localStorage.getItem('authUser');
+  let savedUser = null;
+  try {
+      savedUser = savedUserString ? JSON.parse(savedUserString) : null;
+  } catch(e) {
+      console.error("Failed to parse authUser");
+  }
+
   const [selectedPuja, setSelectedPuja] = useState(null);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [formData, setFormData] = useState({
-    name: '', mobile: '', city: '', pujaType: '', date: '', mode: '', message: ''
+    name: savedUser?.name || '', mobile: savedUser?.phone || '', city: '', pujaType: '', date: '', mode: '', message: ''
   });
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState({});
@@ -135,7 +145,7 @@ export default function BookPuja() {
       title: puja.title,
       price: puja.price || 1100,
       description: puja.shortDescription || puja.description,
-      imageUrl: puja.imageUrl?.startsWith('http') ? puja.imageUrl : `${BACKEND_URL}${puja.imageUrl}`
+      imageUrl: getImageUrl(puja.imageUrl)
     };
 
     if (token) {
@@ -152,23 +162,81 @@ export default function BookPuja() {
 
   const handleSubmit = async () => {
     try {
-      // Final sanity check
       if (!formData.name || !formData.mobile || !formData.city) {
         throw new Error("Core fields are missing. Please ensure Step 3 is correctly populated.");
       }
-      console.log('Sending final booking data:', formData);
-      await createBooking(formData).unwrap();
+      
+      let userId = savedUser?._id || savedUser?.id;
+
+      if (!savedUser) {
+          try {
+              const regRes = await registerUser({
+                  name: formData.name,
+                  phone: formData.mobile,
+                  email: `${formData.mobile}@acharyaji.com`,
+                  password: `${formData.mobile}@AJI`,
+                  location: formData.city
+              }).unwrap();
+              
+              if (regRes.token && regRes.data) {
+                  localStorage.setItem("token", regRes.token);
+                  localStorage.setItem("authUser", JSON.stringify(regRes.data));
+                  userId = regRes.data._id;
+              }
+              toast.success("Account securely created! Adding to cart...");
+          } catch (err) {
+              if (err.status === 400 && err.data?.message?.toLowerCase().includes('exists')) {
+                  toast.info("Account already exists. Please login to continue to cart.");
+                  
+                  const activePuja = pujaServices.find(p => p.title === formData.pujaType);
+                  if (activePuja) {
+                      const cartItemObj = {
+                          id: activePuja._id,
+                          title: activePuja.title,
+                          price: activePuja.price || 1100,
+                          description: activePuja.shortDescription,
+                          imageUrl: getImageUrl(activePuja.imageUrl),
+                          date: formData.date,
+                          mode: formData.mode || 'Morning',
+                      };
+                      navigate('/user_login', { state: { returnTo: '/cart', addPujaToCart: cartItemObj } });
+                      return;
+                  }
+              } else {
+                  throw new Error(err.data?.message || "Registration failed.");
+              }
+          }
+      }
+
+      const activePuja = pujaServices.find(p => p.title === formData.pujaType);
+      if (activePuja) {
+          const cartItem = {
+             id: activePuja._id,
+             title: activePuja.title,
+             price: activePuja.price || 1100,
+             description: activePuja.shortDescription,
+             imageUrl: getImageUrl(activePuja.imageUrl),
+             date: formData.date,
+             mode: formData.mode || 'Morning',
+          };
+          dispatch(addToCart(cartItem));
+      }
+
       setSubmitted(true);
       setCurrentStep(5);
+      
       setTimeout(() => {
         setSubmitted(false);
         setShowBookingForm(false);
         setSelectedPuja(null);
         setCurrentStep(1);
         setFormData({
-          name: '', mobile: '', city: '', pujaType: '', date: '', mode: '', message: ''
+          name: savedUser?.name || '', mobile: savedUser?.phone || '', city: '', pujaType: '', date: '', mode: '', message: ''
         });
-      }, 4000);
+        
+        navigate('/cart');
+      }, 3500);
+
     } catch (err) {
       console.error('Submit Error Details:', err);
       toast.error(err.message || err.data?.message || 'Booking failed. Please check all fields.');
@@ -184,7 +252,7 @@ export default function BookPuja() {
           <section className="relative h-[320px] sm:h-[320px] md:h-[360px] lg:h-[370px] flex items-center pt-20 md:pt-7 lg:pt-7 pb-6 text-white overflow-hidden">
             <div className="absolute inset-0">
               {banner.imageUrl ? (
-                <img src={`${BACKEND_URL}${banner.imageUrl}`} alt="Background" className="w-full h-full object-cover object-top" />
+                <img src={getImageUrl(banner.imageUrl)} alt="Background" className="w-full h-full object-cover object-top" />
               ) : (
                 <div className="absolute inset-0 bg-[#2A1D13]/90" />
               )}
@@ -322,7 +390,7 @@ export default function BookPuja() {
                     >
                       <div className="relative h-52 overflow-hidden shrink-0">
                         <img
-                          src={puja.imageUrl?.startsWith('http') ? puja.imageUrl : `${BACKEND_URL}${puja.imageUrl}`}
+                          src={getImageUrl(puja.imageUrl)}
                           alt={puja.title}
                           className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                         />
@@ -530,7 +598,7 @@ export default function BookPuja() {
                                     }`}
                                 >
                                   <div className="w-14 h-14 shrink-0 shadow-lg overflow-hidden border-2 border-white">
-                                    <img src={puja.imageUrl?.startsWith('http') ? puja.imageUrl : `${BACKEND_URL}${puja.imageUrl}`} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                    <img src={getImageUrl(puja.imageUrl)} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                                   </div>
                                   <div className="flex-1">
                                     <h4 className={`text-xs font-black uppercase tracking-tight transition-colors ${formData.pujaType === puja.title ? 'text-orange-600' : 'text-[#4A3427]'}`}>
@@ -622,8 +690,9 @@ export default function BookPuja() {
                                         name={field.name}
                                         value={formData[field.name] || ''}
                                         onChange={handleChange}
-                                        className={`w-full bg-white border-2 ${errors[field.name] ? 'border-red-300' : 'border-orange-50'} pl-12 pr-6 py-4 font-black text-[#4A3427] text-sm focus:border-orange-500 outline-none transition-all`}
+                                        className={`w-full border-2 ${errors[field.name] ? 'border-red-300' : 'border-orange-50'} pl-12 pr-6 py-4 font-black text-[#4A3427] text-sm focus:border-orange-500 outline-none transition-all ${(field.name === 'name' || field.name === 'mobile') && savedUser ? 'bg-slate-50 cursor-not-allowed' : 'bg-white'}`}
                                         placeholder={field.placeholder}
+                                        disabled={(field.name === 'name' || field.name === 'mobile') && !!savedUser}
                                       />
                                     </div>
                                     {errors[field.name] && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">{errors[field.name]}</p>}
@@ -719,10 +788,13 @@ export default function BookPuja() {
                                 <p className="text-xs font-black text-[#2A1D13] tracking-tighter uppercase">#{Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
                               </div>
                               <button
-                                onClick={() => setShowBookingForm(false)}
+                                onClick={() => {
+                                  setShowBookingForm(false);
+                                  navigate('/cart');
+                                }}
                                 className="bg-[#2A1D13] hover:bg-black text-white p-5 flex items-center justify-center text-[10px] font-black uppercase tracking-[0.2em] transition-all group"
                               >
-                                Exit Dashboard <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                                Go to Cart <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                               </button>
                             </div>
                           </div>

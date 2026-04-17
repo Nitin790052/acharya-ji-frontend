@@ -37,7 +37,7 @@ import {
     ChevronDown
 } from "lucide-react";
 import { usePageBanner } from "@/hooks/usePageBanner";
-import { BACKEND_URL } from "@/config/apiConfig";
+import { BACKEND_URL, getImageUrl } from "@/config/apiConfig";
 import { Layout } from '@/components/layout/Layout';
 import { useGetKundliPageBySlugQuery } from '@/services/kundliContentApi';
 import SEO from '@/components/layout/SEO';
@@ -47,8 +47,7 @@ const CommonKundliPage = () => {
     const navigate = useNavigate();
     const banner = usePageBanner({ pollingInterval: 3000 });
     const { data: pageData, isLoading, isError } = useGetKundliPageBySlugQuery(slug);
-
-    const bannerImage = banner?.imageUrl ? (banner.imageUrl.startsWith('http') ? banner.imageUrl : `${BACKEND_URL}${banner.imageUrl}`) : null;
+    const bannerImage = getImageUrl(banner?.imageUrl);
 
     const [formData, setFormData] = useState({
         name: '',
