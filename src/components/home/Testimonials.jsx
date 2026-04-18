@@ -75,7 +75,7 @@ const Testimonials = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
             {testimonials.map((testimonial, index) => (
                 <div 
-                    key={testimonial.id}
+                    key={testimonial._id || testimonial.id || index}
                     className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500 relative overflow-hidden group animate-fade-in-up"
                     style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'both' }}
                 >

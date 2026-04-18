@@ -595,7 +595,10 @@ const ShopPujaSamagri = ({ shopTypeOverride }) => {
                                             <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                                             <ShoppingCart className="w-4 h-4 relative" /> <span className="relative">Add To Cart</span>
                                         </button>
-                                        <button className="group relative bg-[#E8453C] hover:bg-black text-white flex-grow py-5 font-bold text-[10px] md:text-xs uppercase tracking-[0.3em] transition-all overflow-hidden shadow-xl rounded-xl">
+                                        <button 
+                                            onClick={() => { addItem(selectedProduct); setSelectedProduct(null); navigate('/cart'); }}
+                                            className="group relative bg-[#E8453C] hover:bg-black text-white flex-grow py-5 font-bold text-[10px] md:text-xs uppercase tracking-[0.3em] transition-all overflow-hidden shadow-xl rounded-xl"
+                                        >
                                             <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                                             <span className="relative">Buy Now</span>
                                         </button>

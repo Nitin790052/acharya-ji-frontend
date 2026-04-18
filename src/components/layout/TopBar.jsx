@@ -1,5 +1,7 @@
 import { ShoppingCart, User, Phone, Headphones, Calendar, Building } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { useCart } from '../../contexts/CartContext';
 
 // Hindu calendar months and current month festivals
 const hinduMonths = [
@@ -65,12 +67,6 @@ const getCurrentHinduMonth = () => {
   return hinduMonths[0];
 };
 
-// Mock cart context
-const useCart = () => ({
-  totalItems: 3,
-  setIsCartOpen: () => { }
-});
-
 // Button component
 const Button = ({ variant, size, className, children, onClick, ...props }) => {
   return (
@@ -85,7 +81,10 @@ const Button = ({ variant, size, className, children, onClick, ...props }) => {
 };
 
 export default function TopBar() {
-  const { totalItems, setIsCartOpen } = useCart();
+  const { totalItems: samagriCount, setIsCartOpen } = useCart();
+  const poojaCartItems = useSelector(state => state.cart?.cartItems || []);
+  const cartCount = samagriCount + poojaCartItems.length;
+
   const currentHinduMonth = getCurrentHinduMonth();
   const navigate = useNavigate();
 
@@ -170,11 +169,11 @@ export default function TopBar() {
             >
               <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden xs:inline">Cart</span>
-              {totalItems > 0 && (
+              {cartCount > 0 && (
                 <span
                   className="absolute top-0 -right-1 bg-red-600 text-white text-[9px] sm:text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-black shadow-lg border border-white/20 animate-scale-in"
                 >
-                  {totalItems}
+                  {cartCount}
                 </span>
               )}
             </Button>

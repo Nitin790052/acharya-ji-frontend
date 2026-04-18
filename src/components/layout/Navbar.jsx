@@ -7,9 +7,10 @@ import { useGetNavbarItemsQuery } from '../../services/navbarApi';
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
 // Button component
-const Button = ({ variant, size, className, children, ...props }) => {
+const Button = ({ variant, size, className, onClick, children, ...props }) => {
   return (
     <button
+      onClick={onClick}
       className={cn(
         'inline-flex items-center justify-center transition-colors',
         variant === 'ghost' && 'hover:bg-gray-100',
@@ -118,6 +119,7 @@ export default function Navbar() {
                 )}
               </div>
             ))}
+            
             {isLoading && (
               <div className="flex gap-4 items-center animate-pulse">
                 {[1, 2, 3, 4, 5].map((i) => (

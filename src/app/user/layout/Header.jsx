@@ -24,9 +24,15 @@ import { toast } from 'react-toastify';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGetUserDashboardQuery } from '../../../services/userApi';
 import { API_URL, getImageUrl } from '../../../config/apiConfig';
+import { useSelector } from 'react-redux';
+import { useCart } from '../../../contexts/CartContext';
 
 const Header = ({ toggleSidebar, sidebarOpen, isCollapsed, toggleCollapse, isMobile }) => {
   const { data: dashboardData } = useGetUserDashboardQuery(undefined, { pollingInterval: 3000 });
+  const { setIsCartOpen, totalItems: samagriCount } = useCart();
+  const poojaCartItems = useSelector(state => state.cart?.cartItems || []);
+  const cartCount = samagriCount + poojaCartItems.length;
+
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -209,19 +215,23 @@ const handleLogout =()=>{
 
             <div className="text-gray-600 text-lg hidden sm:block">|</div>
 
-            {/* Chat */}
-            <button className="hidden sm:block relative p-2 rounded-lg bg-white/5 border border-white/20 
-                               hover:bg-orange-500/20 hover:border-orange-400 transition-all duration-300 
-                               text-gray-300 hover:text-white"
-                               onClick={() => toast.info('Messages coming soon!')}>
-              <MessageSquare size={18} />
-              {unreadMessagesCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] 
-                                 rounded-full w-4 h-4 flex items-center justify-center">
-                  {unreadMessagesCount}
+            {/* Cart */}
+            <button 
+              className="relative p-2 rounded-lg bg-white/5 border border-white/20 
+                         hover:bg-[#E8453C]/20 hover:border-[#E8453C]/40 transition-all duration-300 
+                         text-gray-300 hover:text-white"
+              onClick={() => setIsCartOpen(true)}
+            >
+              <ShoppingBag size={18} />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-[#E8453C] text-white text-[10px] 
+                                 rounded-full w-4 h-4 flex items-center justify-center border border-[#0f172a] shadow-lg">
+                  {cartCount}
                 </span>
               )}
             </button>
+
+            {/* Chat */}
 
             {/* Profile */}
             <div className="relative" ref={profileRef}>

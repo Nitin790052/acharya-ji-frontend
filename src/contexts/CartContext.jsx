@@ -1,62 +1,51 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const CartContext = createContext();
 
-const initialItems = [
-  {
-    id: '1',
-    name: 'Premium Dhoop',
-    price: 299,
-    quantity: 2,
-    image: '/placeholder.svg',
-    category: 'Puja Essentials'
-  },
-  {
-    id: '2',
-    name: 'Pure Desi Ghee',
-    price: 599,
-    quantity: 1,
-    image: '/placeholder.svg',
-    category: 'Puja Essentials'
-  },
-  {
-    id: '3',
-    name: 'Samidha Wood',
-    price: 199,
-    quantity: 3,
-    image: '/placeholder.svg',
-    category: 'Hawan Items'
-  },
-  {
-    id: '4',
-    name: 'Complete Puja Samagri',
-    price: 999,
-    quantity: 1,
-    image: '/placeholder.svg',
-    category: 'Puja Kits'
-  }
-];
-
 export function CartProvider({ children }) {
-  const [items, setItems] = useState(initialItems);
+  // Load initial state from localStorage
+  const [items, setItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem('samagri_cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error("Failed to load cart from localStorage", e);
+      return [];
+    }
+  });
+  
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  const addItem = (newItem) => {
+  // Save to localStorage whenever items change
+  useEffect(() => {
+    localStorage.setItem('samagri_cart', JSON.stringify(items));
+  }, [items]);
+
+  const addItem = (product) => {
+    // Normalize ID: backend uses _id, some frontend logic might use id
+    const itemId = product.id || product._id;
+    
     setItems(current => {
-      const existing = current.find(item => item.id === newItem.id);
+      const existing = current.find(item => (item.id || item._id) === itemId);
+      
       if (existing) {
         return current.map(item =>
-          item.id === newItem.id
-            ? { ...item, quantity: item.quantity + 1 }
+          (item.id || item._id) === itemId
+            ? { ...item, quantity: (item.quantity || 1) + 1 }
             : item
         );
       }
-      return [...current, { ...newItem, quantity: 1 }];
+      
+      // Ensure the item in the cart has a consistent 'id' field for other components
+      return [...current, { ...product, id: itemId, quantity: 1 }];
     });
+    
+    // Open drawer automatically for feedback
+    setIsCartOpen(true);
   };
 
   const removeItem = (id) => {
-    setItems(current => current.filter(item => item.id !== id));
+    setItems(current => current.filter(item => (item.id || item._id) !== id));
   };
 
   const updateQuantity = (id, quantity) => {
@@ -66,7 +55,7 @@ export function CartProvider({ children }) {
     }
     setItems(current =>
       current.map(item =>
-        item.id === id ? { ...item, quantity } : item
+        (item.id || item._id) === id ? { ...item, quantity } : item
       )
     );
   };

@@ -11,9 +11,10 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { addToCart } from "@/store/slices/cartSlice";
 import { useGetAllOfferingsQuery } from "@/services/pujaOfferingApi";
-import { useRegisterUserMutation } from "@/services/userApi";
 import { useUserAuth } from "@/app/user/auth/AuthContext";
+import { useRegisterUserMutation, useGetUserDashboardQuery } from "@/services/userApi";
 import { toast } from "react-toastify";
+import { getImageUrl } from "@/config/apiConfig";
 
 const BookPoojaDrawer = ({ open, onClose, initialService }) => {
     const dispatch = useDispatch();
@@ -23,7 +24,12 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
     
     // Get user from AuthContext as primary source
     const { user: contextUser } = useUserAuth();
-    
+
+    // Fallback source: Dashboard API (if logged in but context is empty)
+    const token = localStorage.getItem('token');
+    const { data: dashData } = useGetUserDashboardQuery(undefined, { skip: !token });
+    const dashUser = dashData?.data?.user;
+
     // We will track the local user state when the drawer opens to ensure fresh data
     const [localUser, setLocalUser] = useState(null);
 
@@ -45,36 +51,35 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
     const getFreshUserData = useCallback(() => {
         console.log('[DRAWER AUTH] Checking for user data...');
         
-        // Source 1: AuthContext (most reliable, React state)
-        if (contextUser && typeof contextUser === 'object') {
-            const { name, fullName, phone, mobile, phoneNumber, email, emailId } = contextUser;
-            if (name || fullName || phone || mobile || email) {
-                console.log('[DRAWER AUTH] ✅ Got user from AuthContext:', name || fullName);
-                return {
-                    name: name || fullName,
-                    phone: phone || mobile || phoneNumber,
-                    email: email || emailId
-                };
-            }
+        // Helper to extract fields from any object
+        const extract = (obj) => {
+            if (!obj || typeof obj !== 'object') return null;
+            return {
+                name: obj.name || obj.fullName || obj.userName || '',
+                phone: obj.phone || obj.mobile || obj.phoneNumber || obj.identifier || '',
+                email: obj.email || obj.emailId || '',
+                _id: obj._id || obj.id || null
+            };
+        };
+
+        // Source 1: AuthContext (most reliable)
+        const fromContext = extract(contextUser);
+        if (fromContext && (fromContext.name || fromContext.phone)) {
+            console.log('[DRAWER AUTH] ✅ Got user from AuthContext:', fromContext);
+            return fromContext;
         }
         
-        // Source 2: localStorage authUser
+        // Source 2: localStorage (multiple keys for redundancy)
         try {
             const storageKeys = ['authUser', 'user', 'userdata'];
             for (const key of storageKeys) {
                 const data = localStorage.getItem(key);
                 if (data) {
                     const parsed = JSON.parse(data);
-                    if (parsed && typeof parsed === 'object') {
-                        const { name, fullName, phone, mobile, phoneNumber, email, emailId } = parsed;
-                        if (name || fullName || phone || mobile || email) {
-                            console.log(`[DRAWER AUTH] ✅ Got user from localStorage ${key}:`, name || fullName);
-                            return {
-                                name: name || fullName,
-                                phone: phone || mobile || phoneNumber,
-                                email: email || emailId
-                            };
-                        }
+                    const fromStorage = extract(parsed);
+                    if (fromStorage && (fromStorage.name || fromStorage.phone)) {
+                        console.log(`[DRAWER AUTH] ✅ Got user from localStorage ${key}:`, fromStorage);
+                        return fromStorage;
                     }
                 }
             }
@@ -82,36 +87,41 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
             console.error("[DRAWER AUTH] localStorage check error:", e);
         }
         
-        console.log('[DRAWER AUTH] ❌ No user found in any source');
         return null;
     }, [contextUser]);
 
     useEffect(() => {
         if (open) {
-            // Get fresh user data from all sources
             const freshUser = getFreshUserData();
-            setLocalUser(freshUser);
+            const dashUserObj = dashUser ? {
+                name: dashUser.name,
+                phone: dashUser.phone || dashUser.mobile,
+                email: dashUser.email,
+                _id: dashUser._id
+            } : null;
+
+            const effectiveUser = freshUser || dashUserObj;
+            setLocalUser(effectiveUser);
             
-            if (freshUser) {
-                console.log('[DRAWER AUTH] Autofilling form fields:', freshUser);
-                setFormData(prev => ({
-                    ...prev,
-                    name: freshUser.name || prev.name || '',
-                    mobile: freshUser.phone || prev.mobile || '',
-                    email: freshUser.email || prev.email || ''
-                }));
-            } else {
-                console.log('[DRAWER AUTH] No user logged in — showing empty form');
+            if (effectiveUser) {
+                setFormData(prev => {
+                    // Only autofill if the current field is empty
+                    // This prevents overwriting what the user might have just typed
+                    return {
+                        ...prev,
+                        name: prev.name === '' ? (effectiveUser.name || '') : prev.name,
+                        mobile: prev.mobile === '' ? (effectiveUser.phone || '') : prev.mobile,
+                        email: prev.email === '' ? (effectiveUser.email || '') : prev.email
+                    };
+                });
             }
 
             // Pre-select initial service logic
             if (initialService) {
-                console.log('[DRAWER DEBUG] Initial service provided:', initialService);
                 if (typeof initialService === 'object' && initialService.title) {
                     setSelectedService(initialService);
                     setFormData(prev => ({ ...prev, pujaType: initialService.title }));
                 } else if (typeof initialService === 'string') {
-                    // Match by string name
                     const matched = offerings.find(o => 
                         (o.title || '').toLowerCase() === initialService.toLowerCase() ||
                         (o.name || '').toLowerCase() === initialService.toLowerCase()
@@ -120,14 +130,13 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                         setSelectedService(matched);
                         setFormData(prev => ({ ...prev, pujaType: matched.title || matched.name }));
                     } else {
-                        // Just set the title even if not in offerings list
                         setFormData(prev => ({ ...prev, pujaType: initialService }));
-                        setSelectedService({ title: initialService }); // Mock object to trigger form view
+                        setSelectedService({ title: initialService });
                     }
                 }
             }
         }
-    }, [open, initialService, offerings, getFreshUserData]);
+    }, [open, initialService, offerings, getFreshUserData, dashUser]);
 
     useEffect(() => {
         if (!open) {
@@ -375,7 +384,6 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                                             className={inputClasses} 
                                             value={formData.name}
                                             onChange={handleChange}
-                                            disabled={!!localUser}
                                         />
                                     </div>
                                 </div>
@@ -390,7 +398,6 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                                             className={inputClasses} 
                                             value={formData.mobile}
                                             onChange={handleChange}
-                                            disabled={!!localUser}
                                         />
                                     </div>
                                     <div>
@@ -402,7 +409,6 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                                             className={inputClasses} 
                                             value={formData.email}
                                             onChange={handleChange}
-                                            disabled={!!localUser}
                                         />
                                     </div>
                                 </div>
@@ -415,9 +421,21 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                                     <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Ceremony Details</h4>
                                 </div>
 
-                                <div>
-                                    <Label className={labelClasses}>Selected Service</Label>
-                                    <Input disabled value={selectedService.title} className={inputClasses + " bg-slate-50"} />
+                                <div className="flex gap-4 items-center bg-white p-3 border border-slate-100 mb-2">
+                                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-slate-50 shrink-0 border border-slate-100">
+                                        {selectedService.imageUrl ? (
+                                            <img src={getImageUrl(selectedService.imageUrl)} alt={selectedService.title} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center">
+                                                <Sparkles className="w-6 h-6 text-orange-200" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
+                                        <Label className={labelClasses}>Selected Service</Label>
+                                        <p className="text-sm font-bold text-slate-800 uppercase">{selectedService.title}</p>
+                                        <p className="text-[10px] text-[#E8453C] font-bold">₹{selectedService.price}</p>
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-5">

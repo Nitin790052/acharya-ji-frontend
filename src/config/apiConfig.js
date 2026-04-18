@@ -19,7 +19,7 @@ const getApiUrl = () => {
   let baseApiUrl = 'https://acharya-ji-backend.onrender.com/api';
 
   if (isLocalhost && isDevMode) {
-    baseApiUrl = 'http://localhost:5000/api';
+    baseApiUrl = `${window.location.protocol}//${window.location.hostname}:5000/api`;
   } else if (envUrl) {
     baseApiUrl = envUrl;
   }
@@ -38,7 +38,7 @@ const getBackendUrl = () => {
   let baseBackendUrl = 'https://acharya-ji-backend.onrender.com';
 
   if (isLocalhost && isDevMode) {
-    baseBackendUrl = 'http://localhost:5000';
+    baseBackendUrl = `${window.location.protocol}//${window.location.hostname}:5000`;
   } else if (envUrl) {
     baseBackendUrl = envUrl;
   }
