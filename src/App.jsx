@@ -152,9 +152,9 @@ const App = () => (
         />
         <QueryClientProvider client={queryClient}>
             <ScrollToTop />
-            <GlobalFloatingButtons />
             <VendorAuthProvider>
                 <UserAuthProvider>
+                    <GlobalFloatingButtons />
                     <CartProvider>
                         <TooltipProvider>
                             <Suspense fallback={

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { X, CheckCircle, User, Building2, Briefcase, Send, Calendar, Phone, Mail, MapPin, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { addToCart } from "@/store/slices/cartSlice";
 import { useGetAllOfferingsQuery } from "@/services/pujaOfferingApi";
 import { useRegisterUserMutation } from "@/services/userApi";
+import { useUserAuth } from "@/app/user/auth/AuthContext";
 import { toast } from "react-toastify";
 
 const BookPoojaDrawer = ({ open, onClose, initialService }) => {
@@ -20,12 +21,15 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
     const { data: offerings = [] } = useGetAllOfferingsQuery();
     const [registerUser, { isLoading: isRegistering }] = useRegisterUserMutation();
     
+    // Get user from AuthContext as primary source
+    const { user: contextUser } = useUserAuth();
+    
     // We will track the local user state when the drawer opens to ensure fresh data
     const [localUser, setLocalUser] = useState(null);
 
     const [submitted, setSubmitted] = useState(false);
     const [selectedService, setSelectedService] = useState(null);
-    const [formData, setFormData] = useState({
+    const defaultFormData = {
         name: '',
         mobile: '',
         email: '',
@@ -34,56 +38,104 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
         location: '',
         message: '',
         mode: 'Home Visit'
-    });
+    };
+    const [formData, setFormData] = useState(defaultFormData);
 
-    React.useEffect(() => {
-        if (open) {
-            try {
-                const freshUserStr = localStorage.getItem('authUser');
-                const freshUser = freshUserStr ? JSON.parse(freshUserStr) : null;
-                setLocalUser(freshUser);
-                
-                if (freshUser) {
-                    setFormData(prev => ({
-                        ...prev,
-                        name: freshUser.name || prev.name,
-                        mobile: freshUser.phone || prev.mobile,
-                        email: freshUser.email || prev.email
-                    }));
+    // Helper to get user data from all possible sources
+    const getFreshUserData = useCallback(() => {
+        console.log('[DRAWER AUTH] Checking for user data...');
+        
+        // Source 1: AuthContext (most reliable, React state)
+        if (contextUser && typeof contextUser === 'object') {
+            const { name, fullName, phone, mobile, phoneNumber, email, emailId } = contextUser;
+            if (name || fullName || phone || mobile || email) {
+                console.log('[DRAWER AUTH] ✅ Got user from AuthContext:', name || fullName);
+                return {
+                    name: name || fullName,
+                    phone: phone || mobile || phoneNumber,
+                    email: email || emailId
+                };
+            }
+        }
+        
+        // Source 2: localStorage authUser
+        try {
+            const storageKeys = ['authUser', 'user', 'userdata'];
+            for (const key of storageKeys) {
+                const data = localStorage.getItem(key);
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    if (parsed && typeof parsed === 'object') {
+                        const { name, fullName, phone, mobile, phoneNumber, email, emailId } = parsed;
+                        if (name || fullName || phone || mobile || email) {
+                            console.log(`[DRAWER AUTH] ✅ Got user from localStorage ${key}:`, name || fullName);
+                            return {
+                                name: name || fullName,
+                                phone: phone || mobile || phoneNumber,
+                                email: email || emailId
+                            };
+                        }
+                    }
                 }
-            } catch(e) {
-                console.error("Failed to fetch fresh user data:", e);
+            }
+        } catch(e) {
+            console.error("[DRAWER AUTH] localStorage check error:", e);
+        }
+        
+        console.log('[DRAWER AUTH] ❌ No user found in any source');
+        return null;
+    }, [contextUser]);
+
+    useEffect(() => {
+        if (open) {
+            // Get fresh user data from all sources
+            const freshUser = getFreshUserData();
+            setLocalUser(freshUser);
+            
+            if (freshUser) {
+                console.log('[DRAWER AUTH] Autofilling form fields:', freshUser);
+                setFormData(prev => ({
+                    ...prev,
+                    name: freshUser.name || prev.name || '',
+                    mobile: freshUser.phone || prev.mobile || '',
+                    email: freshUser.email || prev.email || ''
+                }));
+            } else {
+                console.log('[DRAWER AUTH] No user logged in — showing empty form');
             }
 
-            // Pre-select initial service if a full service object is passed
-            console.log('[DRAWER DEBUG] open:', open, 'initialService:', initialService, 'type:', typeof initialService);
-            if (initialService && typeof initialService === 'object' && initialService.title) {
-                console.log('[DRAWER DEBUG] ✅ Pre-selecting service:', initialService.title);
-                setSelectedService(initialService);
-                setFormData(prev => ({ ...prev, pujaType: initialService.title }));
-            } else if (initialService && typeof initialService === 'string' && offerings.length > 0) {
-                // Fallback: try to match by name string
-                const searchKey = initialService.toLowerCase().trim();
-                const matchedService = offerings.find(s => {
-                    const title = (s.title || '').toLowerCase().trim();
-                    const name = (s.name || '').toLowerCase().trim();
-                    return title === searchKey || name === searchKey 
-                        || title.includes(searchKey) || searchKey.includes(title)
-                        || name.includes(searchKey) || searchKey.includes(name);
-                });
-                if (matchedService) {
-                    setSelectedService(matchedService);
-                    setFormData(prev => ({ ...prev, pujaType: matchedService.title || matchedService.name }));
+            // Pre-select initial service logic
+            if (initialService) {
+                console.log('[DRAWER DEBUG] Initial service provided:', initialService);
+                if (typeof initialService === 'object' && initialService.title) {
+                    setSelectedService(initialService);
+                    setFormData(prev => ({ ...prev, pujaType: initialService.title }));
+                } else if (typeof initialService === 'string') {
+                    // Match by string name
+                    const matched = offerings.find(o => 
+                        (o.title || '').toLowerCase() === initialService.toLowerCase() ||
+                        (o.name || '').toLowerCase() === initialService.toLowerCase()
+                    );
+                    if (matched) {
+                        setSelectedService(matched);
+                        setFormData(prev => ({ ...prev, pujaType: matched.title || matched.name }));
+                    } else {
+                        // Just set the title even if not in offerings list
+                        setFormData(prev => ({ ...prev, pujaType: initialService }));
+                        setSelectedService({ title: initialService }); // Mock object to trigger form view
+                    }
                 }
             }
         }
-    }, [open, initialService, offerings]);
+    }, [open, initialService, offerings, getFreshUserData]);
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (!open) {
             const timer = setTimeout(() => {
                 setSelectedService(null);
                 setSubmitted(false);
+                setLocalUser(null);
+                setFormData(defaultFormData);
             }, 300);
             return () => clearTimeout(timer);
         } else {

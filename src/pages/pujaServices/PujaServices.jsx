@@ -105,8 +105,8 @@ const PujaServices = () => {
     });
   }, [activeCategory, searchQuery, allServicesCombined]);
 
-  const handleOpenDrawer = () => {
-    window.dispatchEvent(new CustomEvent('openPoojaDrawer'));
+  const handleOpenDrawer = (puja = null) => {
+    window.dispatchEvent(new CustomEvent('openPoojaDrawer', { detail: puja }));
   };
 
   return (
@@ -317,7 +317,7 @@ const PujaServices = () => {
                                 <ChevronRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
                               </Link>
                               <button
-                                onClick={handleOpenDrawer}
+                                onClick={() => handleOpenDrawer(puja)}
                                 className="group/btn relative inline-flex items-center justify-center gap-1.5 px-4 py-3 bg-orange-600 text-white rounded-2xl font-black text-[9px] uppercase tracking-[0.1em] transition-all duration-500 hover:bg-[#2A1D13] hover:text-amber-400 shadow-lg"
                               >
                                 <span>Book Now</span>
