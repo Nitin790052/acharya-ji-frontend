@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Home, MapPin, Clock, Heart, Calendar, Package, AlertCircle, Building, ArrowLeft, Sparkles, Target, Star } from 'lucide-react';
+import DocumentUploadSection from '../../../components/DocumentUploadSection';
 
 export default function TempleServices({ commonData, onBack, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -10,7 +11,17 @@ export default function TempleServices({ commonData, onBack, onSubmit }) {
     bookingTypes: [],
     prasadDelivery: '',
     templeTimings: '',
-    trustName: ''
+    trustName: '',
+    // Document Details
+    aadharNumber: '',
+    panNumber: '',
+    bankName: '',
+    accountNumber: '',
+    ifscCode: '',
+    // Files
+    aadharFile: null,
+    panFile: null,
+    bankFile: null
   });
 
   const [errors, setErrors] = useState({});
@@ -49,6 +60,16 @@ export default function TempleServices({ commonData, onBack, onSubmit }) {
     }
   };
 
+  const handleFileChange = (e) => {
+    const { name, files } = e.target;
+    if (files && files[0]) {
+      setFormData(prev => ({
+        ...prev,
+        [name]: files[0]
+      }));
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
 
@@ -84,6 +105,10 @@ export default function TempleServices({ commonData, onBack, onSubmit }) {
       newErrors.trustName = 'Trust/Committee name is required';
     }
 
+    if (formData.aadharNumber && formData.aadharNumber.length !== 12) {
+      newErrors.aadharNumber = 'Aadhar number must be 12 digits';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -101,17 +126,13 @@ export default function TempleServices({ commonData, onBack, onSubmit }) {
       const completeData = {
         ...commonData,
         ...formData,
-        vendorType: 'templeServices',
-        submittedAt: new Date().toISOString(),
-        registrationId: `TEMPLE-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+        vendorType: 'templeServices'
       };
       
       console.log('Complete Registration Data:', completeData);
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       if (onSubmit) {
-        onSubmit();
+        await onSubmit(completeData);
       }
       
     } catch (error) {
@@ -635,6 +656,15 @@ export default function TempleServices({ commonData, onBack, onSubmit }) {
                     </div>
                   )}
                 </div>
+
+                {/* Document Upload Section */}
+                <DocumentUploadSection 
+                  formData={formData} 
+                  handleInputChange={handleInputChange} 
+                  handleFileChange={handleFileChange} 
+                  errors={errors} 
+                  vendorType="templeServices" 
+                />
 
               </div> {/* End of Form Grid */}
 

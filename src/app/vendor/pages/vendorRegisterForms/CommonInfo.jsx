@@ -4,7 +4,7 @@ import { Store, User, Eye, EyeOff, Smartphone, Mail, Lock, UserCircle, ChevronDo
 import { toast } from "react-toastify";
 
 const CommonInfo = ({ onComplete }) => {
-  const [role, setRole] = useState("");
+  const [role, setRole] = useState("vendor");
   const [category, setCategory] = useState("");
 
   const [form, setForm] = useState({
@@ -19,11 +19,6 @@ const CommonInfo = ({ onComplete }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const navigate = useNavigate();
-
-  const roles = [
-    { label: "Vendor", value: "vendor", icon: Store },
-    { label: "Customer", value: "customer", icon: User },
-  ];
 
   const vendorCategories = [
     "Pandit",
@@ -107,35 +102,14 @@ const CommonInfo = ({ onComplete }) => {
     setShowConfirmPassword(false);
   };
 
-  // Get button text based on role
+  // Get button text
   const getButtonText = () => {
-    if (role === "vendor") {
-      return "Continue to Vendor Details";
-    } else if (role === "customer") {
-      return "Create Customer Account";
-    }
-    return "Create Account";
+    return "Continue to Vendor Details";
   };
 
   // Handle what happens after form submission
   const handleSubmit = () => {
-    if (role === "customer") {
-      const payload = {
-        role,
-        category: null,
-        name: form.name,
-        mobile: form.mobile,
-        email: form.email,
-        password: form.password,
-      };
-      
-      console.log("Customer payload:", payload);
-      toast.success("Customer account created!");
-      navigate("/login");
-      resetForm();
-    } else if (role === "vendor") {
-      handleCommonInfo();
-    }
+    handleCommonInfo();
   };
 
   return (
@@ -173,65 +147,6 @@ const CommonInfo = ({ onComplete }) => {
             {/* Form Grid - Responsive Layout */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               
-              {/* Role Selection - Full width on mobile, spans 2 columns on larger */}
-              <div className="col-span-1 sm:col-span-2 mb-3 sm:mb-4">
-                <label className="block text-xs sm:text-sm font-medium text-gray-800 mb-1.5 sm:mb-2 ml-1">
-                  <span className="flex items-center gap-1.5 sm:gap-2">
-                    <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-md bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center">
-                      <span className="text-white text-[10px] sm:text-xs">✓</span>
-                    </div>
-                    Register As
-                  </span>
-                </label>
-                <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
-                  {roles.map((v) => {
-                    const Icon = v.icon;
-                    return (
-                      <button
-                        key={v.value}
-                        onClick={() => {
-                          setRole(v.value);
-                          setCategory("");
-                        }}
-                        className={`flex flex-col items-center p-2 sm:p-2.5 rounded-lg sm:rounded-xl border-2 transition-all duration-200 relative overflow-hidden group ${
-                          role === v.value
-                            ? "border-orange-500 shadow-md sm:shadow-lg"
-                            : "border-gray-300/80 hover:border-orange-400/60"
-                        }`}
-                        style={{
-                          background: role === v.value 
-                            ? 'linear-gradient(135deg, rgba(249, 115, 22, 0.08) 0%, rgba(251, 191, 36, 0.08) 100%)'
-                            : 'rgba(255,255,255,0.9)'
-                        }}
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        
-                        <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center mb-1 sm:mb-1.5 relative z-10 transition-all duration-300 ${
-                          role === v.value ? "shadow-sm sm:shadow-md" : ""
-                        }`} style={{
-                          background: role === v.value 
-                            ? 'linear-gradient(135deg, #f97316 0%, #fbbf24 100%)'
-                            : 'rgba(243, 244, 246, 0.8)'
-                        }}>
-                          <Icon size={20} className={role === v.value ? "text-white" : "text-gray-600"} />
-                        </div>
-                        <span className={`text-xs sm:text-sm font-semibold relative z-10 ${
-                          role === v.value ? "text-gray-900" : "text-gray-700"
-                        }`}>
-                          {v.label}
-                        </span>
-                        
-                        {/* Selected indicator */}
-                        {role === v.value && (
-                          <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center shadow-sm sm:shadow-md">
-                            <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-white"></div>
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
 
               {/* Vendor Category */}
               {role === "vendor" && (

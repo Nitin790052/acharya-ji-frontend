@@ -12,12 +12,22 @@ const HeroBanner = () => {
         refetchOnMountOrArgChange: true
     });
 
+    // Helper to normalize paths for comparison
+    const normalizePath = (path) => {
+        if (!path) return '';
+        let p = path.trim().toLowerCase();
+        if (!p.startsWith('/')) p = '/' + p;
+        if (p.endsWith('/') && p.length > 1) p = p.slice(0, -1);
+        return p;
+    };
+
     // Filter banners based on the current page path
     const banners = bannersData
         ? bannersData.filter(banner => {
-            const currentPath = location.pathname;
-            // Handle root path / and ensure exact matching
-            return banner.pagePath === currentPath;
+            const currentPath = normalizePath(location.pathname);
+            const bannerPath = normalizePath(banner.pagePath);
+            // Smart Match: Exact or starts with (for dynamic segments)
+            return bannerPath === currentPath || (currentPath.startsWith(bannerPath + '/') && bannerPath !== '/');
         })
         : [];
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Brain, Users, Clock, DollarSign, Globe, Calendar, BookOpen, AlertCircle, ArrowLeft, Sparkles, Target, Star } from 'lucide-react';
+import DocumentUploadSection from '../../../components/DocumentUploadSection';
 
 export default function SpiritualGuide({ commonData, onBack, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -9,7 +10,17 @@ export default function SpiritualGuide({ commonData, onBack, onSubmit }) {
     sessionCharges: '',
     languages: '',
     dailyAvailability: '',
-    philosophy: ''
+    philosophy: '',
+    // Document Details
+    aadharNumber: '',
+    panNumber: '',
+    bankName: '',
+    accountNumber: '',
+    ifscCode: '',
+    // Files
+    aadharFile: null,
+    panFile: null,
+    bankFile: null
   });
 
   const [errors, setErrors] = useState({});
@@ -23,6 +34,16 @@ export default function SpiritualGuide({ commonData, onBack, onSubmit }) {
     }));
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const { name, files } = e.target;
+    if (files && files[0]) {
+      setFormData(prev => ({
+        ...prev,
+        [name]: files[0]
+      }));
     }
   };
 
@@ -73,6 +94,10 @@ export default function SpiritualGuide({ commonData, onBack, onSubmit }) {
       newErrors.philosophy = 'Please provide at least 100 characters';
     }
 
+    if (formData.aadharNumber && formData.aadharNumber.length !== 12) {
+      newErrors.aadharNumber = 'Aadhar number must be 12 digits';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -90,17 +115,13 @@ export default function SpiritualGuide({ commonData, onBack, onSubmit }) {
       const completeData = {
         ...commonData,
         ...formData,
-        vendorType: 'spiritualGuide',
-        submittedAt: new Date().toISOString(),
-        registrationId: `GUIDE-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+        vendorType: 'spiritualGuide'
       };
       
       console.log('Complete Registration Data:', completeData);
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       if (onSubmit) {
-        onSubmit();
+        await onSubmit(completeData);
       }
       
     } catch (error) {
@@ -564,6 +585,15 @@ export default function SpiritualGuide({ commonData, onBack, onSubmit }) {
                     </p>
                   </div>
                 </div>
+
+                {/* Document Upload Section */}
+                <DocumentUploadSection 
+                  formData={formData} 
+                  handleInputChange={handleInputChange} 
+                  handleFileChange={handleFileChange} 
+                  errors={errors} 
+                  vendorType="spiritualGuide" 
+                />
 
               </div> {/* End of Form Grid */}
 

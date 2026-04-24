@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiImage, FiPlus, FiEdit2, FiTrash2, FiSave, FiX, FiCheckSquare, FiSquare, FiEye } from "react-icons/fi";
+import { FiImage, FiPlus, FiEdit2, FiTrash2, FiSave, FiX, FiCheckSquare, FiSquare, FiEye, FiChevronDown } from "react-icons/fi";
 import { toast } from "react-toastify";
 import {
   useGetAllBannersQuery,
@@ -14,6 +14,15 @@ import { BACKEND_URL, getImageUrl } from "../../../../../config/apiConfig";
 const CarouselManager = () => {
   const { data: banners = [], isLoading: bannersLoading } = useGetAllBannersQuery();
   const { data: navItemsData = [], isLoading: navLoading, error: navError } = useGetNavbarItemsQuery();
+
+  // Helper to normalize paths for comparison
+  const normalizePath = (path) => {
+    if (!path) return '';
+    let p = path.trim().toLowerCase();
+    if (!p.startsWith('/')) p = '/' + p;
+    if (p.endsWith('/') && p.length > 1) p = p.slice(0, -1);
+    return p;
+  };
 
   useEffect(() => {
     if (navError) {
@@ -47,6 +56,45 @@ const CarouselManager = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [viewBanner, setViewBanner] = useState(null);
   const [fileKey, setFileKey] = useState(Date.now());
+
+  // Sync selectedParentObj when data loads or during editing
+  useEffect(() => {
+    if (navError) {
+      toast.error("Failed to load pages! Please check server/database.");
+    }
+  }, [navError]);
+
+  useEffect(() => {
+    if (navItemsData.length > 0 && currentBanner.pagePath) {
+      const bannerPath = normalizePath(currentBanner.pagePath);
+      
+      // Smart Search for Parent Category
+      const parent = navItemsData.find(p => {
+        const pPath = normalizePath(p.href);
+        const pLabel = (p.label || '').toLowerCase();
+        
+        // 1. Direct Match (e.g. /about === /about)
+        if (pPath !== '/' && pPath === bannerPath) return true;
+        
+        // 2. Child Match (Exact)
+        if (p.children && p.children.some(c => normalizePath(c.href) === bannerPath)) return true;
+        
+        // 3. Prefix Match (e.g. /kundli/matching starts with /kundli)
+        // Only if parent has children or is a known dynamic category
+        if (pPath !== '/' && bannerPath.startsWith(pPath + '/')) return true;
+        
+        // 4. Keyword Fallback (Critical for dynamic modules like Kundli)
+        if (pLabel.includes('kundli') && bannerPath.startsWith('/kundli')) return true;
+        if (pLabel.includes('astrology') && bannerPath.startsWith('/astrology')) return true;
+        if (pLabel.includes('puja') && bannerPath.startsWith('/puja')) return true;
+        if (pLabel.includes('learn') && bannerPath.startsWith('/learn')) return true;
+        
+        return false;
+      });
+
+      if (parent) setSelectedParentObj(parent);
+    }
+  }, [navItemsData, currentBanner.pagePath]);
 
 
 
@@ -94,19 +142,24 @@ const CarouselManager = () => {
   };
 
   const handleEdit = (banner) => {
-    setCurrentBanner({ 
+    const updatedBanner = { 
       ...banner, 
       pagePath: banner.pagePath || '/',
       buttons: banner.buttons && banner.buttons.length > 0 ? banner.buttons : [{ text: '', link: '' }]
-    });
+    };
+    setCurrentBanner(updatedBanner);
     setImageFile(null);
     setIsEditing(true);
 
-    // Find parent object if it's a child path
-    const parent = navItemsData.find(p =>
-      p.href === banner.pagePath || (p.children && p.children.some(c => c.href === banner.pagePath))
-    );
-    setSelectedParentObj(parent || null);
+    // Explicitly find parent for immediate UI update
+    if (navItemsData.length > 0) {
+      const bannerPath = normalizePath(updatedBanner.pagePath);
+      const parent = navItemsData.find(p => 
+        normalizePath(p.href) === bannerPath || 
+        (p.children && p.children.some(c => normalizePath(c.href) === bannerPath))
+      );
+      setSelectedParentObj(parent || null);
+    }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -184,44 +237,54 @@ const CarouselManager = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 border border-gray-100 p-4 rounded-xl mb-4">
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-800">Assign to Main Page</label>
-              <select
-                value={selectedParentObj ? selectedParentObj._id : (currentBanner.pagePath === '/' ? 'home' : '')}
-                onChange={(e) => {
-                  if (e.target.value === 'home') {
-                    setSelectedParentObj(null);
-                    setCurrentBanner({ ...currentBanner, pagePath: '/' });
-                  } else {
-                    const p = navItemsData.find(item => item._id === e.target.value);
-                    setSelectedParentObj(p);
-                    setCurrentBanner({ ...currentBanner, pagePath: p.href || '/' });
-                  }
-                }}
-                className="w-full px-4 py-2 border border-blue-900/20 rounded-lg focus:ring-2 focus:ring-blue-900/40 bg-white"
-              >
-                <option value="home">Home Page ( / )</option>
-                {navLoading ? (
-                  <option disabled>Loading pages...</option>
-                ) : (
-                  navItemsData.map(item => (
-                    <option key={item._id} value={item._id}>{item.label}</option>
-                  ))
-                )}
-              </select>
+              <div className="relative">
+                <select
+                  value={selectedParentObj ? selectedParentObj._id : (currentBanner.pagePath === '/' ? 'home' : '')}
+                  onChange={(e) => {
+                    if (e.target.value === 'home') {
+                      setSelectedParentObj(null);
+                      setCurrentBanner({ ...currentBanner, pagePath: '/' });
+                    } else if (e.target.value === '') {
+                        setSelectedParentObj(null);
+                        setCurrentBanner({ ...currentBanner, pagePath: '' });
+                    } else {
+                      const p = navItemsData.find(item => item._id === e.target.value);
+                      setSelectedParentObj(p);
+                      setCurrentBanner({ ...currentBanner, pagePath: p.href || '/' });
+                    }
+                  }}
+                  className="w-full pl-4 pr-10 py-2.5 border-2 border-blue-900/10 rounded-xl focus:ring-4 focus:ring-blue-900/10 bg-white font-bold text-gray-700 outline-none appearance-none cursor-pointer transition-all"
+                >
+                  <option value="">--- Select Category ---</option>
+                  <option value="home">Home Page ( / )</option>
+                  {navLoading ? (
+                    <option disabled>Loading pages...</option>
+                  ) : (
+                    navItemsData.map(item => (
+                      <option key={item._id} value={item._id}>{item.label}</option>
+                    ))
+                  )}
+                </select>
+                <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-900 pointer-events-none" />
+              </div>
             </div>
 
             {selectedParentObj && selectedParentObj.children && selectedParentObj.children.length > 0 && (
               <div className="space-y-2">
                 <label className="text-sm font-bold text-gray-800">Assign to Sub-Page</label>
-                <select
-                  value={currentBanner.pagePath}
-                  onChange={(e) => setCurrentBanner({ ...currentBanner, pagePath: e.target.value })}
-                  className="w-full px-4 py-2 border border-blue-900/20 rounded-lg focus:ring-2 focus:ring-blue-900/40 bg-white"
-                >
-                  <option value={selectedParentObj.href}>-- Use Main Page Banner --</option>
-                  {selectedParentObj.children.map((child, idx) => (
-                    <option key={idx} value={child.href}>{child.label} ({child.href})</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={currentBanner.pagePath}
+                    onChange={(e) => setCurrentBanner({ ...currentBanner, pagePath: e.target.value })}
+                    className="w-full pl-4 pr-10 py-2.5 border-2 border-blue-900/10 rounded-xl focus:ring-4 focus:ring-blue-900/10 bg-white font-bold text-gray-700 outline-none appearance-none cursor-pointer transition-all"
+                  >
+                    <option value={selectedParentObj.href}>-- Use Main Page Banner --</option>
+                    {selectedParentObj.children.map((child, idx) => (
+                      <option key={`${selectedParentObj._id}-child-${idx}`} value={child.href}>{child.label} ({child.href})</option>
+                    ))}
+                  </select>
+                  <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-900 pointer-events-none" />
+                </div>
               </div>
             )}
           </div>

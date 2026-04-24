@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { dummyVendors } from "../mock/Vendors";
 import {
   Eye,
   EyeOff,
@@ -12,6 +11,11 @@ import {
 import image from "../../../assets/login/imageLo4.webp";
 import { useAuth } from "../../../app/vendor/auth/AuthContext";
 import { toast } from "react-toastify";
+import {
+  useLoginVendorMutation,
+  useSendVendorOtpMutation,
+  useVerifyVendorOtpMutation,
+} from "../../../services/vendorApi";
 
 const Login = () => {
   // Yeh component sirf vendor ke liye hai, user option remove kiya
@@ -27,6 +31,11 @@ const Login = () => {
   const navigate = useNavigate();
 
   const { login } = useAuth();
+
+  // RTK Query mutations
+  const [loginVendor, { isLoading: isLoggingIn }] = useLoginVendorMutation();
+  const [sendOtp, { isLoading: isSendingOtp }] = useSendVendorOtpMutation();
+  const [verifyOtp, { isLoading: isVerifyingOtp }] = useVerifyVendorOtpMutation();
 
   useEffect(() => {
     if (otpTimer === 0) return;
@@ -44,56 +53,76 @@ const Login = () => {
     (loginType === "mobile" && isMobileValid && otpVerified) ||
     (loginType === "email" && isEmailValid && isPasswordValid);
 
-  const handleSendOtp = () => {
+  // ✅ Send OTP via RTK Query — logs OTP to browser console
+  const handleSendOtp = async () => {
     if (!isMobileValid) return;
-    setOtpSent(true);
-    setOtpVerified(false);
-    setOtp("");
-    setOtpTimer(30);
+    try {
+      const result = await sendOtp({ identifier: mobile, type: "mobile" }).unwrap();
+      setOtpSent(true);
+      setOtpVerified(false);
+      setOtp("");
+      setOtpTimer(30);
+      // 🔥 OTP printed to browser console for testing
+      if (result.debugOtp) {
+        console.log(`%c📱 Vendor OTP: ${result.debugOtp}`, "color: #f97316; font-size: 18px; font-weight: bold;");
+      }
+      toast.success(result.message || "OTP sent!");
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to send OTP");
+    }
   };
 
-  const handleVerifyOtp = () => {
-    if (isOtpValid) setOtpVerified(true);
+  // ✅ Verify OTP via RTK Query → then auto-login & redirect to dashboard
+  const handleVerifyOtp = async () => {
+    if (!isOtpValid) return;
+    try {
+      await verifyOtp({ identifier: mobile, otp }).unwrap();
+      setOtpVerified(true);
+
+      // 🚀 Auto-login immediately after OTP is verified
+      const data = await loginVendor({ phone: mobile, loginType: "mobile" }).unwrap();
+
+      login({
+        ...data.data,
+        token: data.token,
+        loginMethod: "mobile",
+      });
+
+      toast.success(`Welcome, ${data.data.name}!`);
+      navigate("/vendor/dashboard");
+    } catch (err) {
+      toast.error(err?.data?.message || "Invalid OTP or login failed");
+    }
   };
 
   const shouldShowLoginButton =
     loginType === "email" || (loginType === "mobile" && otpVerified);
 
-  // ✅ VENDOR-SPECIFIC LOGIN LOGIC
-const handleVendorLogin = () => {
-  if (!canLogin) return;
+  // ✅ VENDOR LOGIN via RTK Query
+  const handleVendorLogin = async () => {
+    if (!canLogin) return;
 
-  // ================= FIND VENDOR =================
-  const vendor =
-    loginType === "mobile"
-      ? dummyVendors.find((v) => v.mobile === mobile)
-      : dummyVendors.find(
-          (v) => v.email?.toLowerCase() === email.toLowerCase()
-        );
+    try {
+      const payload =
+        loginType === "mobile"
+          ? { phone: mobile, loginType: "mobile" }
+          : { email, password, loginType: "email" };
 
-  if (!vendor) {
-    toast.error("Vendor not found");
-    return;
-  }
+      const data = await loginVendor(payload).unwrap();
 
-  // ================= EMAIL PASSWORD CHECK =================
-  if (loginType === "email" && password !== vendor.password) {
-    toast.error("Invalid password");
-    return;
-  }
+      login({
+        ...data.data,
+        token: data.token,
+        loginMethod: loginType,
+      });
 
-  // ================= SAVE AUTH =================
-  login({
-    ...vendor,                // ✅ always full vendor
-    role: "vendor",
-    token: "vendor-demo-token",
-    loginMethod: loginType,
-  });
-
-  toast.success(`Welcome back, ${vendor.name}!`);
-
-  navigate("/vendor/dashboard");
-};
+      toast.success(`Welcome back, ${data.data.name}!`);
+      navigate("/vendor/dashboard");
+    } catch (err) {
+      console.error("Login error:", err);
+      toast.error(err?.data?.message || "An error occurred during login");
+    }
+  };
 
 
 

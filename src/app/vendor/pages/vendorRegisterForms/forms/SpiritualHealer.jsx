@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Activity, Award, Users, Video, DollarSign, Heart, AlertCircle, ArrowLeft, Target, Star, Sparkles, Moon, Zap, Brain } from 'lucide-react';
+import DocumentUploadSection from '../../../components/DocumentUploadSection';
 
 export default function SpiritualHealer({ commonData, onBack, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -9,7 +10,17 @@ export default function SpiritualHealer({ commonData, onBack, onSubmit }) {
     sessionModes: [],
     sessionType: '',
     chargesPerSession: '',
-    distanceHealing: ''
+    distanceHealing: '',
+    // Document Details
+    aadharNumber: '',
+    panNumber: '',
+    bankName: '',
+    accountNumber: '',
+    ifscCode: '',
+    // Files
+    aadharFile: null,
+    panFile: null,
+    bankFile: null
   });
 
   const [errors, setErrors] = useState({});
@@ -48,6 +59,16 @@ export default function SpiritualHealer({ commonData, onBack, onSubmit }) {
     }
   };
 
+  const handleFileChange = (e) => {
+    const { name, files } = e.target;
+    if (files && files[0]) {
+      setFormData(prev => ({
+        ...prev,
+        [name]: files[0]
+      }));
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
 
@@ -79,6 +100,10 @@ export default function SpiritualHealer({ commonData, onBack, onSubmit }) {
       newErrors.distanceHealing = 'Please specify distance healing availability';
     }
 
+    if (formData.aadharNumber && formData.aadharNumber.length !== 12) {
+      newErrors.aadharNumber = 'Aadhar number must be 12 digits';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -96,17 +121,13 @@ export default function SpiritualHealer({ commonData, onBack, onSubmit }) {
       const completeData = {
         ...commonData,
         ...formData,
-        vendorType: 'spiritualHealer',
-        submittedAt: new Date().toISOString(),
-        registrationId: `SPIRIT-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+        vendorType: 'spiritualHealer'
       };
       
       console.log('Complete Registration Data:', completeData);
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       if (onSubmit) {
-        onSubmit();
+        await onSubmit(completeData);
       }
       
     } catch (error) {
@@ -644,6 +665,15 @@ export default function SpiritualHealer({ commonData, onBack, onSubmit }) {
                     </div>
                   )}
                 </div>
+
+                {/* Document Upload Section */}
+                <DocumentUploadSection 
+                  formData={formData} 
+                  handleInputChange={handleInputChange} 
+                  handleFileChange={handleFileChange} 
+                  errors={errors} 
+                  vendorType="spiritualHealer" 
+                />
 
               </div> {/* End of Form Grid */}
 

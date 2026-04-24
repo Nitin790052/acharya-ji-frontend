@@ -30,6 +30,7 @@ import { courseApi } from '../services/courseApi';
 import { learningContentApi } from '../services/learningContentApi';
 import { universalContentApi } from '../services/universalContentApi';
 import { userApi } from '../services/userApi';
+import { vendorApi } from '../services/vendorApi';
 import cartReducer from './slices/cartSlice';
 
 export const store = configureStore({
@@ -67,6 +68,7 @@ export const store = configureStore({
         [learningContentApi.reducerPath]: learningContentApi.reducer,
         [universalContentApi.reducerPath]: universalContentApi.reducer,
         [userApi.reducerPath]: userApi.reducer,
+        [vendorApi.reducerPath]: vendorApi.reducer,
     },
 
     middleware: (getDefaultMiddleware) =>
@@ -101,7 +103,8 @@ export const store = configureStore({
             courseApi.middleware,
             learningContentApi.middleware,
             universalContentApi.middleware,
-            userApi.middleware
+            userApi.middleware,
+            vendorApi.middleware
         ),
 });
 

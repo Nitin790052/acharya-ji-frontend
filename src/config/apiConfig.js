@@ -57,6 +57,21 @@ export const BACKEND_URL = getBackendUrl();
 export const getImageUrl = (path) => {
   if (!path) return "";
   if (typeof path !== 'string') return "";
+  
+  // If it's already a full URL (like Cloudinary), return it as is
   if (path.startsWith("http")) return path;
-  return `${BACKEND_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+  
+  // 1. Convert Windows backslashes to forward slashes
+  let cleanPath = path.replace(/\\/g, "/");
+  
+  // 2. Remove absolute file system paths if any (for robustness)
+  if (cleanPath.includes(":/")) {
+    cleanPath = cleanPath.split("uploads/").pop(); // Get everything after /uploads/
+    cleanPath = "uploads/" + cleanPath;
+  }
+  
+  // 3. Ensure the path is relative to the backend base
+  const finalPath = cleanPath.startsWith("/") ? cleanPath : "/" + cleanPath;
+  
+  return `${BACKEND_URL}${finalPath}`;
 };

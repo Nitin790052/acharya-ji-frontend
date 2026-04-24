@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { BookOpen, Users, Globe, Calendar, MapPin, Home, Sparkles, Target, Star, ArrowLeft } from 'lucide-react';
+import { BookOpen, Users, Globe, Calendar, MapPin, Home, Sparkles, Target, Star, ArrowLeft, ShieldCheck } from 'lucide-react';
+import DocumentUploadSection from '../../../components/DocumentUploadSection';
 
 export default function Pandit({ commonData, onBack, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -10,7 +11,18 @@ export default function Pandit({ commonData, onBack, onSubmit }) {
     languages: '',
     dakshinaExpectation: '',
     availability: '',
-    willingToTravel: ''
+    willingToTravel: '',
+    // Document Details
+    aadharNumber: '',
+    panNumber: '',
+    bankName: '',
+    accountNumber: '',
+    ifscCode: '',
+    // Files (stored as local state or refs, here in form state for simplicity in demo)
+    aadharFile: null,
+    panFile: null,
+    bankFile: null,
+    qualificationFile: null
   });
 
   const [errors, setErrors] = useState({});
@@ -49,6 +61,16 @@ export default function Pandit({ commonData, onBack, onSubmit }) {
     }
   };
 
+  const handleFileChange = (e) => {
+    const { name, files } = e.target;
+    if (files && files[0]) {
+      setFormData(prev => ({
+        ...prev,
+        [name]: files[0]
+      }));
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
 
@@ -84,6 +106,11 @@ export default function Pandit({ commonData, onBack, onSubmit }) {
       newErrors.willingToTravel = 'Please select travel preference';
     }
 
+    // Basic document validation
+    if (formData.aadharNumber && formData.aadharNumber.length !== 12) {
+      newErrors.aadharNumber = 'Aadhar number must be 12 digits';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -101,17 +128,13 @@ export default function Pandit({ commonData, onBack, onSubmit }) {
       const completeData = {
         ...commonData,
         ...formData,
-        vendorType: 'pandit',
-        submittedAt: new Date().toISOString(),
-        registrationId: `PANDIT-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+        vendorType: 'pandit'
       };
       
       console.log('Complete Registration Data:', completeData);
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       if (onSubmit) {
-        onSubmit();
+        await onSubmit(completeData);
       }
       
     } catch (error) {
@@ -669,6 +692,15 @@ export default function Pandit({ commonData, onBack, onSubmit }) {
                     </div>
                   )}
                 </div>
+
+                {/* Document Upload Section */}
+                <DocumentUploadSection 
+                  formData={formData} 
+                  handleInputChange={handleInputChange} 
+                  handleFileChange={handleFileChange} 
+                  errors={errors} 
+                  vendorType="pandit" 
+                />
 
               </div> {/* End of Form Grid */}
 

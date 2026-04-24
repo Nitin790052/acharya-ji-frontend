@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Star, Calendar, Phone, Video, Users, MessageSquare, Globe, AlertCircle, Sparkles, Brain, Target, Zap, ArrowLeft, Info, CheckCircle2 } from 'lucide-react';
+import DocumentUploadSection from '../../../components/DocumentUploadSection';
 
 export default function Astrologer({ commonData, onBack, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -9,7 +10,18 @@ export default function Astrologer({ commonData, onBack, onSubmit }) {
     perSessionCharges: '',
     dailySlotCapacity: '',
     languages: '',
-    samplePrediction: ''
+    samplePrediction: '',
+    // Document Details
+    aadharNumber: '',
+    panNumber: '',
+    bankName: '',
+    accountNumber: '',
+    ifscCode: '',
+    // Files
+    aadharFile: null,
+    panFile: null,
+    bankFile: null,
+    qualificationFile: null
   });
 
   const [errors, setErrors] = useState({});
@@ -25,6 +37,18 @@ export default function Astrologer({ commonData, onBack, onSubmit }) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
+
+  const handleFileChange = (e) => {
+    const { name, files } = e.target;
+    if (files && files[0]) {
+      setFormData(prev => ({
+        ...prev,
+        [name]: files[0]
+      }));
+    }
+  };
+
+
 
   const handleCheckboxChange = (field, value) => {
     setFormData(prev => {
@@ -85,6 +109,10 @@ export default function Astrologer({ commonData, onBack, onSubmit }) {
       newErrors.samplePrediction = 'Please provide at least 50 characters';
     }
 
+    if (formData.aadharNumber && formData.aadharNumber.length !== 12) {
+      newErrors.aadharNumber = 'Aadhar number must be 12 digits';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -102,16 +130,13 @@ export default function Astrologer({ commonData, onBack, onSubmit }) {
       const completeData = {
         ...commonData,
         ...formData,
-        vendorType: 'astrologer',
-        submittedAt: new Date().toISOString(),
-        registrationId: `ASTRO-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+        vendorType: 'astrologer'
       };
       
       console.log('Complete Registration Data:', completeData);
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
       if (onSubmit) {
-        onSubmit();
+        await onSubmit(completeData);
       }
       
     } catch (error) {
@@ -615,6 +640,15 @@ export default function Astrologer({ commonData, onBack, onSubmit }) {
                     </div>
                   </div>
                 </div>
+
+                {/* Document Upload Section */}
+                <DocumentUploadSection 
+                  formData={formData} 
+                  handleInputChange={handleInputChange} 
+                  handleFileChange={handleFileChange} 
+                  errors={errors} 
+                  vendorType="astrologer" 
+                />
 
               </div> {/* End of Form Grid */}
 

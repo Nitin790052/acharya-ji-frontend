@@ -10,6 +10,9 @@ import UserDetailPage from "./pages/userManagment/UserDetailPage";
 import ActiveUsers from "./pages/userManagment/ActiveUsers";
 import BlockedUsers from "./pages/userManagment/BlockedUsers";
 import PagePlaceholder from "./pages/PagePlaceholder";
+import PendingVendors from "./pages/vendors/PendingVendors";
+import ApprovedVendors from "./pages/vendors/ApprovedVendors";
+import AllVendors from "./pages/vendors/AllVendors";
 import CategoryManager from "./pages/vendors/CategoryManager";
 import NavbarManager from "./pages/content/NavbarManager";
 import CarouselManager from "./pages/content/CarouselManager";
@@ -65,9 +68,10 @@ function AdminApp() {
           <Route path="users/active" element={<ActiveUsers />} />
           <Route path="users/blocked" element={<BlockedUsers />} />
           <Route path="vendors/category/:categoryType" element={<CategoryManager />} />
-          <Route path="vendors/all" element={<PagePlaceholder title="All Vendors" />} />
-          <Route path="vendors/pending" element={<PagePlaceholder title="Pending Approvals" />} />
-          <Route path="vendors/approved" element={<PagePlaceholder title="Approved Vendors" />} />
+          <Route path="vendors/all" element={<AllVendors />} />
+          <Route path="vendors/pending" element={<PendingVendors />} />
+          <Route path="vendors/approved" element={<ApprovedVendors />} />
+
           <Route path="vendors/earnings" element={<PagePlaceholder title="Vendor Earnings" />} />
           <Route path="content/navbar" element={<NavbarManager />} />
           <Route path="content/blogs" element={<BlogManager />} />

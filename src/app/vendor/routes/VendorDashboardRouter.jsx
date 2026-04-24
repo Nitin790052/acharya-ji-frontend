@@ -19,7 +19,7 @@ const VendorDashboardRouter = () => {
 
   if (!user) return null;
 
-  const type = user.vendorType;
+  const type = user.category || user.vendorType;
 
   switch (type) {
     case "Pandit":

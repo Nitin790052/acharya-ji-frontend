@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Camera, Users, MapPin, DollarSign, Building, Calendar, CheckCircle, AlertCircle, Upload, X, Sparkles, Target, Globe, Award, ArrowLeft } from 'lucide-react';
+import DocumentUploadSection from '../../../components/DocumentUploadSection';
 
 export default function EventOrganizer({ commonData, onBack, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -10,7 +11,17 @@ export default function EventOrganizer({ commonData, onBack, onSubmit }) {
     cityCoverage: '',
     equipmentProvided: '',
     startingPrice: '',
-    pastEventPhotos: []
+    pastEventPhotos: [],
+    // Document Details
+    aadharNumber: '',
+    panNumber: '',
+    bankName: '',
+    accountNumber: '',
+    ifscCode: '',
+    // Files
+    aadharFile: null,
+    panFile: null,
+    bankFile: null
   });
 
   const [errors, setErrors] = useState({});
@@ -88,6 +99,16 @@ export default function EventOrganizer({ commonData, onBack, onSubmit }) {
     }
   };
 
+  const handleDocumentFileChange = (e) => {
+    const { name, files } = e.target;
+    if (files && files[0]) {
+      setFormData(prev => ({
+        ...prev,
+        [name]: files[0]
+      }));
+    }
+  };
+
   const removePhoto = (index) => {
     URL.revokeObjectURL(photoPreview[index]);
     
@@ -133,6 +154,10 @@ export default function EventOrganizer({ commonData, onBack, onSubmit }) {
       newErrors.pastEventPhotos = 'Please upload at least one past event photo';
     }
 
+    if (formData.aadharNumber && formData.aadharNumber.length !== 12) {
+      newErrors.aadharNumber = 'Aadhar number must be 12 digits';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -150,17 +175,13 @@ export default function EventOrganizer({ commonData, onBack, onSubmit }) {
       const completeData = {
         ...commonData,
         ...formData,
-        vendorType: 'eventOrganizer',
-        submittedAt: new Date().toISOString(),
-        registrationId: `EVENT-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+        vendorType: 'eventOrganizer'
       };
       
       console.log('Complete Registration Data:', completeData);
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       if (onSubmit) {
-        onSubmit();
+        await onSubmit(completeData);
       }
       
     } catch (error) {
@@ -709,6 +730,15 @@ export default function EventOrganizer({ commonData, onBack, onSubmit }) {
                     </div>
                   )}
                 </div>
+
+                {/* Document Upload Section */}
+                <DocumentUploadSection 
+                  formData={formData} 
+                  handleInputChange={handleInputChange} 
+                  handleFileChange={handleDocumentFileChange} 
+                  errors={errors} 
+                  vendorType="eventOrganizer" 
+                />
 
               </div> {/* End of Form Grid */}
 

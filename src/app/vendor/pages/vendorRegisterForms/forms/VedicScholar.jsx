@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BookOpen, Users, Book, School, Globe, FileText, AlertCircle, ArrowLeft, Sparkles, Target, Star } from 'lucide-react';
+import DocumentUploadSection from '../../../components/DocumentUploadSection';
 
 export default function VedicScholar({ commonData, onBack, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -9,7 +10,17 @@ export default function VedicScholar({ commonData, onBack, onSubmit }) {
     teachingModes: [],
     affiliatedInstitution: '',
     researchArea: '',
-    languages: ''
+    languages: '',
+    // Document Details
+    aadharNumber: '',
+    panNumber: '',
+    bankName: '',
+    accountNumber: '',
+    ifscCode: '',
+    // Files
+    aadharFile: null,
+    panFile: null,
+    bankFile: null
   });
 
   const [errors, setErrors] = useState({});
@@ -23,6 +34,16 @@ export default function VedicScholar({ commonData, onBack, onSubmit }) {
     }));
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const { name, files } = e.target;
+    if (files && files[0]) {
+      setFormData(prev => ({
+        ...prev,
+        [name]: files[0]
+      }));
     }
   };
 
@@ -69,6 +90,10 @@ export default function VedicScholar({ commonData, onBack, onSubmit }) {
       newErrors.languages = 'Please enter languages known';
     }
 
+    if (formData.aadharNumber && formData.aadharNumber.length !== 12) {
+      newErrors.aadharNumber = 'Aadhar number must be 12 digits';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -86,17 +111,13 @@ export default function VedicScholar({ commonData, onBack, onSubmit }) {
       const completeData = {
         ...commonData,
         ...formData,
-        vendorType: 'vedicScholar',
-        submittedAt: new Date().toISOString(),
-        registrationId: `SCHOLAR-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+        vendorType: 'vedicScholar'
       };
       
       console.log('Complete Registration Data:', completeData);
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       if (onSubmit) {
-        onSubmit();
+        await onSubmit(completeData);
       }
       
     } catch (error) {
@@ -539,6 +560,15 @@ export default function VedicScholar({ commonData, onBack, onSubmit }) {
                     </p>
                   </div>
                 </div>
+
+                {/* Document Upload Section */}
+                <DocumentUploadSection 
+                  formData={formData} 
+                  handleInputChange={handleInputChange} 
+                  handleFileChange={handleFileChange} 
+                  errors={errors} 
+                  vendorType="vedicScholar" 
+                />
 
               </div> {/* End of Form Grid */}
 

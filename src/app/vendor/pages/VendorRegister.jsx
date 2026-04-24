@@ -25,10 +25,50 @@ const VendorRegister = () => {
   };
 
   // Handle form submission from vendor forms
-  const handleFormSubmit = () => {
-    console.log("Form submitted successfully!");
-    setFormSubmitted(true);
-    setStep(3); // Move to success page
+  const handleFormSubmit = async (finalData) => {
+    console.log("Starting final submission with data:", finalData);
+    
+    try {
+      const formData = new FormData();
+      
+      // Separate files from other data
+      Object.keys(finalData).forEach(key => {
+        const value = finalData[key];
+        
+        if (value instanceof File) {
+          formData.append(key, value);
+        } else if (Array.isArray(value) && value.some(item => item instanceof File)) {
+          // Handle arrays of files (like pastEventPhotos)
+          value.forEach(file => {
+            if (file instanceof File) {
+              formData.append(key, file);
+            }
+          });
+        } else if (typeof value === 'object' && value !== null) {
+          formData.append(key, JSON.stringify(value));
+        } else {
+          formData.append(key, value);
+        }
+      });
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/vendors/register`, {
+        method: 'POST',
+        body: formData,
+        // Don't set Content-Type header when sending FormData, the browser will do it automatically with boundary
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setFormSubmitted(true);
+        setStep(3); // Move to success page
+      } else {
+        alert(result.message || "Registration failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Submission Error:", error);
+      alert("Something went wrong. Please check your connection and try again.");
+    }
   };
 
   // Map category from CommonInfo to vendorType

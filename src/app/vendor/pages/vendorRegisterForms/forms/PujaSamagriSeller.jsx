@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Store, Package, Truck, RefreshCw, ShoppingBag, Tag, AlertCircle, Home, ArrowLeft, Sparkles, Target, Star } from 'lucide-react';
+import DocumentUploadSection from '../../../components/DocumentUploadSection';
 
 export default function PujaSamagriSeller({ commonData, onBack, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -10,7 +11,17 @@ export default function PujaSamagriSeller({ commonData, onBack, onSubmit }) {
     deliveryAvailable: '',
     deliveryCities: '',
     returnPolicy: '',
-    wholesaleAvailable: ''
+    wholesaleAvailable: '',
+    // Document Details
+    aadharNumber: '',
+    panNumber: '',
+    bankName: '',
+    accountNumber: '',
+    ifscCode: '',
+    // Files
+    aadharFile: null,
+    panFile: null,
+    bankFile: null
   });
 
   const [errors, setErrors] = useState({});
@@ -46,6 +57,16 @@ export default function PujaSamagriSeller({ commonData, onBack, onSubmit }) {
     }));
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const { name, files } = e.target;
+    if (files && files[0]) {
+      setFormData(prev => ({
+        ...prev,
+        [name]: files[0]
+      }));
     }
   };
 
@@ -89,6 +110,10 @@ export default function PujaSamagriSeller({ commonData, onBack, onSubmit }) {
       newErrors.wholesaleAvailable = 'Please specify if wholesale is available';
     }
 
+    if (formData.aadharNumber && formData.aadharNumber.length !== 12) {
+      newErrors.aadharNumber = 'Aadhar number must be 12 digits';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -106,17 +131,13 @@ export default function PujaSamagriSeller({ commonData, onBack, onSubmit }) {
       const completeData = {
         ...commonData,
         ...formData,
-        vendorType: 'pujaSamagriSeller',
-        submittedAt: new Date().toISOString(),
-        registrationId: `PUJA-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+        vendorType: 'pujaSamagriSeller'
       };
       
       console.log('Complete Registration Data:', completeData);
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       if (onSubmit) {
-        onSubmit();
+        await onSubmit(completeData);
       }
       
     } catch (error) {
@@ -692,6 +713,15 @@ export default function PujaSamagriSeller({ commonData, onBack, onSubmit }) {
                     )}
                   </div>
                 </div>
+
+                {/* Document Upload Section */}
+                <DocumentUploadSection 
+                  formData={formData} 
+                  handleInputChange={handleInputChange} 
+                  handleFileChange={handleFileChange} 
+                  errors={errors} 
+                  vendorType="pujaSamagriSeller" 
+                />
 
               </div> {/* End of Form Grid */}
 
