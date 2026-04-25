@@ -22,6 +22,8 @@ import {
   ChevronRight
 } from 'lucide-react';
 
+import VendorPageHeader from '../../../components/VendorPageHeader';
+
 const NotificationsPuja = () => {
   const [filter, setFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(false);
@@ -283,36 +285,11 @@ const NotificationsPuja = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40 px-3 py-1.5 border border-orange-100">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          {/* Title Section */}
-         
-           <div className="text-left sm:text-left flex-1 md:flex ">
-            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[26px] font-semibold uppercase leading-tight text-orange-900">
-               Notifications
-            </h1>
-            <p className="text-sm text-gray-600 mt-1 md:mt-2.5 lg:mt-2.5">
-              Stay updated with business activities
-            </p>
-          </div>
-          
-          {/* Notifications Count */}
-          <div className="flex items-center gap-3">
-            {unreadCount > 0 && (
-              <div className="relative">
-                <div className="w-8 h-8 bg-orange-50 rounded flex items-center justify-center">
-                  <Bell className="w-5 h-5 text-orange-500" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-[17px] h-[17px] bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                  {unreadCount}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50/30">
+      <VendorPageHeader 
+        title="NOTIFICATIONS" 
+        subtitle="Stay updated with your business activities" 
+      />
 
       {/* Loading Overlay */}
       {isLoading && (

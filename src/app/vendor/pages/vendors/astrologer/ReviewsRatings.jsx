@@ -12,6 +12,8 @@ import {
   Building, Hash, Crown, Sparkles
 } from 'lucide-react';
 
+import VendorPageHeader from '../../../components/VendorPageHeader';
+
 const ReviewsRatings = () => {
   const [filter, setFilter] = useState('all'); // all, 5-star, 4-star, 3-star, 2-star, 1-star
   const [sortBy, setSortBy] = useState('recent'); // recent, highest, lowest, helpful
@@ -438,48 +440,11 @@ const ReviewsRatings = () => {
   };
 
   return (
-    <div className=''>
-      {/* Header Section - Exact Same Styling */}
-      <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40  
-                    px-3 py-1.5 border border-orange-100">
-        
-        {/* Mobile: Column, Desktop: Row */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          
-          {/* Title Section */}
-          <div className="text-left sm:text-left flex items-end gap-2">
-            <div>
-              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[26px] font-semibold text-orange-900 uppercase
-                            leading-tight">
-                Reviews & Ratings
-              </h1>
-              {/* Mobile: Below heading, Desktop: Right side */}
-              <p className="sm:hidden text-sm text-gray-600 mt-0.5">
-                Manage your reputation and client feedback
-              </p>
-            </div>
-            
-            {/* Desktop: Right side of heading */}
-            <p className="hidden sm:block text-sm text-gray-600 mb-0.5">
-              Manage your reputation and client feedback
-            </p>
-          </div>
-          
-          {/* Right Section */}
-          <div className="flex justify-end sm:justify-end mt-1 sm:mt-0">
-            <button
-              onClick={() => {}}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 
-                         bg-gradient-to-r from-orange-500 to-orange-600 text-white 
-                         rounded-lg hover:from-orange-600 hover:to-orange-700 
-                         transition-all shadow-sm text-sm"
-            >
-              <Download className="w-4 h-4" />
-              Export Reviews
-            </button>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50/30">
+      <VendorPageHeader 
+        title="REVIEWS & RATINGS" 
+        subtitle="Manage your reputation and client feedback" 
+      />
 
       {/* Main Content */}
       <div className="space-y-4 p-6">

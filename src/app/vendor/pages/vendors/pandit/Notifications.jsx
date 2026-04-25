@@ -41,6 +41,8 @@ const WhatsAppIcon = ({ className = "w-4 h-4" }) => (
   </svg>
 );
 
+import VendorPageHeader from '../../../components/VendorPageHeader';
+
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState('all');
@@ -221,47 +223,11 @@ const Notifications = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/*Main Header */}
-      <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40  
-                px-3 py-1.5 border border-orange-100 mb-4">
-
-        {/* Mobile: Column, Desktop: Row */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-
-          {/* Title Section - Original size */}
-          <div className="text-left sm:text-left flex items-end gap-2">
-            <div>
-              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[26px] font-semibold text-orange-900 uppercase
-                   leading-tight">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <Bell className="w-6 h-6 text-orange-500" />
-                      {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                          {unreadCount}
-                        </span>
-                      )}
-                    </div>
-                    <h1 className="text-[26px] font-bold text-gray-800">Notifications</h1>
-                  </div>
-                </div>
-              </h1>
-              {/* Mobile: Below heading, Desktop: Right side */}
-              <p className="sm:hidden text-sm text-gray-600 mt-0.5">
-                Never miss important updates
-              </p>
-            </div>
-
-            {/* Desktop: Right side of heading */}
-            <p className="hidden sm:block text-sm text-gray-600 mb-0.5">
-              Never miss important updates
-            </p>
-          </div>
-
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50/30">
+      <VendorPageHeader 
+        title="MY NOTIFICATIONS" 
+        subtitle="Stay updated with latest activity and alerts" 
+      />
       <div className="space-y-4 px-6 pb-6 pt-2">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-3">

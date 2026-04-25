@@ -11,6 +11,8 @@ import {
   Database, Lock, Unlock, Users
 } from 'lucide-react';
 
+import VendorPageHeader from '../../../components/VendorPageHeader';
+
 const ReportsKundli = () => {
   const [activeTab, setActiveTab] = useState('clients');
   const [searchTerm, setSearchTerm] = useState('');
@@ -365,48 +367,11 @@ const ReportsKundli = () => {
   };
 
   return (
-    <div className=''>
-      {/* Header Section - Exact Same Styling */}
-      <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40  
-                    px-3 py-1.5 border border-orange-100">
-        
-        {/* Mobile: Column, Desktop: Row */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          
-          {/* Title Section */}
-          <div className="text-left sm:text-left flex items-end gap-2">
-            <div>
-              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[26px] font-semibold text-orange-900 uppercase
-                            leading-tight">
-                Clients & Kundli Library
-              </h1>
-              {/* Mobile: Below heading, Desktop: Right side */}
-              <p className="sm:hidden text-sm text-gray-600 mt-0.5">
-                Manage client memory and birth charts
-              </p>
-            </div>
-            
-            {/* Desktop: Right side of heading */}
-            <p className="hidden sm:block text-sm text-gray-600 mb-0.5">
-              Manage client memory and birth charts
-            </p>
-          </div>
-          
-          {/* Right Section */}
-          <div className="flex justify-end sm:justify-end mt-1 sm:mt-0">
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 
-                         bg-gradient-to-r from-orange-400 to-orange-500 text-white 
-                         rounded-lg hover:from-orange-600 hover:to-orange-700 
-                         transition-all shadow-sm text-sm"
-            >
-              <Plus className="w-4 h-4" />
-              Add Client
-            </button>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50/30">
+      <VendorPageHeader 
+        title="CLIENTS & KUNDLI LIBRARY" 
+        subtitle="Manage client records and birth charts" 
+      />
 
       {/* Main Content */}
       <div className="space-y-4 p-6">

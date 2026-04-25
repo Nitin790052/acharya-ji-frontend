@@ -14,6 +14,8 @@ import {
   ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
 
+import VendorPageHeader from '../../../components/VendorPageHeader';
+
 const ChatCenter = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [selectedChat, setSelectedChat] = useState(null);
@@ -317,40 +319,11 @@ const ChatCenter = () => {
   };
 
   return (
-    <div className='min-h-screen'>
-      {/* Header Section */}
-      <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40  
-                    px-3 py-1.5 border border-orange-100">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          <div className="text-left sm:text-left flex items-end gap-2">
-            <div>
-              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[26px] font-semibold text-orange-900 uppercase
-                            leading-tight">
-                Messages & Chat Center
-              </h1>
-              <p className="sm:hidden text-sm text-gray-600 mt-0.5">
-                Follow-up, clarification, and reminder messages
-              </p>
-            </div>
-            <p className="hidden sm:block text-sm text-gray-600 mb-0.5">
-              Follow-up, clarification, and reminder messages
-            </p>
-          </div>
-          
-          <div className="flex justify-end sm:justify-end mt-1 sm:mt-0">
-            <button
-              onClick={() => setShowNewChatModal(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 
-                         bg-gradient-to-r from-orange-400 to-orange-500 text-white 
-                         rounded-lg hover:from-orange-600 hover:to-orange-700 
-                         transition-all shadow-sm text-sm"
-            >
-              <Plus className="w-4 h-4" />
-              New Message
-            </button>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50/30">
+      <VendorPageHeader 
+        title="MESSAGES & CHAT CENTER" 
+        subtitle="Follow-up, clarification, and reminder messages" 
+      />
 
       {/* Main Content - Only left side visible */}
       <div className="h-[calc(100vh-120px)] p-6">

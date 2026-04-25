@@ -26,6 +26,8 @@ import {
   Copy
 } from 'lucide-react';
 
+import VendorPageHeader from '../../../components/VendorPageHeader';
+
 const StoreProfile = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [isLoading, setIsLoading] = useState(false);
@@ -219,21 +221,11 @@ const StoreProfile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40 px-3 py-1.5 border border-orange-100">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          {/* Title Section */}
-             <div className="text-left sm:text-left flex-1 md:flex ">
-            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[26px] font-semibold uppercase leading-tight text-orange-900">
-                Store Profile & KYC
-            </h1>
-            <p className="text-sm text-gray-600 mt-1 md:mt-2.5 lg:mt-2.5">
-             Manage your store details, KYC, and business information
-            </p>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50/30">
+      <VendorPageHeader 
+        title="STORE PROFILE & KYC" 
+        subtitle="Manage your store details, KYC, and business information" 
+      />
 
       {/* Loading Overlay */}
       {isLoading && (

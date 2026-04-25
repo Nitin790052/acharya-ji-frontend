@@ -13,6 +13,8 @@ import {
   Globe as GlobeIcon, CreditCard, Bell
 } from 'lucide-react';
 
+import VendorPageHeader from '../../../components/VendorPageHeader';
+
 const ProfileBranding = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [showEditModal, setShowEditModal] = useState(false);
@@ -209,57 +211,11 @@ const ProfileBranding = () => {
   };
 
   return (
-    <div className=''>
-      {/* Header Section - Exact Same Styling */}
-      <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40  
-                    px-3 py-1.5 border border-orange-100">
-        
-        {/* Mobile: Column, Desktop: Row */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          
-          {/* Title Section */}
-          <div className="text-left sm:text-left flex items-end gap-2">
-            <div>
-              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[26px] font-semibold text-orange-900 uppercase
-                            leading-tight">
-                Profile & Branding
-              </h1>
-              {/* Mobile: Below heading, Desktop: Right side */}
-              <p className="sm:hidden text-sm text-gray-600 mt-0.5">
-                Build your professional astrologer identity
-              </p>
-            </div>
-            
-            {/* Desktop: Right side of heading */}
-            <p className="hidden sm:block text-sm text-gray-600 mb-0.5">
-              Build your professional astrologer identity
-            </p>
-          </div>
-          
-          {/* Right Section */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => window.print()}
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 
-                         border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 
-                         transition-all shadow-sm text-sm"
-            >
-              <Printer className="w-4 h-4" />
-              Print Profile
-            </button>
-            <button
-              onClick={() => setShowEditModal(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 
-                         bg-gradient-to-r from-orange-400 to-orange-500 text-white 
-                         rounded-lg hover:from-orange-600 hover:to-orange-700 
-                         transition-all shadow-sm text-sm"
-            >
-              <Edit className="w-4 h-4" />
-              Edit Profile
-            </button>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50/30">
+      <VendorPageHeader 
+        title="PROFILE & BRANDING" 
+        subtitle="Build your professional astrologer identity" 
+      />
 
       {/* Main Content */}
       <div className="p-6">

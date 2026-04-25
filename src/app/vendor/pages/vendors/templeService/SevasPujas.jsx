@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import VendorPageHeader from '../../../components/VendorPageHeader';
+
 import {
   PlusCircle,
   Edit3,
@@ -378,24 +380,11 @@ const SevasPujas = () => {
           </div>
         </div>
       )}
+      <VendorPageHeader 
+        title="SEVAS & PUJAS" 
+        subtitle="Manage temple services and offerings" 
+      />
 
-      {/* Header - EXACT match - ONLY HEADING & SUBTITLE - NO BUTTON, NO NOTIFICATION */}
-      <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40 px-3 py-1.5 border border-orange-100">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          <div className="text-left sm:text-left flex-1 md:flex">
-            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[26px] font-semibold uppercase leading-tight text-orange-900">
-              Sevas & Pujas
-            </h1>
-            <p className="text-sm text-gray-600 mt-1 md:mt-2.5 lg:mt-2.5">
-              Manage temple services and offerings
-            </p>
-
-            {/* EMPTY - NO BUTTON, NO NOTIFICATION BELL */}
-          <div className="flex items-center gap-3"></div>
-          </div>
-          
-        </div>
-      </div>
 
       {/* Main Content - EXACT spacing match */}
       <div className="space-y-4 p-6">

@@ -34,6 +34,8 @@ import image4 from "../../../../../assets/vendor/pujaKits/Diwali Puja Kit.webp"
 import image5 from "../../../../../assets/vendor/pujaKits/Daily Puja Basic Kit.webp"
 import image6 from "../../../../../assets/vendor/pujaKits/Maha Shivratri Kit.webp"
 
+import VendorPageHeader from '../../../components/VendorPageHeader';
+
 const PujaKits = () => {
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
   const [isLoading, setIsLoading] = useState(false);
@@ -354,20 +356,11 @@ const PujaKits = () => {
   };
 
   return (
-    <div className="min-h-screen transition-colors duration-200 bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40 px-3 py-1.5 border border-orange-100">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          <div className="text-left sm:text-left flex-1 md:flex ">
-            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[26px] font-semibold uppercase leading-tight text-orange-900">
-              Puja Kits
-            </h1>
-            <p className="text-sm text-gray-600 mt-1 md:mt-2.5 lg:mt-2.5">
-              Increase order value with bundled products
-            </p>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen transition-colors duration-200 bg-gray-50/30">
+      <VendorPageHeader 
+        title="PUJA KITS" 
+        subtitle="Increase order value with bundled products" 
+      />
 
       {/* Loading Overlay */}
       {isLoading && (

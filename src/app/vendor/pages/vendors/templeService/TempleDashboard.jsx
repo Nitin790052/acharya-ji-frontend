@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import VendorPageHeader from '../../../components/VendorPageHeader';
+
 import { 
   // Core Icons
   ShoppingBag,
@@ -346,39 +348,11 @@ const TempleDashboard = () => {
         </div>
       )}
 
-      {/* Header - EXACT match to NotificationsPuja - NO FIXED POSITION */}
-      <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40 px-3 py-1.5 border border-orange-100">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          {/* Title Section - EXACT match */}
-          <div className="text-left sm:text-left flex-1 md:flex">
-            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[26px] font-semibold uppercase leading-tight text-orange-900">
-              Temple Dashboard
-            </h1>
-            <p className="text-sm text-gray-600 mt-1 md:mt-2.5 lg:mt-2.5">
-              श्री राम मंदिर • Welcome back
-            </p>
-          </div>
-          
-          {/* Notification Count - EXACT match */}
-          <div className="flex items-center gap-3">
-           
-            <div className="text-right">
-              <p className="text-sm text-gray-600">Today</p>
-              <p className="text-[15px] font-semibold text-orange-500">22 Feb 2026</p>
-            </div>
-             {unreadCount > 0 && (
-              <div className="relative">
-                <div className="w-8 h-8 bg-orange-50 rounded flex items-center justify-center">
-                  <Bell className="w-5 h-5 text-orange-500" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-[17px] h-[17px] bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                  {unreadCount}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <VendorPageHeader 
+        title="TEMPLE DASHBOARD" 
+        subtitle="Manage all seva, puja & hall bookings" 
+      />
+
 
       {/* Main Content - EXACT spacing match */}
       <div className="space-y-4 p-6">

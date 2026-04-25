@@ -40,7 +40,9 @@ const CartCheckout = lazy(() => import("./pages/CartCheckout"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 
 // Vendor Pages
+const UniversalResourceManager = lazy(() => import("./app/vendor/pages/vendors/common/UniversalResourceManager"));
 const MyPujaServices = lazy(() => import("../src/app/vendor/pages/vendors/pandit/MyPujaServices"));
+
 const Bookings = lazy(() => import("../src/app/vendor/pages/vendors/pandit/Bookings"));
 const AvailabilityCalendar = lazy(() => import("../src/app/vendor/pages/vendors/pandit/AvailabilityCalender"));
 const WalletEarning = lazy(() => import("../src/app/vendor/pages/vendors/pandit/WalletEarning"));
@@ -255,49 +257,64 @@ const App = () => (
                                         }
                                     >
                                         <Route index element={<VendorDashboardRouter />} />
-                                        <Route path="services" element={<MyPujaServices />} />
-                                        <Route path="bookings" element={<Bookings />} />
+                                        
+                                        {/* Dynamic Resource Management - Handles ALL listing pages */}
+                                        <Route path="manage/:resourceType" element={<UniversalResourceManager />} />
+                                        
+                                        {/* Standard Mappings for Sidebar Compatibility */}
+                                        <Route path="services" element={<UniversalResourceManager overrideType="services" />} />
+                                        <Route path="bookings" element={<UniversalResourceManager overrideType="bookings" />} />
+                                        <Route path="orders_puja" element={<UniversalResourceManager overrideType="orders_puja" />} />
+                                        <Route path="products_puja" element={<UniversalResourceManager overrideType="products_puja" />} />
+                                        <Route path="inventory_puja" element={<UniversalResourceManager overrideType="inventory_puja" />} />
+                                        <Route path="pujaKits_puja" element={<UniversalResourceManager overrideType="pujaKits_puja" />} />
+                                        <Route path="offers_puja" element={<UniversalResourceManager overrideType="offers_puja" />} />
+                                        <Route path="delivery_puja" element={<UniversalResourceManager overrideType="delivery_puja" />} />
+                                        <Route path="settlement_puja" element={<UniversalResourceManager overrideType="settlement_puja" />} />
+                                        <Route path="ratings_puja" element={<UniversalResourceManager overrideType="ratings_puja" />} />
+                                        <Route path="notifications_puja" element={<UniversalResourceManager overrideType="notifications_puja" />} />
+                                        <Route path="settings_puja" element={<UniversalResourceManager overrideType="settings_puja" />} />
+
+                                        {/* Temple & Others */}
+                                        <Route path="sevas_temple" element={<UniversalResourceManager overrideType="sevas_temple" />} />
+                                        <Route path="bookings_temple" element={<UniversalResourceManager overrideType="bookings_temple" />} />
+                                        <Route path="donations_temple" element={<UniversalResourceManager overrideType="donations_temple" />} />
+                                        <Route path="events_temple" element={<UniversalResourceManager overrideType="events_temple" />} />
+                                        <Route path="staff_temple" element={<UniversalResourceManager overrideType="staff_temple" />} />
+                                        <Route path="wallet_temple" element={<UniversalResourceManager overrideType="wallet_temple" />} />
+                                        <Route path="settings_temple" element={<UniversalResourceManager overrideType="settings_temple" />} />
+
+                                        {/* Event Organizer */}
+                                        <Route path="events_Organizer" element={<UniversalResourceManager overrideType="events_Organizer" />} />
+                                        <Route path="bookings_Organizer" element={<UniversalResourceManager overrideType="bookings_Organizer" />} />
+                                        <Route path="attendees_Organizer" element={<UniversalResourceManager overrideType="attendees_Organizer" />} />
+                                        <Route path="wallet_Organizer" element={<UniversalResourceManager overrideType="wallet_Organizer" />} />
+                                        <Route path="analytics_Organizer" element={<UniversalResourceManager overrideType="analytics_Organizer" />} />
+                                        <Route path="settings_Organizer" element={<UniversalResourceManager overrideType="settings_Organizer" />} />
+
+                                        {/* Spiritual Healer & Guide */}
+                                        <Route path="sessions" element={<UniversalResourceManager overrideType="sessions" />} />
+                                        <Route path="articles" element={<UniversalResourceManager overrideType="articles" />} />
+                                        <Route path="followers" element={<UniversalResourceManager overrideType="followers" />} />
+                                        <Route path="clients" element={<UniversalResourceManager overrideType="clients" />} />
+                                        <Route path="requests" element={<UniversalResourceManager overrideType="requests" />} />
+                                        <Route path="publications" element={<UniversalResourceManager overrideType="publications" />} />
+
+                                        {/* Core Pages (Still using specific components) */}
                                         <Route path="calendar" element={<AvailabilityCalendar />} />
                                         <Route path="wallet" element={<WalletEarning />} />
                                         <Route path="reviews" element={<ReviewsRating />} />
                                         <Route path="notifications" element={<Notifications />} />
                                         <Route path="settings" element={<ProfileKyc />} />
-
-                                        <Route path="consultations" element={<MyConsultations />} />
+                                        <Route path="chatCenter" element={<ChatCenter />} />
+                                        <Route path="profile" element={<ProfileBranding />} />
                                         <Route path="reports" element={<ReportsKundli />} />
                                         <Route path="generate" element={<GeneratorKundliReports />} />
                                         <Route path="availability" element={<AvailabilitySchedule />} />
-                                        <Route path="wallet" element={<WalletEarnings />} />
-                                        <Route path="reviews" element={<ReviewsRatings />} />
-                                        <Route path="chatCenter" element={<ChatCenter />} />
+                                        <Route path="consultations" element={<MyConsultations />} />
                                         <Route path="astroNotifications" element={<AstroNotifications />} />
-                                        <Route path="profile" element={<ProfileBranding />} />
-
-                                        <Route path="orders_puja" element={<Orders />} />
-                                        <Route path="products_puja" element={<Products />} />
-                                        <Route path="pujaKits_puja" element={<PujaKits />} />
-                                        <Route path="inventory_puja" element={<Inventory />} />
-                                        <Route path="offers_puja" element={<OffersCoupons />} />
-                                        <Route path="delivery_puja" element={<ShippingDelivery />} />
-                                        <Route path="settlement_puja" element={<WalletPuja />} />
-                                        <Route path="ratings_puja" element={<ReviewsPuja />} />
-                                        <Route path="notifications_puja" element={<NotificationPuja />} />
-                                        <Route path="settings_puja" element={<StoreProfile />} />
-
-                                        <Route path="sevas_temple" element={<SevasPujas />} />
-                                        <Route path="bookings_temple" element={<BookingsTemple />} />
-                                        <Route path="donations_temple" element={<Donations />} />
-                                        <Route path="events_temple" element={<EventsTemple />} />
-                                        <Route path="staff_temple" element={<StaffManagement />} />
-                                        <Route path="wallet_temple" element={<WalletTemple />} />
-                                        <Route path="settings_temple" element={<SettingsTemple />} />
-
-                                        <Route path="events_Organizer" element={<OrganizerEvents />} />
-                                        <Route path="bookings_Organizer" element={<Bookings_Organizer />} />
-                                        <Route path="attendees_Organizer" element={<Attendees_Organizer />} />
-                                        <Route path="wallet_Organizer" element={<WalletPayments_Organizer />} />
-                                        <Route path="analytics_Organizer" element={<Analytics_Oraganizer />} />
-                                        <Route path="settings_Organizer" element={<ProfileSettings_Organizer />} />
+                                        <Route path="astroReviews" element={<ReviewsRatings />} />
+                                        <Route path="astroWallet" element={<WalletEarnings />} />
                                     </Route>
 
                                     <Route path="/admin-acharya/*" element={<AdminApp />} />

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { 
-  Bell, Circle, MessageSquare, Menu, User, Wallet, Settings, 
-  HelpCircle, LogOut, ChevronDown, CreditCard, Shield, 
-  FileText, Globe, Smartphone, Mail, Key 
+import {
+  Bell, Circle, MessageSquare, Menu, User, Wallet, Settings,
+  HelpCircle, LogOut, ChevronDown, CreditCard, Shield,
+  FileText, Globe, Smartphone, Mail, Key
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
@@ -10,7 +10,7 @@ import { useAuth } from '../auth/AuthContext';
 const Header = ({ toggleSidebar }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [activeSection, setActiveSection] = useState(null);
-  
+
   const navigate = useNavigate();
   const { logout, user } = useAuth();
 
@@ -127,10 +127,9 @@ const Header = ({ toggleSidebar }) => {
                 {section.icon}
                 <span className="text-sm font-medium text-gray-200">{section.title}</span>
               </div>
-              <ChevronDown 
-                className={`h-4 w-4 text-gray-400 transition-transform ${
-                  activeSection === section.id ? 'rotate-180' : ''
-                }`}
+              <ChevronDown
+                className={`h-4 w-4 text-gray-400 transition-transform ${activeSection === section.id ? 'rotate-180' : ''
+                  }`}
               />
             </button>
 
@@ -241,7 +240,7 @@ const Header = ({ toggleSidebar }) => {
                 <span>{item.label}</span>
               </button>
             ))}
-            
+
             {section.id !== 'support' && (
               <div className="mx-2 my-1 h-px bg-gray-700"></div>
             )}
@@ -275,14 +274,14 @@ const Header = ({ toggleSidebar }) => {
       <div className="flex items-center justify-between">
         {/* Left side */}
         <div className='flex items-center gap-1 sm:gap-2 flex-1 min-w-0'>
-          <button 
+          <button
             onClick={toggleSidebar}
             className="lg:hidden p-1.5 rounded-md text-amber-300 hover:bg-gray-800 mr-2 flex-shrink-0"
             aria-label="Toggle menu"
           >
             <Menu className="h-5 w-5" />
           </button>
-          
+
           <div className="flex items-center gap-2 sm:hidden min-w-0">
             <div className="h-7 w-7 rounded-full bg-gradient-to-br from-white to-gray-100 flex items-center justify-center text-amber-800 text-xs font-bold border border-amber-300">
               {userInitials}
@@ -313,7 +312,7 @@ const Header = ({ toggleSidebar }) => {
           <div className='hidden sm:block px-1'>
             <span className='text-white text-lg sm:text-2xl font-normal'>|</span>
           </div>
-          
+
           <div className='relative'>
             <button className='p-1 sm:p-1.5  rounded-lg hover:bg-orange-200 hover:text-gray-900'>
               <MessageSquare className='w-4 h-4 sm:w-5 sm:h-5 text-white hover:text-gray-900' />
@@ -325,7 +324,7 @@ const Header = ({ toggleSidebar }) => {
 
           {/* MOBILE: Profile Dropdown */}
           <div className="sm:hidden relative">
-            <button 
+            <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="p-1 rounded-lg hover:bg-gray-800"
             >
@@ -336,8 +335,8 @@ const Header = ({ toggleSidebar }) => {
 
             {isProfileOpen && (
               <>
-                <div 
-                  className="fixed inset-0 z-40" 
+                <div
+                  className="fixed inset-0 z-40"
                   onClick={() => setIsProfileOpen(false)}
                 />
                 {renderMobileDropdown()}
@@ -351,9 +350,9 @@ const Header = ({ toggleSidebar }) => {
               <Circle className="h-2 w-2 text-green-500 fill-green-500 animate-pulse" />
               <span className="text-xs text-green-400 font-medium">Online</span>
             </div>
-            
+
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="flex items-center gap-1 p-1 rounded-lg hover:bg-gray-800 group"
               >
@@ -365,8 +364,8 @@ const Header = ({ toggleSidebar }) => {
 
               {isProfileOpen && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-40" 
+                  <div
+                    className="fixed inset-0 z-40"
                     onClick={() => setIsProfileOpen(false)}
                   />
                   {renderDesktopDropdown()}

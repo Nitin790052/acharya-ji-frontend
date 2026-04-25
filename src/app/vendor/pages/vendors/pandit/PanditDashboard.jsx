@@ -18,6 +18,8 @@ import {
   FileText
 } from 'lucide-react';
 
+import VendorPageHeader from '../../../components/VendorPageHeader';
+
 const PanditDashboard = () => {
   const [timeLeft, setTimeLeft] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -230,25 +232,11 @@ const PanditDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-    <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40  
-                px-3 py-1.5 border border-orange-100">
-  
-  {/* Mobile: Column, Desktop: Row */}
-  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-    
-    {/* Title Section - Original size */}
-    <div className="text-left sm:text-left flex-1">
-      <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[26px] font-semibold text-orange-900 uppercase
-                       leading-tight">
-        Acharya dashboard
-      </h1>
-      
-    </div>
-    
-   
-  </div>
-</div>
+    <div className="min-h-screen bg-gray-50/30">
+      <VendorPageHeader 
+        title="ACHARYA DASHBOARD" 
+        subtitle="Manage your daily pujas and bookings" 
+      />
      
       {/* Loading Overlay */}
       {isLoading && (

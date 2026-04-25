@@ -11,7 +11,7 @@ const VendorDashboardLayout = () => {
     <div className="min-h-screen bg-gray-100 overflow-x-hidden">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
@@ -31,7 +31,7 @@ const VendorDashboardLayout = () => {
         <div className="flex-1 flex flex-col min-h-0 w-full max-w-full overflow-x-hidden">
           {/* Header - Fixed height */}
           <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-          
+
           {/* Main Content - Scrollable */}
           <main className="flex-1 min-h-0 overflow-y-auto">
             <div className=" bg-gray-50">

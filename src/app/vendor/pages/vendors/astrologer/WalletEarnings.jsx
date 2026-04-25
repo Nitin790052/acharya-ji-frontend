@@ -13,6 +13,8 @@ import {
   Smartphone, Mail, QrCode, History
 } from 'lucide-react';
 
+import VendorPageHeader from '../../../components/VendorPageHeader';
+
 const WalletEarnings = () => {
   const [timeFilter, setTimeFilter] = useState('month'); // day, week, month, year
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
@@ -304,54 +306,11 @@ const WalletEarnings = () => {
   const minValue = Math.min(...chartData);
 
   return (
-    <div className=''>
-      {/* Header Section - Exact Same Styling */}
-      <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40  
-                    px-3 py-1.5 border border-orange-100">
-        
-        {/* Mobile: Column, Desktop: Row */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          
-          {/* Title Section */}
-          <div className="text-left sm:text-left flex items-end gap-2">
-            <div>
-              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[26px] font-semibold text-orange-900 uppercase
-                            leading-tight">
-                Wallet & Earnings
-              </h1>
-              {/* Mobile: Below heading, Desktop: Right side */}
-              <p className="sm:hidden text-sm text-gray-600 mt-0.5">
-                Track your income and manage payouts
-              </p>
-            </div>
-            
-            {/* Desktop: Right side of heading */}
-            <p className="hidden sm:block text-sm text-gray-600 mb-0.5">
-              Track your income and manage payouts
-            </p>
-          </div>
-          
-          {/* Right Section */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowWithdrawModal(true)}
-              disabled={earningsData.available <= 0}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm transition-all ${
-                earningsData.available > 0
-                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700'
-                  : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              <Download className="w-4 h-4" />
-              Withdraw
-            </button>
-            <button className="flex items-center gap-1.5 px-2.5 py-1.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
-              <Receipt className="w-4 h-4" />
-              Statement
-            </button>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50/30">
+      <VendorPageHeader 
+        title="WALLET & EARNINGS" 
+        subtitle="Track your income and manage payouts" 
+      />
 
       {/* Main Content */}
       <div className="space-y-4 p-6">

@@ -12,6 +12,8 @@ import {
   Home, Globe, Building, User
 } from 'lucide-react';
 
+import VendorPageHeader from '../../../components/VendorPageHeader';
+
 const AstroNotifications = () => {
   const [activeFilter, setActiveFilter] = useState('all'); // all, important, finance, messages, unread
   const [showFilters, setShowFilters] = useState(false);
@@ -337,65 +339,11 @@ const AstroNotifications = () => {
   };
 
   return (
-    <div className=''>
-      {/* Header Section - Exact Same Styling */}
-      <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40  
-                    px-3 py-1.5 border border-orange-100">
-        
-        {/* Mobile: Column, Desktop: Row */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          
-          {/* Title Section */}
-          <div className="text-left sm:text-left flex items-end gap-2">
-            <div>
-              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[26px] font-semibold text-orange-900 uppercase
-                            leading-tight">
-                AstroNotifications Center
-              </h1>
-              {/* Mobile: Below heading, Desktop: Right side */}
-              <p className="sm:hidden text-sm text-gray-600 mt-0.5">
-                Stay updated with alerts and updates
-              </p>
-            </div>
-            
-            {/* Desktop: Right side of heading */}
-            <p className="hidden sm:block text-sm text-gray-600 mb-0.5">
-              Stay updated with alerts and updates
-            </p>
-          </div>
-          
-          {/* Right Section */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setDoNotDisturb(!doNotDisturb)}
-              className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm ${
-                doNotDisturb
-                  ? 'bg-gradient-to-r from-red-500 to-red-600 text-white'
-                  : 'border border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              {doNotDisturb ? (
-                <>
-                  <BellOff className="w-4 h-4" />
-                  DND On
-                </>
-              ) : (
-                <>
-                  <Bell className="w-4 h-4" />
-                  DND Off
-                </>
-              )}
-            </button>
-            <button
-              onClick={markAllAsRead}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm"
-            >
-              <Check className="w-4 h-4" />
-              Mark All Read
-            </button>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50/30">
+      <VendorPageHeader 
+        title="NOTIFICATIONS CENTER" 
+        subtitle="Stay updated with alerts and updates" 
+      />
 
       {/* Main Content */}
       <div className="space-y-4 p-6">

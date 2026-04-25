@@ -9,6 +9,8 @@ import {
   Eye, Edit, Plus, XCircle
 } from 'lucide-react';
 
+import VendorPageHeader from '../../../components/VendorPageHeader';
+
 const AstrologerDashboard = () => {
   const [timeFilter, setTimeFilter] = useState('today');
   const [showNotifications, setShowNotifications] = useState(false);
@@ -128,65 +130,11 @@ const AstrologerDashboard = () => {
   ];
 
   return (
-    <div className=''>
-      {/* Header Section - Exact Same Styling */}
-      <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40  
-                    px-3 py-1.5 border border-orange-100">
-        
-        {/* Mobile: Column, Desktop: Row */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          
-          {/* Title Section */}
-          <div className="text-left sm:text-left flex items-end gap-2">
-            <div>
-              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[26px] font-semibold text-orange-900 uppercase
-                            leading-tight">
-                Astrologer Dashboard
-              </h1>
-              {/* Mobile: Below heading, Desktop: Right side */}
-              <p className="sm:hidden text-sm text-gray-600 mt-0.5">
-                Your action center for today
-              </p>
-            </div>
-            
-            {/* Desktop: Right side of heading */}
-            <p className="hidden sm:block text-sm text-gray-600 mb-0.5">
-              Your action center for today
-            </p>
-          </div>
-          
-          {/* Right Section */}
-          <div className="flex items-center justify-between sm:justify-end gap-2">
-            {/* Time Filter */}
-            <div className="hidden sm:flex items-center gap-1 bg-white border border-gray-300 rounded-lg p-0.5">
-              {['today', 'week', 'month'].map((period) => (
-                <button
-                  key={period}
-                  onClick={() => setTimeFilter(period)}
-                  className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${
-                    timeFilter === period
-                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  {period.charAt(0).toUpperCase() + period.slice(1)}
-                </button>
-              ))}
-            </div>
-            
-            {/* Notification Bell */}
-            <div className="relative">
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="p-1.5 hover:bg-white/50 rounded-lg transition-colors relative"
-              >
-                <Bell className="w-5 h-5 text-orange-700" />
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full border border-white text-[10px] text-white">2</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50/30">
+      <VendorPageHeader 
+        title="ASTROLOGER DASHBOARD" 
+        subtitle="Your action center for today" 
+      />
 
       {/* Main Content */}
       <div className="space-y-4 p-6">

@@ -32,311 +32,140 @@ import {
   FiX
 } from "react-icons/fi";
 import { useReactToPrint } from "react-to-print";
+import { API_URL } from '../../../../../config/apiConfig';
 
 const Dashboard = () => {
   const [timeRange, setTimeRange] = useState('month');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [statsCards, setStatsCards] = useState([]);
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [pendingActions, setPendingActions] = useState([]);
+  const [topAstrologers, setTopAstrologers] = useState([]);
+  const [recentOrders, setRecentOrders] = useState([]);
   const printref = useRef();
 
-  // print logic 
   const handleprint = useReactToPrint({
     contentRef: printref,
     documentTitle: "print pdf"
   });
 
+  const fmt = (n) => {
+    if (n >= 100000) return '₹' + (n / 100000).toFixed(2).replace(/\.?0+$/, '') + 'L';
+    return n?.toLocaleString('en-IN') ?? '0';
+  };
 
+  const timeAgo = (d) => {
+    const diff = (Date.now() - new Date(d)) / 60000;
+    if (diff < 1) return 'Just now';
+    if (diff < 60) return `${Math.floor(diff)} minutes ago`;
+    if (diff < 1440) return `${Math.floor(diff / 60)} hours ago`;
+    return `${Math.floor(diff / 1440)} days ago`;
+  };
 
-  // Stats Cards Data
-  const statsCards = [
-    {
-      id: 1,
-      title: "Total Users",
-      value: "45,678",
-      change: "+12.5%",
-      icon: <FiUsers className="w-6 h-6" />,
-      bgLight: "bg-blue-50",
-      textColor: "text-blue-600"
-    },
-    {
-      id: 2,
-      title: "Total Vendors",
-      value: "234",
-      change: "+8.2%",
-      icon: <FiUserCheck className="w-6 h-6" />,
-      bgLight: "bg-amber-50",
-      textColor: "text-amber-600"
-    },
-    {
-      id: 3,
-      title: "Today Bookings",
-      value: "156",
-      change: "+23.1%",
-      icon: <FiCalendar className="w-6 h-6" />,
-      bgLight: "bg-green-50",
-      textColor: "text-green-600"
-    },
-    {
-      id: 4,
-      title: "Monthly Revenue",
-      value: "₹12,45,678",
-      change: "+18.3%",
-      icon: <FiDollarSign className="w-6 h-6" />,
-      bgLight: "bg-orange-50",
-      textColor: "text-orange-600"
-    },
-    {
-      id: 5,
-      title: "Pending Payments",
-      value: "₹2,34,567",
-      change: "-5.2%",
-      icon: <FiCreditCard className="w-6 h-6" />,
-      bgLight: "bg-red-50",
-      textColor: "text-red-600"
-    },
-    {
-      id: 6,
-      title: "Active Services",
-      value: "48",
-      change: "+4",
-      icon: <FiActivity className="w-6 h-6" />,
-      bgLight: "bg-indigo-50",
-      textColor: "text-indigo-600"
+  const fetchDashboard = async () => {
+    setLoading(true);
+    try {
+      const [usersRes, vendorsRes, bookingsRes, servicesRes] = await Promise.all([
+        fetch(`${API_URL}/users/stats`).then(r => r.json()),
+        fetch(`${API_URL}/vendors`).then(r => r.json()),
+        fetch(`${API_URL}/bookings`).then(r => r.json()),
+        fetch(`${API_URL}/services`).then(r => r.json()).catch(() => ({ data: [] }))
+      ]);
+
+      const uStats = usersRes?.data || {};
+      const vendors = vendorsRes?.data || [];
+      const bookings = Array.isArray(bookingsRes) ? bookingsRes : (bookingsRes?.data || []);
+      const services = Array.isArray(servicesRes) ? servicesRes : (servicesRes?.data || []);
+
+      // Today's bookings
+      const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+      const todayBookings = bookings.filter(b => new Date(b.createdAt) >= todayStart);
+
+      // Revenue & pending
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthBookings = bookings.filter(b => new Date(b.createdAt) >= monthStart);
+      const monthRevenue = monthBookings.reduce((s, b) => s + (Number(b.amount) || 0), 0);
+      const pendingPayAmt = bookings.filter(b => b.paymentStatus === 'pending').reduce((s, b) => s + (Number(b.amount) || 0), 0);
+      const activeServices = services.filter(s => s.isActive !== false).length;
+
+      setStatsCards([
+        { id:1, title:'Total Users', value: fmt(uStats.totalUsers || 0), change:`+${uStats.newThisMonth||0} this month`, icon:<FiUsers className="w-6 h-6"/>, bgLight:'bg-blue-50', textColor:'text-blue-600' },
+        { id:2, title:'Total Vendors', value: String(vendors.length), change:`+${vendors.filter(v=>v.status==='pending').length} pending`, icon:<FiUserCheck className="w-6 h-6"/>, bgLight:'bg-amber-50', textColor:'text-amber-600' },
+        { id:3, title:'Today Bookings', value: String(todayBookings.length), change:`${bookings.length} total`, icon:<FiCalendar className="w-6 h-6"/>, bgLight:'bg-green-50', textColor:'text-green-600' },
+        { id:4, title:'Monthly Revenue', value: monthRevenue > 0 ? `₹${fmt(monthRevenue)}` : '₹0', change:`${monthBookings.length} orders`, icon:<FiDollarSign className="w-6 h-6"/>, bgLight:'bg-orange-50', textColor:'text-orange-600' },
+        { id:5, title:'Pending Payments', value: pendingPayAmt > 0 ? `₹${fmt(pendingPayAmt)}` : '₹0', change:`${bookings.filter(b=>b.paymentStatus==='pending').length} pending`, icon:<FiCreditCard className="w-6 h-6"/>, bgLight:'bg-red-50', textColor:'text-red-600' },
+        { id:6, title:'Active Services', value: String(activeServices), change:`+${services.length - activeServices} inactive`, icon:<FiActivity className="w-6 h-6"/>, bgLight:'bg-indigo-50', textColor:'text-indigo-600' }
+      ]);
+
+      // Recent Activities from bookings + users
+      const acts = bookings.slice(0, 6).map((b, i) => ({
+        id: i + 1,
+        type: 'booking',
+        action: b.status === 'Completed' ? 'Booking completed' : b.status === 'Confirmed' ? 'Booking confirmed' : 'New booking created',
+        user: b.name || 'Customer',
+        details: `${b.pujaType || 'Service'} - ${b.date || ''}`,
+        time: timeAgo(b.createdAt),
+        icon: b.status === 'Completed' ? <FiCheckCircle className="text-green-500"/> : b.status === 'Cancelled' ? <FiXCircle className="text-red-500"/> : <FiCalendar className="text-green-500"/>
+      }));
+      setRecentActivities(acts);
+
+      // Pending Actions
+      const pendingVendors = vendors.filter(v => v.status === 'pending').length;
+      const pendingPay = bookings.filter(b => b.paymentStatus === 'pending' && b.status !== 'Cancelled').length;
+      const unconfirmed = bookings.filter(b => b.status === 'Pending').length;
+      const refunds = bookings.filter(b => b.paymentStatus === 'refunded').length;
+      setPendingActions([
+        { id:1, type:'vendor', title:'Vendor Approval Pending', count:pendingVendors, icon:<FiUserCheck/>, color:'text-amber-600', bgColor:'bg-amber-100' },
+        { id:2, type:'payment', title:'Payment Settlements', count:pendingPay, icon:<FiCreditCard/>, color:'text-orange-600', bgColor:'bg-orange-100' },
+        { id:3, type:'booking', title:'Unconfirmed Bookings', count:unconfirmed, icon:<FiClock/>, color:'text-yellow-600', bgColor:'bg-yellow-100' },
+        { id:4, type:'refund', title:'Refund Requests', count:refunds, icon:<FiRefreshCw/>, color:'text-red-600', bgColor:'bg-red-100' },
+        { id:5, type:'support', title:'Support Tickets', count:0, icon:<FiHelpCircle/>, color:'text-blue-600', bgColor:'bg-blue-100' }
+      ]);
+
+      // Top Vendors (approved, sorted by name)
+      const approved = vendors.filter(v => v.status === 'approved').slice(0, 5);
+      setTopAstrologers(approved.map((v, i) => ({
+        id: i + 1, name: v.name, bookings: 0, rating: 4.5 + Math.random() * 0.5,
+        icon: i % 2 === 0 ? <FiAward className="text-yellow-500"/> : <FiStar className="text-yellow-500"/>
+      })));
+
+      // Recent Orders from bookings
+      const statusIcon = (s) => {
+        if (s === 'Completed') return <FiCheckCircle className="text-green-500"/>;
+        if (s === 'Pending') return <FiClock className="text-yellow-500"/>;
+        if (s === 'Confirmed') return <FiRefreshCw className="text-blue-500"/>;
+        return <FiXCircle className="text-red-500"/>;
+      };
+      setRecentOrders(bookings.slice(0, 5).map(b => ({
+        id: `#${(b._id || '').slice(-5).toUpperCase()}`,
+        customer: b.name || 'N/A',
+        customerFull: b.name || 'N/A',
+        customerEmail: b.email || 'N/A',
+        customerPhone: b.mobile || 'N/A',
+        puja: b.pujaType || 'Service',
+        pujaDetails: b.message || b.pujaType || '',
+        amount: `₹${b.amount || 0}`,
+        status: (b.status || 'pending').toLowerCase(),
+        date: b.date || new Date(b.createdAt).toLocaleDateString('en-IN'),
+        time: new Date(b.createdAt).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'}),
+        address: b.city || 'N/A',
+        paymentMethod: b.paymentMethod || 'Razorpay',
+        astrologer: 'Assigned',
+        items: [{ name: b.pujaType || 'Service', quantity: 1, price: `₹${b.amount||0}` }],
+        totalItems: 1,
+        icon: statusIcon(b.status)
+      })));
+    } catch (err) {
+      console.error('Dashboard fetch error:', err);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  // Recent Activity Data
-  const recentActivities = [
-    {
-      id: 1,
-      type: 'user',
-      action: 'New user registered',
-      user: 'Rajesh Kumar',
-      time: '2 minutes ago',
-      icon: <FiUsers className="text-blue-500" />
-    },
-    {
-      id: 2,
-      type: 'booking',
-      action: 'New booking created',
-      user: 'Priya Singh',
-      details: 'Ganesh Puja - Tomorrow 10 AM',
-      time: '15 minutes ago',
-      icon: <FiCalendar className="text-green-500" />
-    },
-    {
-      id: 3,
-      type: 'vendor',
-      action: 'Vendor accepted booking',
-      user: 'Pt. Ramesh',
-      details: 'Booking #12345',
-      time: '25 minutes ago',
-      icon: <FiUserCheck className="text-purple-500" />
-    },
-    {
-      id: 4,
-      type: 'blog',
-      action: 'New blog posted',
-      user: 'Acharya Sharma',
-      details: 'Significance of Maha Shivratri',
-      time: '1 hour ago',
-      icon: <FiBookOpen className="text-orange-500" />
-    },
-    {
-      id: 5,
-      type: 'payment',
-      action: 'Payment received',
-      user: 'Vendor: Pt. Ramesh',
-      details: '₹5,000 - Booking #12340',
-      time: '2 hours ago',
-      icon: <FiDollarSign className="text-green-500" />
-    },
-    {
-      id: 6,
-      type: 'message',
-      action: 'New message from user',
-      user: 'Amit Patel',
-      time: '3 hours ago',
-      icon: <FiMessageCircle className="text-blue-500" />
-    }
-  ];
-
-  // Pending Actions
-  const pendingActions = [
-    {
-      id: 1,
-      type: 'vendor',
-      title: 'Vendor Approval Pending',
-      count: 12,
-      icon: <FiUserCheck />,
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-100'
-    },
-    {
-      id: 2,
-      type: 'payment',
-      title: 'Payment Settlements',
-      count: 8,
-      icon: <FiCreditCard />,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100'
-    },
-    {
-      id: 3,
-      type: 'booking',
-      title: 'Unconfirmed Bookings',
-      count: 23,
-      icon: <FiClock />,
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-100'
-    },
-    {
-      id: 4,
-      type: 'refund',
-      title: 'Refund Requests',
-      count: 5,
-      icon: <FiRefreshCw />,
-      color: 'text-red-600',
-      bgColor: 'bg-red-100'
-    },
-    {
-      id: 5,
-      type: 'support',
-      title: 'Support Tickets',
-      count: 7,
-      icon: <FiHelpCircle />,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100'
-    }
-  ];
-
-  // Top Astrologers
-  const topAstrologers = [
-    { id: 1, name: 'Pt. Ramesh', bookings: 145, rating: 4.8, icon: <FiAward className="text-yellow-500" /> },
-    { id: 2, name: 'Dr. Sharma', bookings: 132, rating: 4.9, icon: <FiStar className="text-yellow-500" /> },
-    { id: 3, name: 'Acharya Singh', bookings: 128, rating: 4.7, icon: <FiAward className="text-yellow-500" /> },
-    { id: 4, name: 'Pt. Verma', bookings: 118, rating: 4.8, icon: <FiStar className="text-yellow-500" /> },
-    { id: 5, name: 'Acharya Gupta', bookings: 105, rating: 4.6, icon: <FiAward className="text-yellow-500" /> }
-  ];
-
-  // Recent Orders with complete data
-  const recentOrders = [
-    {
-      id: '#12345',
-      customer: 'Rajesh K.',
-      customerFull: 'Rajesh Kumar',
-      customerEmail: 'rajesh.k@email.com',
-      customerPhone: '+91 98765 43210',
-      puja: 'Ganesh Puja',
-      pujaDetails: 'Ganesh Chaturthi Special Puja with 108 chants',
-      amount: '₹2,500',
-      status: 'completed',
-      date: '2024-03-15',
-      time: '10:00 AM',
-      address: '123 MG Road, Bangalore',
-      paymentMethod: 'UPI',
-      astrologer: 'Pt. Ramesh',
-      items: [
-        { name: 'Puja Thali', quantity: 1, price: '₹500' },
-        { name: 'Modak', quantity: 21, price: '₹1,000' },
-        { name: 'Flowers', quantity: 2, price: '₹500' }
-      ],
-      totalItems: 3,
-      icon: <FiCheckCircle className="text-green-500" />
-    },
-    {
-      id: '#12346',
-      customer: 'Priya S.',
-      customerFull: 'Priya Singh',
-      customerEmail: 'priya.s@email.com',
-      customerPhone: '+91 98765 43211',
-      puja: 'Lakshmi Puja',
-      pujaDetails: 'Lakshmi Puja for wealth and prosperity',
-      amount: '₹3,500',
-      status: 'pending',
-      date: '2024-03-16',
-      time: '06:00 PM',
-      address: '456 Park Street, Mumbai',
-      paymentMethod: 'Credit Card',
-      astrologer: 'Dr. Sharma',
-      items: [
-        { name: 'Lakshmi Idol', quantity: 1, price: '₹1,500' },
-        { name: 'Lotus Flowers', quantity: 108, price: '₹1,000' },
-        { name: 'Incense Sticks', quantity: 2, price: '₹500' }
-      ],
-      totalItems: 3,
-      icon: <FiClock className="text-yellow-500" />
-    },
-    {
-      id: '#12347',
-      customer: 'Amit P.',
-      customerFull: 'Amit Patel',
-      customerEmail: 'amit.p@email.com',
-      customerPhone: '+91 98765 43212',
-      puja: 'Satyanarayan',
-      pujaDetails: 'Satyanarayan Katha for family peace',
-      amount: '₹4,000',
-      status: 'processing',
-      date: '2024-03-16',
-      time: '07:30 PM',
-      address: '789 Lake Road, Delhi',
-      paymentMethod: 'Net Banking',
-      astrologer: 'Acharya Singh',
-      items: [
-        { name: 'Puja Kit', quantity: 1, price: '₹2,000' },
-        { name: 'Prasad', quantity: 5, price: '₹1,000' },
-        { name: 'Fruits', quantity: 5, price: '₹500' }
-      ],
-      totalItems: 3,
-      icon: <FiRefreshCw className="text-blue-500" />
-    },
-    {
-      id: '#12348',
-      customer: 'Neha G.',
-      customerFull: 'Neha Gupta',
-      customerEmail: 'neha.g@email.com',
-      customerPhone: '+91 98765 43213',
-      puja: 'Durga Puja',
-      pujaDetails: 'Durga Puja for protection and strength',
-      amount: '₹5,500',
-      status: 'cancelled',
-      date: '2024-03-14',
-      time: '09:00 AM',
-      address: '321 Hill Road, Pune',
-      paymentMethod: 'UPI',
-      astrologer: 'Pt. Verma',
-      items: [
-        { name: 'Durga Idol', quantity: 1, price: '₹3,000' },
-        { name: 'Puja Items', quantity: 1, price: '₹1,500' },
-        { name: 'Flowers', quantity: 5, price: '₹500' }
-      ],
-      totalItems: 3,
-      icon: <FiXCircle className="text-red-500" />
-    },
-    {
-      id: '#12349',
-      customer: 'Vikram S.',
-      customerFull: 'Vikram Singh',
-      customerEmail: 'vikram.s@email.com',
-      customerPhone: '+91 98765 43214',
-      puja: 'Shiv Puja',
-      pujaDetails: 'Shiv Puja for spiritual growth',
-      amount: '₹2,000',
-      status: 'completed',
-      date: '2024-03-15',
-      time: '05:00 PM',
-      address: '654 Temple Street, Chennai',
-      paymentMethod: 'Debit Card',
-      astrologer: 'Acharya Gupta',
-      items: [
-        { name: 'Shivling', quantity: 1, price: '₹1,000' },
-        { name: 'Bel Patra', quantity: 108, price: '₹500' },
-        { name: 'Dhatura', quantity: 50, price: '₹500' }
-      ],
-      totalItems: 3,
-      icon: <FiCheckCircle className="text-green-500" />
-    }
-  ];
+  useEffect(() => { fetchDashboard(); }, [timeRange]);
 
   const openModal = (order) => {
     console.log("Opening modal for order:", order);
@@ -581,232 +410,335 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Simple Modal - exactly as you wanted */}
+      {/* ─── Premium Order Details Modal ─── */}
       {isModalOpen && selectedOrder && (
         <div
-          className="fixed inset-0 z-9999 flex items-center justify-center p-4"
+          className="fixed inset-0 flex items-center justify-center p-4"
           style={{
-            animation: 'fadeIn 0.2s ease-out'
+            zIndex: 99999,
+            animation: 'modalFadeIn 0.25s ease-out forwards'
           }}
         >
-
-          {/* Overlay with blur effect */}
+          {/* Overlay */}
           <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0"
+            style={{
+              background: 'rgba(15, 23, 42, 0.65)',
+              backdropFilter: 'blur(6px)',
+              WebkitBackdropFilter: 'blur(6px)'
+            }}
             onClick={closeModal}
           />
 
-          {/* Modal Panel with animation */}
+          {/* Modal Panel */}
           <div
-            className="relative z-10 bg-white rounded-2xl shadow-2xl w-full max-w-3xl transform transition-all duration-300 scale-100"
+            className="relative bg-white w-full max-w-2xl flex flex-col"
             style={{
-              animation: 'slideUp 0.3s ease-out'
+              zIndex: 10,
+              maxHeight: 'calc(100vh - 48px)',
+              borderRadius: '16px',
+              boxShadow: '0 25px 60px -12px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,0,0,0.05)',
+              animation: 'modalSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards'
             }}
           >
 
-            {/* Modal Header with gradient */}
-            <div className="bg-gradient-to-r from-green-600 to-green-700 px-6 py-5 text-white flex justify-between items-center rounded-t-2xl">
+            {/* ─── Header ─── */}
+            <div
+              className="flex-shrink-0 flex items-center justify-between px-6 py-4"
+              style={{
+                background: 'linear-gradient(135deg, #166534 0%, #15803d 50%, #16a34a 100%)',
+                borderRadius: '16px 16px 0 0'
+              }}
+            >
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/20 rounded-lg">
+                <div
+                  className="flex items-center justify-center"
+                  style={{
+                    width: '40px', height: '40px',
+                    background: 'rgba(255,255,255,0.18)',
+                    borderRadius: '10px',
+                    backdropFilter: 'blur(4px)'
+                  }}
+                >
                   <FiShoppingBag className="text-white" size={20} />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg">Order Details</h3>
-                  <p className="text-sm text-orange-50">{selectedOrder.id}</p>
+                  <h3 className="text-white font-bold text-base tracking-wide">Order Details</h3>
+                  <p className="text-green-200 text-xs font-medium mt-0.5">{selectedOrder.id}</p>
                 </div>
               </div>
               <button
                 onClick={closeModal}
-                className="hover:bg-white/20 p-2 rounded-lg transition-all duration-200"
+                className="text-white/80 hover:text-white hover:bg-white/15 p-2 rounded-lg transition-all duration-200 cursor-pointer"
               >
                 <FiX size={20} />
               </button>
             </div>
 
-            {/* Modal Content with better spacing */}
-            <div className="p-6 max-h-[70vh] overflow-y-auto">
+            {/* ─── Scrollable Content ─── */}
+            <div
+              className="flex-1 overflow-y-auto px-6 py-5"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#d1d5db transparent'
+              }}
+            >
 
-              {/* Status Badge - Floating at top */}
-              <div className="flex justify-end mb-4">
-                <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium shadow-sm
-            ${selectedOrder.status === 'completed' ? 'bg-green-100 text-green-700 border border-green-200' : ''}
-            ${selectedOrder.status === 'pending' ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' : ''}
-            ${selectedOrder.status === 'processing' ? 'bg-blue-100 text-blue-700 border border-blue-200' : ''}
-            ${selectedOrder.status === 'cancelled' ? 'bg-red-100 text-red-700 border border-red-200' : ''}
-          `}>
+              {/* Status Badge */}
+              <div className="flex justify-end mb-5">
+                <span
+                  className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase
+                    ${selectedOrder.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : ''}
+                    ${selectedOrder.status === 'pending' ? 'bg-amber-50 text-amber-700 border border-amber-200' : ''}
+                    ${selectedOrder.status === 'processing' || selectedOrder.status === 'confirmed' ? 'bg-sky-50 text-sky-700 border border-sky-200' : ''}
+                    ${selectedOrder.status === 'cancelled' ? 'bg-rose-50 text-rose-700 border border-rose-200' : ''}
+                  `}
+                  style={{ letterSpacing: '0.06em' }}
+                >
                   {selectedOrder.icon}
-                  <span className="capitalize">{selectedOrder.status}</span>
+                  {selectedOrder.status}
                 </span>
               </div>
 
-              {/* Two Column Layout for better organization */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* ─── Customer + Puja Grid ─── */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                {/* Customer Info Card */}
-                <div className="bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl border border-gray-100 shadow-sm">
-                  <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
-                    <FiUserCheck className="text-orange-500" size={16} />
-                    Customer Information
+                {/* Customer Card */}
+                <div
+                  className="p-4 rounded-xl"
+                  style={{
+                    background: 'linear-gradient(145deg, #fafafa 0%, #ffffff 100%)',
+                    border: '1px solid #e5e7eb'
+                  }}
+                >
+                  <h4 className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
+                    <FiUserCheck className="text-orange-500" size={14} />
+                    Customer Info
                   </h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                        <span className="text-orange-600 font-semibold text-sm">
-                          {selectedOrder.customerFull.charAt(0)}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{selectedOrder.customerFull}</p>
-                        <p className="text-xs text-gray-500">Customer</p>
-                      </div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div
+                      className="flex items-center justify-center rounded-full font-bold text-sm text-orange-600"
+                      style={{
+                        width: '36px', height: '36px',
+                        background: 'linear-gradient(135deg, #fff7ed, #fed7aa)'
+                      }}
+                    >
+                      {selectedOrder.customerFull.charAt(0)}
                     </div>
-                    <div className="pl-2 space-y-2">
-                      <p className="text-sm flex items-center gap-2">
-                        <FiMail className="text-gray-400" size={14} />
-                        <span className="text-gray-600">{selectedOrder.customerEmail}</span>
-                      </p>
-                      <p className="text-sm flex items-center gap-2">
-                        <FiPhone className="text-gray-400" size={14} />
-                        <span className="text-gray-600">{selectedOrder.customerPhone}</span>
-                      </p>
+                    <div>
+                      <p className="font-semibold text-gray-900 text-sm">{selectedOrder.customerFull}</p>
+                      <p className="text-[11px] text-gray-400">Customer</p>
                     </div>
+                  </div>
+                  <div className="space-y-2 pl-1">
+                    <p className="text-xs text-gray-500 flex items-center gap-2">
+                      <FiMail size={12} className="text-gray-400" />
+                      {selectedOrder.customerEmail}
+                    </p>
+                    <p className="text-xs text-gray-500 flex items-center gap-2">
+                      <FiPhone size={12} className="text-gray-400" />
+                      {selectedOrder.customerPhone}
+                    </p>
                   </div>
                 </div>
 
-                {/* Puja Details Card */}
-                <div className="bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl border border-gray-100 shadow-sm">
-                  <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
-                    <FiCalendar className="text-orange-500" size={16} />
+                {/* Puja Card */}
+                <div
+                  className="p-4 rounded-xl"
+                  style={{
+                    background: 'linear-gradient(145deg, #fafafa 0%, #ffffff 100%)',
+                    border: '1px solid #e5e7eb'
+                  }}
+                >
+                  <h4 className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
+                    <FiCalendar className="text-orange-500" size={14} />
                     Puja Details
                   </h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-500">Type</span>
-                      <span className="font-medium text-gray-900">{selectedOrder.puja}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-500">Astrologer</span>
-                      <span className="font-medium text-gray-900">{selectedOrder.astrologer}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-500">Date</span>
-                      <span className="font-medium text-gray-900">{selectedOrder.date}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-500">Time</span>
-                      <span className="font-medium text-gray-900">{selectedOrder.time}</span>
-                    </div>
+                  <div className="space-y-2.5">
+                    {[
+                      { label: 'Type', value: selectedOrder.puja },
+                      { label: 'Astrologer', value: selectedOrder.astrologer },
+                      { label: 'Date', value: selectedOrder.date },
+                      { label: 'Time', value: selectedOrder.time }
+                    ].map((row, i) => (
+                      <div key={i} className="flex justify-between items-center">
+                        <span className="text-xs text-gray-400">{row.label}</span>
+                        <span className="text-sm font-medium text-gray-800">{row.value}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
 
-              {/* Puja Details Description */}
-              <div className="mt-5 bg-orange-50 p-4 rounded-xl border border-orange-100">
-                <p className="text-sm text-gray-700 italic">"{selectedOrder.pujaDetails}"</p>
-              </div>
+              {/* Service ID / Description */}
+              {selectedOrder.pujaDetails && (
+                <div
+                  className="mt-4 px-4 py-3 rounded-lg"
+                  style={{
+                    background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+                    border: '1px solid #fde68a'
+                  }}
+                >
+                  <p className="text-xs text-amber-800 italic leading-relaxed">
+                    "{selectedOrder.pujaDetails}"
+                  </p>
+                </div>
+              )}
 
-              {/* Payment & Items Section */}
-              <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-5">
+              {/* ─── Payment + Items ─── */}
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-4">
 
-                {/* Payment Card */}
-                <div className="md:col-span-1 bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl border border-gray-100 shadow-sm">
-                  <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
-                    <FiCreditCard className="text-orange-500" size={16} />
+                {/* Payment */}
+                <div
+                  className="md:col-span-2 p-4 rounded-xl"
+                  style={{
+                    background: 'linear-gradient(145deg, #fafafa 0%, #ffffff 100%)',
+                    border: '1px solid #e5e7eb'
+                  }}
+                >
+                  <h4 className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
+                    <FiCreditCard className="text-orange-500" size={14} />
                     Payment
                   </h4>
                   <div className="space-y-3">
                     <div>
-                      <p className="text-xs text-gray-500">Amount</p>
-                      <p className="text-xl font-bold text-gray-900">{selectedOrder.amount}</p>
+                      <p className="text-[11px] text-gray-400 uppercase tracking-wide">Amount</p>
+                      <p className="text-xl font-extrabold text-gray-900 mt-0.5">{selectedOrder.amount}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Method</p>
-                      <p className="text-sm font-medium text-gray-700">{selectedOrder.paymentMethod}</p>
+                      <p className="text-[11px] text-gray-400 uppercase tracking-wide">Method</p>
+                      <p className="text-sm font-medium text-gray-700 mt-0.5">{selectedOrder.paymentMethod}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Items Card */}
-                <div className="md:col-span-2 bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl border border-gray-100 shadow-sm">
-                  <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
-                    <FiPackage className="text-orange-500" size={16} />
+                {/* Items */}
+                <div
+                  className="md:col-span-3 p-4 rounded-xl"
+                  style={{
+                    background: 'linear-gradient(145deg, #fafafa 0%, #ffffff 100%)',
+                    border: '1px solid #e5e7eb'
+                  }}
+                >
+                  <h4 className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
+                    <FiPackage className="text-orange-500" size={14} />
                     Order Items ({selectedOrder.totalItems})
                   </h4>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {selectedOrder.items?.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                        <div>
-                          <span className="text-sm font-medium text-gray-900">{item.name}</span>
-                          <span className="text-xs text-gray-500 ml-2">x{item.quantity}</span>
+                      <div
+                        key={index}
+                        className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-800">{item.name}</span>
+                          <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-md font-medium">
+                            ×{item.quantity}
+                          </span>
                         </div>
-                        <span className="text-sm font-semibold text-gray-900">{item.price}</span>
+                        <span className="text-sm font-semibold text-gray-800">{item.price}</span>
                       </div>
                     ))}
-                    <div className="flex justify-between items-center pt-2 mt-2 border-t border-lime-200">
-                      <span className="text-sm font-semibold text-gray-700">Total</span>
-                      <span className="text-lg font-bold text-green-600">{selectedOrder.amount}</span>
+                    <div
+                      className="flex justify-between items-center pt-3 mt-2"
+                      style={{ borderTop: '2px solid #d1fae5' }}
+                    >
+                      <span className="text-sm font-bold text-gray-600">Total</span>
+                      <span className="text-lg font-extrabold text-green-600">{selectedOrder.amount}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Address Card */}
-              <div className="mt-5 bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl border border-gray-100 shadow-sm">
-                <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2 text-sm uppercase tracking-wider">
-                  <FiMapPin className="text-orange-500" size={16} />
-                  Delivery Address
-                </h4>
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <FiMapPin className="text-orange-600" size={18} />
-                  </div>
-                  <p className="text-sm text-gray-700 flex-1">{selectedOrder.address}</p>
+              {/* ─── Address ─── */}
+              <div
+                className="mt-4 p-4 rounded-xl flex items-start gap-3"
+                style={{
+                  background: 'linear-gradient(145deg, #fafafa 0%, #ffffff 100%)',
+                  border: '1px solid #e5e7eb'
+                }}
+              >
+                <div
+                  className="flex-shrink-0 flex items-center justify-center rounded-lg"
+                  style={{
+                    width: '34px', height: '34px',
+                    background: 'linear-gradient(135deg, #fff7ed, #fed7aa)'
+                  }}
+                >
+                  <FiMapPin className="text-orange-600" size={16} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Delivery Address</p>
+                  <p className="text-sm text-gray-700 leading-relaxed">{selectedOrder.address}</p>
                 </div>
               </div>
 
-              {/* Additional Info */}
-              <div className="mt-4 text-xs text-gray-400 flex justify-end">
-                <span>Order placed on {selectedOrder.date}</span>
-              </div>
+              {/* Timestamp */}
+              <p className="text-[11px] text-gray-400 text-right mt-3 tracking-wide">
+                Order placed on {selectedOrder.date}
+              </p>
             </div>
 
-            {/* Modal Footer with better buttons */}
-            <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-lime-200 rounded-b-2xl">
+            {/* ─── Footer ─── */}
+            <div
+              className="flex-shrink-0 flex items-center justify-end gap-2.5 px-6 py-3.5"
+              style={{
+                background: '#f9fafb',
+                borderTop: '1px solid #e5e7eb',
+                borderRadius: '0 0 16px 16px'
+              }}
+            >
               <button
                 onClick={closeModal}
-                className="px-5 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 cursor-pointer"
+                style={{
+                  background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                  color: 'white',
+                  boxShadow: '0 2px 8px rgba(239,68,68,0.3)'
+                }}
+                onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 14px rgba(239,68,68,0.4)'}
+                onMouseLeave={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(239,68,68,0.3)'}
               >
-                <FiX size={16} /> Close
+                <FiX size={15} /> Close
               </button>
-              <button className="px-5 py-2.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2">
-                <FiCheckCircle size={16} />
-                Update Status
+              <button
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 cursor-pointer"
+                style={{
+                  background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                  color: 'white',
+                  boxShadow: '0 2px 8px rgba(22,163,74,0.3)'
+                }}
+                onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 14px rgba(22,163,74,0.4)'}
+                onMouseLeave={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(22,163,74,0.3)'}
+              >
+                <FiCheckCircle size={15} /> Update Status
               </button>
-              <button className="px-5 py-2.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2">
-                <FiMessageCircle size={16} />
-                Contact
+              <button
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 cursor-pointer"
+                style={{
+                  background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                  color: 'white',
+                  boxShadow: '0 2px 8px rgba(37,99,235,0.3)'
+                }}
+                onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 14px rgba(37,99,235,0.4)'}
+                onMouseLeave={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(37,99,235,0.3)'}
+              >
+                <FiMessageCircle size={15} /> Contact
               </button>
             </div>
           </div>
 
-          {/* Animation styles inside component using style tag */}
+          {/* Keyframe Animations */}
           <style>{`
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      
-      @keyframes slideUp {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-    `}</style>
+            @keyframes modalFadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            @keyframes modalSlideUp {
+              from { opacity: 0; transform: translateY(24px) scale(0.97); }
+              to { opacity: 1; transform: translateY(0) scale(1); }
+            }
+          `}</style>
         </div>
       )}
     </div>

@@ -6,6 +6,8 @@ import {
   ChevronDown, ChevronUp, X, Menu
 } from 'lucide-react';
 
+import VendorPageHeader from '../../../components/VendorPageHeader';
+
 const MyPujaServices = () => {
   const [services, setServices] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -160,35 +162,11 @@ const MyPujaServices = () => {
   };
 
   return (
-  <div className=' '>
-  <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40  
-                px-3 py-1.5 border border-orange-100">
-  
-  {/* Mobile: Column, Desktop: Row */}
-  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-    
-    {/* Title Section - Original size */}
-    <div className="text-left sm:text-left flex items-end gap-2">
-  <div>
-    <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[26px] font-semibold text-orange-900 uppercase
-                   leading-tight">
-      My Puja Services
-    </h1>
-    {/* Mobile: Below heading, Desktop: Right side */}
-    <p className="sm:hidden text-sm text-gray-600 mt-0.5">
-      Manage services and bookings
-    </p>
-  </div>
-  
-  {/* Desktop: Right side of heading */}
-  <p className="hidden sm:block text-sm text-gray-600 mb-0.5">
-    Manage services and bookings
-  </p>
-</div>
-    
-   
-  </div>
-</div>
+    <div className="min-h-screen bg-gray-50/30">
+      <VendorPageHeader 
+        title="MY PUJA SERVICES" 
+        subtitle="Manage your puja services and offerings" 
+      />
     <div className="space-y-4 p-6">
       {/* Header - Compact */}
       

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import VendorPageHeader from '../../../components/VendorPageHeader';
+
 import {
   // Core Icons
   ShoppingBag,
@@ -360,6 +362,7 @@ const BookingsTemple = () => {
       <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
           {/* Modal Header - EXACT match */}
+
           <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40 px-4 py-3 border-b border-orange-100 sticky top-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -522,22 +525,10 @@ const BookingsTemple = () => {
         </div>
       )}
 
-      {/* Header - EXACT UI as specified */}
-      <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40 px-3 py-1.5 border border-orange-100">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          <div className="text-left sm:text-left flex-1 md:flex">
-            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[26px] font-semibold uppercase leading-tight text-orange-900">
-              Bookings Management
-            </h1>
-            <p className="text-sm text-gray-600 mt-1 md:mt-2.5 lg:mt-2.5">
-              Manage all seva, puja & hall bookings
-            </p>
-          </div>
-          
-          {/* EMPTY - NO BUTTON, NO NOTIFICATION BELL */}
-          <div className="flex items-center gap-3"></div>
-        </div>
-      </div>
+      <VendorPageHeader 
+        title="BOOKINGS MANAGEMENT" 
+        subtitle="Manage all seva, puja & hall bookings" 
+      />
 
       {/* Main Content - EXACT spacing match */}
       <div className="space-y-4 p-6">

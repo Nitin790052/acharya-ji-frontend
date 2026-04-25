@@ -35,6 +35,8 @@ import image4 from "../../../../../assets/vendor/eventsDashboard/Annakut Utsav m
 import image5 from "../../../../../assets/vendor/eventsDashboard/Gita Jayanti.webp"
 import image6 from "../../../../../assets/vendor/eventsDashboard/Mahashivratri Celebration.webp"
 
+import VendorPageHeader from '../../../components/VendorPageHeader';
+
 const OrganizerEvents = () => {
   const [filter, setFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(false);
@@ -683,45 +685,11 @@ const OrganizerEvents = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Loading Overlay - EXACT match */}
-      {isLoading && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 flex flex-col items-center gap-3">
-            <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-sm text-gray-700">Processing...</p>
-          </div>
-        </div>
-      )}
-
-      {/* Header - EXACT match */}
-      <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40 px-3 py-1.5 border border-orange-100">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          <div className="text-left sm:text-left flex-1 md:flex">
-            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[26px] font-semibold uppercase leading-tight text-orange-900">
-              Events Management
-            </h1>
-            <p className="text-sm text-gray-600 mt-1 md:mt-2.5 lg:mt-2.5">
-              Manage temple festivals and programs
-            </p>
-          </div>
-          
-          {/* Notification Bell & Add Button */}
-          <div className="flex items-center gap-3">
-            {unreadCount > 0 && (
-              <div className="relative">
-                <div className="w-8 h-8 bg-orange-50 rounded flex items-center justify-center">
-                  <Bell className="w-5 h-5 text-orange-500" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-[17px] h-[17px] bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                  {unreadCount}
-                </div>
-              </div>
-            )}
-            
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50/30">
+      <VendorPageHeader 
+        title="EVENTS MANAGEMENT" 
+        subtitle="Manage temple festivals and programs" 
+      />
 
       {/* Main Content - EXACT spacing */}
       <div className="space-y-4 p-6">

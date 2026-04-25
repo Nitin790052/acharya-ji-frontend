@@ -13,6 +13,8 @@ import {
   Home, Building, Video
 } from 'lucide-react';
 
+import VendorPageHeader from '../../../components/VendorPageHeader';
+
 const AvailabilitySchedule = () => {
   const [view, setView] = useState('week'); // 'week', 'day', 'month'
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -259,68 +261,11 @@ const AvailabilitySchedule = () => {
   };
 
   return (
-    <div className=''>
-      {/* Header Section - Exact Same Styling */}
-      <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40  
-                    px-3 py-1.5 border border-orange-100">
-        
-        {/* Mobile: Column, Desktop: Row */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          
-          {/* Title Section */}
-          <div className="text-left sm:text-left flex items-end gap-2">
-            <div>
-              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[26px] font-semibold text-orange-900 uppercase
-                            leading-tight">
-                Availability & Schedule
-              </h1>
-              {/* Mobile: Below heading, Desktop: Right side */}
-              <p className="sm:hidden text-sm text-gray-600 mt-0.5">
-                Manage your consultation calendar
-              </p>
-            </div>
-            
-            {/* Desktop: Right side of heading */}
-            <p className="hidden sm:block text-sm text-gray-600 mb-0.5">
-              Manage your consultation calendar
-            </p>
-          </div>
-          
-          {/* Right Section */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={toggleEmergencyPause}
-              className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm transition-all ${
-                isEmergencyPause
-                  ? 'bg-gradient-to-r from-red-500 to-red-600 text-white'
-                  : 'border border-red-500 text-red-600 hover:bg-red-50'
-              }`}
-            >
-              {isEmergencyPause ? (
-                <>
-                  <PlayCircle className="w-4 h-4" />
-                  Resume
-                </>
-              ) : (
-                <>
-                  <PauseCircle className="w-4 h-4" />
-                  Emergency Pause
-                </>
-              )}
-            </button>
-            <button
-              onClick={() => setShowAddSlot(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 
-                         bg-gradient-to-r from-orange-400 to-orange-500 text-white 
-                         rounded-lg hover:from-orange-600 hover:to-orange-700 
-                         transition-all shadow-sm text-sm"
-            >
-              <Plus className="w-4 h-4" />
-              Add Time Slot
-            </button>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50/30">
+      <VendorPageHeader 
+        title="AVAILABILITY & SCHEDULE" 
+        subtitle="Manage your consultation calendar" 
+      />
 
       {/* Main Content */}
       <div className="space-y-4 p-6">
