@@ -10,7 +10,7 @@ import onlineImg from "@/assets/grihaPraveshPuja/online_puja.webp"
 import muhuratImg from "@/assets/grihaPraveshPuja/muhurat.webp"
 
 export default function GrihaPraveshPuja() {
-  const { data: offerings = [], isLoading, isError } = useGetAllOfferingsQuery(undefined, { pollingInterval: 3000 });
+  const { data: offerings = [], isLoading, isError } = useGetAllOfferingsQuery(undefined, { pollingInterval: 60000 });
 
   // Find the offering that matches Griha or Girha Pravesh
   const offering = offerings.find(o =>

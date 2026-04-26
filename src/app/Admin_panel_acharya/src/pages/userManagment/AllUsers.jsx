@@ -63,10 +63,10 @@ const AllUsers = () => {
     searchTerm: searchTerm,
     page: currentPage,
     limit: itemsPerPage
-  }, { pollingInterval: 3000 });
+  }, { pollingInterval: 60000 });
 
   // Fetch statistics
-  const { data: statsResponse } = useGetUserStatsQuery(undefined, { pollingInterval: 3000 });
+  const { data: statsResponse } = useGetUserStatsQuery(undefined, { pollingInterval: 60000 });
 
   // Mutations
   const [updateStatus] = useUpdateUserStatusMutation();

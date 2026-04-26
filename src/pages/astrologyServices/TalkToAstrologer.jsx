@@ -61,7 +61,7 @@ import lakshmiDeviImg from "../../assets/astrologors/AcharyaVikramJoshi.webp";
 
 const TalkToAstrologer = () => {
     const navigate = useNavigate();
-    const banner = usePageBanner({ pollingInterval: 3000 });
+    const banner = usePageBanner({ pollingInterval: 60000 });
     const bannerImage = getImageUrl(banner?.imageUrl);
 
     const [selectedFaq, setSelectedFaq] = useState(null);

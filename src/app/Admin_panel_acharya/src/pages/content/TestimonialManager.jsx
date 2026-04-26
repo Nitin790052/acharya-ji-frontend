@@ -22,7 +22,7 @@ export default function TestimonialManager() {
     const [viewItem, setViewItem] = useState(null);
     const fileRef = useRef();
 
-    const { data: testimonials = [], isLoading } = useGetAllTestimonialsQuery(undefined, { pollingInterval: 3000 });
+    const { data: testimonials = [], isLoading } = useGetAllTestimonialsQuery(undefined, { pollingInterval: 60000 });
     const { data: settings } = useGetTestimonialSettingsQuery();
     const [createTestimonial] = useCreateTestimonialMutation();
     const [updateTestimonial] = useUpdateTestimonialMutation();

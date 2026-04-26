@@ -1,13 +1,21 @@
 import React, { useState } from "react";
 import { Sparkles, Bot } from "lucide-react";
 import BookPoojaDrawer from "./home/BookPoojaDrawer";
+import { useUserAuth } from "@/app/user/auth/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const FloatingButtons = ({ isHomePage }) => {
   const [poojaOpen, setPoojaOpen] = useState(false);
   const [initialService, setInitialService] = useState(null);
+  const { user } = useUserAuth();
+  const navigate = useNavigate();
   
   React.useEffect(() => {
     const handleOpen = (e) => {
+        if (!user) {
+            navigate('/user_login/registeration');
+            return;
+        }
         setPoojaOpen(true);
         if (e.detail) {
             setInitialService(e.detail);
@@ -24,7 +32,13 @@ const FloatingButtons = ({ isHomePage }) => {
       {/* LEFT CENTER - Book Pooja Trigger */}
       <div className="fixed left-0 top-1/2 -translate-y-1/2 z-[999]">
         <button
-          onClick={() => setPoojaOpen(true)}
+          onClick={() => {
+            if (!user) {
+              navigate('/user_login/registeration');
+            } else {
+              setPoojaOpen(true);
+            }
+          }}
           className={`group relative bg-[#E8453C] text-yellow-300 px-2 py-5 rounded-r-xl shadow-[4px_0_15px_rgba(232,69,60,0.25)] flex items-center justify-center gap-3 [writing-mode:vertical-lr] border-y border-r border-[#c73530] transition-all hover:translate-x-1 active:scale-95 ${isHomePage ? 'animate-slide-in-left' : 'opacity-100'}`}
           style={isHomePage ? { animationDelay: '0.5s' } : {}}
         >

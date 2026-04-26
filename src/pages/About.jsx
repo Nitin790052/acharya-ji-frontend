@@ -16,13 +16,13 @@ const LucideIcon = ({ name, className }) => {
 };
 
 const AboutUs = () => {
-  const banner = usePageBanner({ pollingInterval: 3000 });
+  const banner = usePageBanner({ pollingInterval: 60000 });
 
-  const { data: settings, isLoading: loadingSettings } = useGetAboutPageSettingsQuery(undefined, { pollingInterval: 3000 });
-  const { data: servicesData, isLoading: loadingServices } = useGetActiveAboutPageItemsQuery('service', { pollingInterval: 3000 });
-  const { data: whyChooseData, isLoading: loadingWhy } = useGetActiveAboutPageItemsQuery('whyChoose', { pollingInterval: 3000 });
-  const { data: valuesData, isLoading: loadingValues } = useGetActiveAboutPageItemsQuery('value', { pollingInterval: 3000 });
-  const { data: testimonialsData } = useGetActiveTestimonialsQuery(undefined, { pollingInterval: 3000 });
+  const { data: settings, isLoading: loadingSettings } = useGetAboutPageSettingsQuery(undefined, { pollingInterval: 60000 });
+  const { data: servicesData, isLoading: loadingServices } = useGetActiveAboutPageItemsQuery('service', { pollingInterval: 60000 });
+  const { data: whyChooseData, isLoading: loadingWhy } = useGetActiveAboutPageItemsQuery('whyChoose', { pollingInterval: 60000 });
+  const { data: valuesData, isLoading: loadingValues } = useGetActiveAboutPageItemsQuery('value', { pollingInterval: 60000 });
+  const { data: testimonialsData } = useGetActiveTestimonialsQuery(undefined, { pollingInterval: 60000 });
 
   if (loadingSettings || loadingServices || loadingWhy || loadingValues) {
     return (

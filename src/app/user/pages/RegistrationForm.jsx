@@ -22,10 +22,12 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useRegisterUserMutation, useSendOtpMutation, useVerifyOtpMutation } from '../../../services/userApi';
+import { useUserAuth } from '../auth/AuthContext';
 
 const RegistrationForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { login } = useUserAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
@@ -245,14 +247,14 @@ const RegistrationForm = () => {
         return toast.warning('Please verify both Mobile and Email first');
       }
 
-      // Prepare FormData for multipart/form-data support (for image upload)
-      const submitData = new FormData();
-      submitData.append('name', formData.fullName);
-      submitData.append('email', formData.email);
-      submitData.append('phone', formData.mobile);
-      submitData.append('password', formData.password);
-      submitData.append('location', `${formData.city}, ${formData.state}, ${formData.country}`);
-
+      // Prepare data as JSON (since we removed multer for debugging)
+      const submitData = {
+        name: formData.fullName,
+        email: formData.email,
+        phone: formData.mobile,
+        password: formData.password,
+        location: `${formData.city}, ${formData.state}, ${formData.country}`
+      };
 
       // Submit form using RTK Mutation
       toast.promise(
@@ -260,15 +262,22 @@ const RegistrationForm = () => {
         {
           pending: 'Creating your account...',
           success: {
-            render: ({ data }) => {
+            render: ({ data: response }) => {
+              const { token, data: userData } = response;
+              login(userData, token);
+              
+              // If there is a puja to add to cart, the CartCheckout page will handle it via state
               setTimeout(() => {
-                if (location.state?.returnTo) {
-                  navigate('/user_login', { state: location.state });
+                if (location.state?.addPujaToCart) {
+                  // Direct to cart with the item state
+                  navigate('/cart', { state: location.state });
+                } else if (location.state?.returnTo) {
+                  navigate(location.state.returnTo, { state: location.state });
                 } else {
-                  navigate('/user_login');
+                  navigate('/user/dashboard');
                 }
-              }, 2000);
-              return 'Registration successful! Please login.';
+              }, 1500);
+              return 'Registration successful! Welcome to Acharya Ji.';
             }
           },
           error: {

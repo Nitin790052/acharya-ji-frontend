@@ -101,12 +101,28 @@ export default function TempleServices({ commonData, onBack, onSubmit }) {
       newErrors.templeTimings = 'Temple timings are required';
     }
 
-    if (!formData.trustName.trim()) {
+    if (!formData.trustName?.trim()) {
       newErrors.trustName = 'Trust/Committee name is required';
     }
 
     if (formData.aadharNumber && formData.aadharNumber.length !== 12) {
       newErrors.aadharNumber = 'Aadhar number must be 12 digits';
+    }
+
+    if (!formData.bankName) {
+      newErrors.bankName = 'Bank name is required';
+    }
+
+    if (!formData.accountNumber) {
+      newErrors.accountNumber = 'Account number is required';
+    }
+
+    if (!formData.ifscCode) {
+      newErrors.ifscCode = 'IFSC code is required';
+    } else if (formData.ifscCode.length !== 11) {
+      newErrors.ifscCode = 'IFSC must be exactly 11 characters';
+    } else if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifscCode)) {
+      newErrors.ifscCode = 'Invalid IFSC format (e.g. ABCD0123456)';
     }
 
     setErrors(newErrors);

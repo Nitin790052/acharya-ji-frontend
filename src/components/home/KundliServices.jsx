@@ -16,8 +16,8 @@ const KundliServices = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [activeService, setActiveService] = useState(0);
 
-  const { data: services = [], isLoading: isServicesLoading } = useGetActiveKundliServicesQuery(undefined, { pollingInterval: 3000 });
-  const { data: settings, isLoading: isSettingsLoading } = useGetKundliSettingsQuery(undefined, { pollingInterval: 3000 });
+  const { data: services = [], isLoading: isServicesLoading } = useGetActiveKundliServicesQuery(undefined, { pollingInterval: 60000 });
+  const { data: settings, isLoading: isSettingsLoading } = useGetKundliSettingsQuery(undefined, { pollingInterval: 60000 });
 
   useEffect(() => {
     setTimeout(() => setIsVisible(true), 150);

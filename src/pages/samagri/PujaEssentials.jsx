@@ -83,7 +83,7 @@ const products = [
 
 export default function PujaEssentials() {
   const { addItem } = useCart();
-  const banner = usePageBanner({ pollingInterval: 3000 });
+  const banner = usePageBanner({ pollingInterval: 60000 });
   const bannerImage = banner?.imageUrl ? (banner.imageUrl.startsWith('http') ? banner.imageUrl : `${BACKEND_URL}${banner.imageUrl}`) : null;
 
   return (

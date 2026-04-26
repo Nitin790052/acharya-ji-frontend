@@ -18,7 +18,7 @@ import { BACKEND_URL } from "@/config/apiConfig";
 import bgImage from "../../assets/healing/ReikiHealing.webp";
 
 const ReikiHealing = () => {
-    const banner = usePageBanner({ pollingInterval: 3000 });
+    const banner = usePageBanner({ pollingInterval: 60000 });
     const [selectedFaq, setSelectedFaq] = useState(null);
     const [selectedSession, setSelectedSession] = useState(null);
 

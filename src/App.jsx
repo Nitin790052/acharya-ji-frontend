@@ -276,13 +276,13 @@ const App = () => (
                                         <Route path="settings_puja" element={<UniversalResourceManager overrideType="settings_puja" />} />
 
                                         {/* Temple & Others */}
-                                        <Route path="sevas_temple" element={<UniversalResourceManager overrideType="sevas_temple" />} />
-                                        <Route path="bookings_temple" element={<UniversalResourceManager overrideType="bookings_temple" />} />
-                                        <Route path="donations_temple" element={<UniversalResourceManager overrideType="donations_temple" />} />
-                                        <Route path="events_temple" element={<UniversalResourceManager overrideType="events_temple" />} />
-                                        <Route path="staff_temple" element={<UniversalResourceManager overrideType="staff_temple" />} />
-                                        <Route path="wallet_temple" element={<UniversalResourceManager overrideType="wallet_temple" />} />
-                                        <Route path="settings_temple" element={<UniversalResourceManager overrideType="settings_temple" />} />
+                                        <Route path="sevas_temple" element={<SevasPujas />} />
+                                        <Route path="bookings_temple" element={<BookingsTemple />} />
+                                        <Route path="donations_temple" element={<Donations />} />
+                                        <Route path="events_temple" element={<EventsTemple />} />
+                                        <Route path="staff_temple" element={<StaffManagement />} />
+                                        <Route path="wallet_temple" element={<WalletTemple />} />
+                                        <Route path="settings_temple" element={<SettingsTemple />} />
 
                                         {/* Event Organizer */}
                                         <Route path="events_Organizer" element={<UniversalResourceManager overrideType="events_Organizer" />} />

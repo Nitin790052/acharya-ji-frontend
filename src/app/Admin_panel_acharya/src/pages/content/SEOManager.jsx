@@ -40,7 +40,7 @@ const SEOManager = () => {
 
     const { data: seoConfig, isLoading, isFetching } = useGetSEOByPageNameQuery(selectedPage, {
         skip: !selectedPage,
-        pollingInterval: 3000
+        pollingInterval: 60000
     });
     
     const [updateSEO, { isLoading: isUpdating }] = useUpdatePageSEOMutation();

@@ -1,8 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import VendorPageHeader from '../../../components/VendorPageHeader';
+import { useAuth } from '../../../auth/AuthContext';
+import { 
+  useGetVendorBookingsQuery, 
+  useGetVendorDonationsQuery,
+  useGetVendorEventsQuery,
+  useGetVendorStaffQuery
+} from '../../../../../services/vendorApi';
+import { toast } from 'react-toastify';
 
 import { 
-  // Core Icons
   ShoppingBag,
   IndianRupee,
   Gift,
@@ -14,6 +21,7 @@ import {
   Bell,
   ChevronRight,
   Filter,
+  Search,
   Download,
   Eye,
   CheckCircle2,
@@ -21,786 +29,235 @@ import {
   CalendarDays,
   Star,
   MapPin,
-  UserCircle
+  UserCircle,
+  RefreshCw,
+  Award
 } from 'lucide-react';
 
 const TempleDashboard = () => {
-  // ============ STATE MANAGEMENT ============
+  const { user } = useAuth();
   const [filter, setFilter] = useState('all');
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState('today');
 
-  // ============ DASHBOARD STATS ============
-  const [dashboardStats, setDashboardStats] = useState({
-    todayBookings: 24,
-    todayDonations: 12500,
-    upcomingEvents: 3,
-    walletBalance: 284500,
-    staffOnDuty: 8
-  });
+  // RTK Queries
+  const { data: bookingsRes, isLoading: bLoading, refetch: bRefetch } = useGetVendorBookingsQuery(user?._id, { skip: !user?._id });
+  const { data: donationsRes, isLoading: dLoading, refetch: dRefetch } = useGetVendorDonationsQuery(user?._id, { skip: !user?._id });
+  const { data: eventsRes, isLoading: eLoading, refetch: eRefetch } = useGetVendorEventsQuery(user?._id, { skip: !user?._id });
+  const { data: staffRes, isLoading: sLoading, refetch: sRefetch } = useGetVendorStaffQuery(user?._id, { skip: !user?._id });
 
-  // ============ RECENT BOOKINGS ============
-  const [recentBookings] = useState([
-    {
-      id: 'BKG-7890',
-      devotee: 'Rajesh Kumar',
-      seva: 'Annadanam Seva',
-      date: '22 Feb 2026',
-      time: '10:23 AM',
-      amount: 1100,
-      status: 'confirmed',
-      items: 2
-    },
-    {
-      id: 'BKG-7891',
-      devotee: 'Priya Sharma',
-      seva: 'Rudrabhishek',
-      date: '22 Feb 2026',
-      time: '09:45 AM',
-      amount: 501,
-      status: 'pending',
-      items: 1
-    },
-    {
-      id: 'BKG-7892',
-      devotee: 'Amit Patel',
-      seva: 'Satyanarayan Katha',
-      date: '22 Feb 2026',
-      time: '08:30 AM',
-      amount: 2500,
-      status: 'completed',
-      items: 5
-    },
-    {
-      id: 'BKG-7893',
-      devotee: 'Sneha Reddy',
-      seva: 'Abhishek Puja',
-      date: '21 Feb 2026',
-      time: '04:20 PM',
-      amount: 750,
-      status: 'confirmed',
-      items: 1
-    },
-    {
-      id: 'BKG-7894',
-      devotee: 'Vikram Singh',
-      seva: 'Vrat Puja',
-      date: '21 Feb 2026',
-      time: '02:15 PM',
-      amount: 1100,
-      status: 'cancelled',
-      items: 3
-    }
-  ]);
+  const bookings = bookingsRes?.data || [];
+  const donations = donationsRes?.data || [];
+  const events = eventsRes?.data || [];
+  const staff = staffRes?.data || [];
 
-  // ============ RECENT DONATIONS ============
-  const [recentDonations] = useState([
-    {
-      id: 'DON-001',
-      devotee: 'Ramesh Gupta',
-      amount: 5100,
-      date: '22 Feb 2026',
-      time: '11:30 AM',
-      type: 'General Donation',
-      paymentMode: 'UPI',
-      status: 'success'
-    },
-    {
-      id: 'DON-002',
-      devotee: 'Anita Desai',
-      amount: 2001,
-      date: '22 Feb 2026',
-      time: '10:50 AM',
-      type: 'Temple Renovation',
-      paymentMode: 'Card',
-      status: 'success'
-    },
-    {
-      id: 'DON-003',
-      devotee: 'Suresh Nair',
-      amount: 1100,
-      date: '22 Feb 2026',
-      time: '09:15 AM',
-      type: 'Annadanam',
-      paymentMode: 'NetBanking',
-      status: 'pending'
-    },
-    {
-      id: 'DON-004',
-      devotee: 'Meera Krishnan',
-      amount: 501,
-      date: '21 Feb 2026',
-      time: '06:45 PM',
-      type: 'General Donation',
-      paymentMode: 'UPI',
-      status: 'success'
-    },
-    {
-      id: 'DON-005',
-      devotee: 'Arjun Reddy',
-      amount: 2500,
-      date: '21 Feb 2026',
-      time: '03:20 PM',
-      type: 'Festival Donation',
-      paymentMode: 'Cash',
-      status: 'success'
-    }
-  ]);
+  const isLoading = bLoading || dLoading || eLoading || sLoading;
 
-  // ============ UPCOMING EVENTS ============
-  const [upcomingEvents] = useState([
-    {
-      id: 'EVT-001',
-      name: 'Mahashivratri Celebration',
-      date: '26 Feb 2026',
-      devotees: 500,
-      status: 'planning',
-      time: '06:00 AM - 09:00 PM'
-    },
-    {
-      id: 'EVT-002',
-      name: 'Ram Navami',
-      date: '06 Apr 2026',
-      devotees: 350,
-      status: 'planning',
-      time: '05:00 AM - 10:00 PM'
-    },
-    {
-      id: 'EVT-003',
-      name: 'Hanuman Jayanti',
-      date: '12 Apr 2026',
-      devotees: 400,
-      status: 'upcoming',
-      time: '05:30 AM - 09:00 PM'
-    }
-  ]);
+  const refetchAll = () => {
+    bRefetch();
+    dRefetch();
+    eRefetch();
+    sRefetch();
+    toast.info('Dashboard data refreshed');
+  };
 
-  // ============ RECENT ACTIVITY ============
-  const [recentActivity] = useState([
-    {
-      id: 'ACT-001',
-      type: 'booking',
-      message: 'Rajesh Kumar booked Annadanam Seva',
-      time: '2 minutes ago',
-      amount: 1100
-    },
-    {
-      id: 'ACT-002',
-      type: 'donation',
-      message: 'Priya Sharma donated ₹501',
-      time: '15 minutes ago',
-      amount: 501
-    },
-    {
-      id: 'ACT-003',
-      type: 'event',
-      message: 'Mahashivratri event created',
-      time: '1 hour ago',
-      amount: null
-    },
-    {
-      id: 'ACT-004',
-      type: 'booking',
-      message: 'Amit Patel booked Rudrabhishek',
-      time: '2 hours ago',
-      amount: 2500
-    }
-  ]);
+  // ============ STATS ============
+  const today = new Date().toISOString().split('T')[0];
+  const todayBookings = bookings.filter(b => b.date === today);
+  const todayDonations = donations.filter(d => d.date === today && d.status === 'success');
+  
+  const dashboardStats = {
+    todayBookings: todayBookings.length,
+    todayDonationsAmount: todayDonations.reduce((acc, d) => acc + d.amount, 0),
+    upcomingEvents: events.filter(e => e.status === 'upcoming').length,
+    walletBalance: 284500, // This would usually come from a payout/wallet API
+    staffOnDuty: staff.filter(s => s.status === 'available').length
+  };
 
-  // ============ UNREAD COUNT ============
-  const unreadCount = 3;
-
-  // ============ UTILITY FUNCTIONS ============
   const getStatusStyles = (status) => {
-    const base = "px-2 py-0.5 rounded-full text-xs font-medium";
-    switch(status) {
+    const base = "px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest";
+    switch(status?.toLowerCase()) {
       case 'confirmed':
       case 'success':
       case 'completed':
-        return `${base} bg-green-50 text-green-700`;
+        return `${base} bg-green-100 text-green-700`;
       case 'pending':
-        return `${base} bg-orange-50 text-orange-500`;
+        return `${base} bg-orange-100 text-orange-700`;
       case 'cancelled':
-        return `${base} bg-red-50 text-red-700`;
-      case 'planning':
-        return `${base} bg-blue-50 text-blue-600`;
-      case 'upcoming':
-        return `${base} bg-purple-50 text-purple-600`;
+      case 'failed':
+        return `${base} bg-red-100 text-red-700`;
       default:
-        return `${base} bg-gray-100 text-gray-600`;
+        return `${base} bg-gray-100 text-gray-700`;
     }
   };
 
-  const getIcon = (type) => {
+  const getActivityIcon = (type) => {
     switch(type) {
-      case 'booking':
-        return <ShoppingBag className="w-5 h-5 text-green-600" />;
-      case 'donation':
-        return <IndianRupee className="w-5 h-5 text-blue-600" />;
-      case 'event':
-        return <Gift className="w-5 h-5 text-purple-600" />;
-      default:
-        return <Bell className="w-5 h-5 text-gray-500" />;
+      case 'booking': return <ShoppingBag className="w-5 h-5 text-green-600" />;
+      case 'donation': return <IndianRupee className="w-5 h-5 text-blue-600" />;
+      case 'event': return <Gift className="w-5 h-5 text-purple-600" />;
+      default: return <Bell className="w-5 h-5 text-gray-500" />;
     }
-  };
-
-  const getTypeLabel = (type) => {
-    switch(type) {
-      case 'booking': return 'Booking';
-      case 'donation': return 'Donation';
-      case 'event': return 'Event';
-      default: return 'Activity';
-    }
-  };
-
-  // ============ HANDLE ACTIONS ============
-  const handleAction = (action, id = null) => {
-    setIsLoading(true);
-    
-    switch(action) {
-      case 'viewBooking':
-        console.log('Viewing booking:', id);
-        break;
-      case 'viewDonation':
-        console.log('Viewing donation:', id);
-        break;
-      case 'viewEvent':
-        console.log('Viewing event:', id);
-        break;
-      case 'refresh':
-        console.log('Refreshing dashboard');
-        break;
-      case 'export':
-        console.log('Exporting data');
-        break;
-    }
-    
-    setTimeout(() => setIsLoading(false), 500);
-  };
-
-  // ============ STATS CARD COMPONENT ============
-  const StatsCard = ({ title, value, subtitle, icon: Icon, color = 'orange', trend, trendValue }) => {
-    const getIconBackground = () => {
-      switch(color) {
-        case 'green': return 'bg-green-50';
-        case 'blue': return 'bg-blue-50';
-        case 'purple': return 'bg-purple-50';
-        case 'red': return 'bg-red-50';
-        default: return 'bg-orange-50';
-      }
-    };
-
-    const getIconColor = () => {
-      switch(color) {
-        case 'green': return 'text-green-600';
-        case 'blue': return 'text-blue-600';
-        case 'purple': return 'text-purple-600';
-        case 'red': return 'text-red-500';
-        default: return 'text-orange-600';
-      }
-    };
-
-    return (
-      <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40 rounded-lg border border-gray-200 px-3 py-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-600">{title}</p>
-            <p className="text-xl font-semibold text-gray-800 mt-1">
-              {typeof value === 'number' && title.includes('₹') 
-                ? `₹${value.toLocaleString('en-IN')}` 
-                : value}
-            </p>
-            {trend && (
-              <div className="flex items-center gap-1 mt-2">
-                {trend === 'up' ? (
-                  <TrendingUp className="w-3 h-3 text-green-600" />
-                ) : (
-                  <TrendingDown className="w-3 h-3 text-red-500" />
-                )}
-                <span className={`text-sm ${
-                  trend === 'up' ? 'text-green-600' : 'text-red-500'
-                }`}>
-                  {trendValue}
-                </span>
-              </div>
-            )}
-            {subtitle && (
-              <p className="text-sm text-gray-500 mt-2">{subtitle}</p>
-            )}
-          </div>
-          <div className={`p-2 ${getIconBackground()} rounded`}>
-            <Icon className={`w-5 h-5 ${getIconColor()}`} />
-          </div>
-        </div>
-      </div>
-    );
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Loading Overlay - Exact match to NotificationsPuja */}
       {isLoading && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 flex flex-col items-center gap-3">
-            <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-sm text-gray-700">Processing...</p>
-          </div>
+        <div className="fixed inset-0 bg-black bg-opacity-20 z-[150] flex items-center justify-center backdrop-blur-sm">
+           <div className="bg-white rounded-3xl p-8 shadow-2xl flex flex-col items-center gap-4">
+              <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-sm font-black text-gray-800">Updating Dashboard...</p>
+           </div>
         </div>
       )}
 
-      <VendorPageHeader 
-        title="TEMPLE DASHBOARD" 
-        subtitle="Manage all seva, puja & hall bookings" 
-      />
+      <VendorPageHeader title="TEMPLE DASHBOARD" subtitle="Centralized management for your temple services" />
 
-
-      {/* Main Content - EXACT spacing match */}
       <div className="space-y-4 p-6">
-        {/* Welcome Section - EXACT match */}
-        <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40 rounded-lg px-3 py-2 border border-orange-200">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div>
-              <p className="text-[17px] text-gray-600">
-                You have {dashboardStats.todayBookings} bookings today
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-3">
+        <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40 rounded-2xl p-4 border border-orange-100 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
+           <div>
+              <p className="text-lg font-black text-gray-800">Welcome, {user?.businessName || 'Admin'}</p>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">You have {dashboardStats.todayBookings} bookings today</p>
+           </div>
+           <div className="flex items-center gap-6">
               <div className="text-right">
-                <p className="text-sm text-gray-600">Today's Collection</p>
-                <p className="text-[15px] font-semibold text-orange-500">
-                  ₹{dashboardStats.todayDonations.toLocaleString('en-IN')}
-                </p>
+                 <p className="text-sm font-black text-orange-600">₹{dashboardStats.todayDonationsAmount.toLocaleString('en-IN')}</p>
+                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Today's Collection</p>
               </div>
-              <div className="w-8 h-8 bg-orange-50 rounded flex items-center justify-center">
-                <Clock className="w-5 h-5 text-orange-500" />
+              <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                 <Clock className="w-6 h-6 text-orange-600" />
               </div>
-            </div>
-          </div>
+           </div>
         </div>
 
-        {/* Stats Cards Grid - EXACT match to NotificationsPuja */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {/* Today Bookings */}
-          <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40 rounded-lg border border-gray-200 px-3 py-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Today Bookings</p>
-                <p className="text-xl font-semibold text-gray-800 mt-1">
-                  {dashboardStats.todayBookings}
-                </p>
-                <div className="flex items-center gap-1 mt-2">
-                  <ShoppingBag className="w-3 h-3 text-green-700" />
-                  <span className="text-sm text-green-700">+8 today</span>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+           {[
+             { label: 'Today Bookings', val: dashboardStats.todayBookings, icon: ShoppingBag, color: 'green', sub: `+${todayBookings.length} today` },
+             { label: 'Donations', val: `₹${dashboardStats.todayDonationsAmount.toLocaleString('en-IN')}`, icon: IndianRupee, color: 'blue', sub: 'Real-time sync' },
+             { label: 'Upcoming Events', val: dashboardStats.upcomingEvents, icon: Gift, color: 'purple', sub: 'Next 30 days' },
+             { label: 'Available Staff', val: dashboardStats.staffOnDuty, icon: Users, color: 'orange', sub: 'On duty now' }
+           ].map((s, i) => (
+             <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-all group">
+                <div className="flex items-center justify-between mb-2">
+                   <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{s.label}</span>
+                   <div className={`p-1.5 bg-${s.color}-50 rounded-lg group-hover:scale-110 transition-transform`}>
+                      <s.icon className={`w-4 h-4 text-${s.color}-500`} />
+                   </div>
                 </div>
-              </div>
-              <div className="p-2 bg-green-50 rounded">
-                <ShoppingBag className="w-5 h-5 text-green-600" />
-              </div>
-            </div>
-          </div>
-
-          {/* Today Donations */}
-          <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40 rounded-lg border border-gray-200 px-3 py-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Today Donations</p>
-                <p className="text-xl font-semibold text-gray-800 mt-1">
-                  ₹{dashboardStats.todayDonations.toLocaleString('en-IN')}
-                </p>
-                <div className="flex items-center gap-1 mt-2">
-                  <TrendingUp className="w-3 h-3 text-green-600" />
-                  <span className="text-sm text-green-600">+₹2.5k</span>
-                </div>
-              </div>
-              <div className="p-2 bg-blue-50 rounded">
-                <IndianRupee className="w-5 h-5 text-blue-600" />
-              </div>
-            </div>
-          </div>
-
-          {/* Upcoming Events */}
-          <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40 rounded-lg border border-gray-200 px-3 py-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Upcoming Events</p>
-                <p className="text-xl font-semibold text-gray-800 mt-1">
-                  {dashboardStats.upcomingEvents}
-                </p>
-                <p className="text-xs text-orange-500 mt-2">Next: Mahashivratri</p>
-              </div>
-              <div className="p-2 bg-purple-50 rounded">
-                <Gift className="w-5 h-5 text-purple-600" />
-              </div>
-            </div>
-          </div>
-
-          {/* Wallet Balance */}
-          <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40 rounded-lg border border-gray-200 px-3 py-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Wallet Balance</p>
-                <p className="text-xl font-semibold text-gray-800 mt-1">
-                  ₹{dashboardStats.walletBalance.toLocaleString('en-IN')}
-                </p>
-                <div className="flex items-center gap-1 mt-2">
-                  <Wallet className="w-3 h-3 text-blue-600" />
-                  <span className="text-sm text-blue-600">₹45k pending</span>
-                </div>
-              </div>
-              <div className="p-2 bg-yellow-50 rounded">
-                <Wallet className="w-5 h-5 text-yellow-600" />
-              </div>
-            </div>
-          </div>
+                <p className="text-xl font-black text-gray-800">{s.val}</p>
+                <p className={`text-[10px] font-bold text-${s.color}-500`}>{s.sub}</p>
+             </div>
+           ))}
         </div>
 
-        {/* Filter Bar - EXACT match to NotificationsPuja */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setFilter('all')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
-                  filter === 'all' 
-                    ? 'bg-orange-500 text-white' 
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                All Activity
-              </button>
-              <button
-                onClick={() => setFilter('bookings')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 ${
-                  filter === 'bookings' 
-                    ? 'bg-green-50 text-green-700 border border-green-300' 
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                <ShoppingBag className="w-4 h-4" />
-                Bookings
-              </button>
-              <button
-                onClick={() => setFilter('donations')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 ${
-                  filter === 'donations' 
-                    ? 'bg-blue-50 text-blue-600 border border-blue-300' 
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                <IndianRupee className="w-4 h-4" />
-                Donations
-              </button>
-              <button
-                onClick={() => setFilter('events')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 ${
-                  filter === 'events' 
-                    ? 'bg-purple-50 text-purple-600 border border-purple-300' 
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                <Gift className="w-4 h-4" />
-                Events
-              </button>
-            </div>
-            
-            <div className="flex gap-2">
-              <button 
-                onClick={() => handleAction('export')}
-                className="px-3 py-1.5 text-sm bg-gray-100 text-gray-800 rounded border border-gray-300 hover:bg-gray-200 flex items-center gap-2"
-              >
-                <Download className="w-4 h-4" />
-                Export
-              </button>
-              <button 
-                onClick={() => handleAction('refresh')}
-                className="px-3 py-1.5 text-sm bg-orange-50 text-orange-500 rounded border border-orange-300 hover:bg-orange-100 flex items-center gap-2"
-              >
-                <Clock className="w-4 h-4" />
-                Refresh
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Grid - EXACT match to NotificationsPuja layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Left Column - Recent Bookings & Donations */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* Recent Bookings - EXACT styling match */}
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-[15px] font-bold text-gray-800">Recent Bookings</h3>
-                  <span className="text-sm text-gray-600">{recentBookings.length} items</span>
-                </div>
-              </div>
-
-              <div className="divide-y divide-gray-200">
-                {recentBookings.map((booking) => (
-                  <div 
-                    key={booking.id}
-                    className="p-4 hover:bg-gray-50 transition-colors"
-                    onClick={() => handleAction('viewBooking', booking.id)}
-                  >
-                    <div className="flex gap-3">
-                      {/* Icon */}
-                      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                        <ShoppingBag className="w-5 h-5 text-green-600" />
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="text-[14px] font-semibold text-gray-800">
-                              {booking.devotee}
-                            </h4>
-                            <span className={getStatusStyles(booking.status)}>
-                              {booking.status}
-                            </span>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+           <div className="lg:col-span-2 space-y-6">
+              <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                 <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                    <h3 className="text-base font-black text-gray-800">Recent Bookings</h3>
+                    <button onClick={refetchAll} className="p-2 hover:bg-white rounded-xl transition-all"><RefreshCw className="w-4 h-4 text-gray-400" /></button>
+                 </div>
+                 <div className="divide-y divide-gray-50">
+                    {bookings.slice(0, 5).map(b => (
+                       <div key={b._id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-all group">
+                          <div className="flex items-center gap-4">
+                             <div className="w-10 h-10 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 font-bold group-hover:bg-orange-500 group-hover:text-white transition-all">
+                                {(b.user?.name || b.name || '?')[0].toUpperCase()}
+                             </div>
+                             <div>
+                                <p className="text-sm font-bold text-gray-800">{b.user?.name || b.name}</p>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase">{b.pujaType || b.seva}</p>
+                             </div>
                           </div>
-                          <span className="text-xs text-gray-500">{booking.time}</span>
-                        </div>
-
-                        <p className="text-sm text-gray-700 mb-2">
-                          {booking.seva} • #{booking.id}
-                        </p>
-
-                        {/* Tags */}
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded flex items-center gap-1">
-                            <CalendarDays className="w-3 h-3" />
-                            {booking.date}
-                          </span>
-                          <span className="px-2 py-0.5 bg-green-50 text-green-700 text-xs rounded flex items-center gap-1">
-                            <IndianRupee className="w-3 h-3" />
-                            ₹{booking.amount}
-                          </span>
-                          <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
-                            {booking.items} items
-                          </span>
-                        </div>
-
-                        {/* Action Buttons - EXACT match */}
-                        <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAction('viewBooking', booking.id);
-                            }}
-                            className="px-2.5 py-1 text-xs bg-orange-50 text-orange-500 rounded border border-orange-300 hover:bg-orange-100"
-                          >
-                            View Details →
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* View All Link - EXACT match */}
-              <div className="p-3 bg-gray-50 border-t border-gray-200">
-                <button className="text-sm font-medium text-orange-500 hover:text-orange-600 flex items-center justify-center gap-1">
-                  View All Bookings
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Recent Donations - EXACT styling match */}
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-[15px] font-bold text-gray-800">Recent Donations</h3>
-                  <span className="text-sm text-gray-600">{recentDonations.length} items</span>
-                </div>
-              </div>
-
-              <div className="divide-y divide-gray-200">
-                {recentDonations.map((donation) => (
-                  <div 
-                    key={donation.id}
-                    className="p-4 hover:bg-gray-50 transition-colors"
-                    onClick={() => handleAction('viewDonation', donation.id)}
-                  >
-                    <div className="flex gap-3">
-                      {/* Icon */}
-                      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                        <IndianRupee className="w-5 h-5 text-blue-600" />
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="text-[14px] font-semibold text-gray-800">
-                              {donation.devotee}
-                            </h4>
-                            <span className={getStatusStyles(donation.status)}>
-                              {donation.status}
-                            </span>
+                          <div className="text-right">
+                             <p className="text-sm font-black text-gray-800">₹{(b.amount || 0).toLocaleString('en-IN')}</p>
+                             <span className={getStatusStyles(b.status)}>{b.status}</span>
                           </div>
-                          <span className="text-xs text-gray-500">{donation.time}</span>
-                        </div>
-
-                        <p className="text-sm text-gray-700 mb-2">
-                          {donation.type} • #{donation.id}
-                        </p>
-
-                        {/* Tags */}
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded flex items-center gap-1">
-                            <CalendarDays className="w-3 h-3" />
-                            {donation.date}
-                          </span>
-                          <span className="px-2 py-0.5 bg-green-50 text-green-700 text-xs rounded flex items-center gap-1">
-                            <IndianRupee className="w-3 h-3" />
-                            ₹{donation.amount.toLocaleString('en-IN')}
-                          </span>
-                          <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
-                            {donation.paymentMode}
-                          </span>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAction('viewDonation', donation.id);
-                            }}
-                            className="px-2.5 py-1 text-xs bg-orange-50 text-orange-500 rounded border border-orange-300 hover:bg-orange-100"
-                          >
-                            View Receipt →
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                       </div>
+                    ))}
+                    {bookings.length === 0 && <div className="p-10 text-center text-gray-400 text-sm font-bold">No recent bookings</div>}
+                 </div>
+                 <div className="p-3 bg-gray-50/50 border-t border-gray-50">
+                    <button className="w-full py-2 text-xs font-black text-orange-500 uppercase tracking-widest hover:text-orange-600 transition-colors">View All Bookings</button>
+                 </div>
               </div>
 
-              {/* View All Link */}
-              <div className="p-3 bg-gray-50 border-t border-gray-200">
-                <button className="text-sm font-medium text-orange-500 hover:text-orange-600 flex items-center justify-center gap-1">
-                  View All Donations
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+              <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                 <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                    <h3 className="text-base font-black text-gray-800">Latest Donations</h3>
+                    <IndianRupee className="w-4 h-4 text-blue-500" />
+                 </div>
+                 <div className="divide-y divide-gray-50">
+                    {donations.slice(0, 5).map(d => (
+                       <div key={d._id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-all group">
+                          <div className="flex items-center gap-4">
+                             <div className="w-10 h-10 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 font-bold group-hover:bg-blue-500 group-hover:text-white transition-all">
+                                {(d.name || d.devotee || '?')[0].toUpperCase()}
+                             </div>
+                             <div>
+                                <p className="text-sm font-bold text-gray-800">{d.name || d.devotee}</p>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase">{d.category || 'General'}</p>
+                             </div>
+                          </div>
+                          <div className="text-right">
+                             <p className="text-sm font-black text-gray-800">₹{(d.amount || 0).toLocaleString('en-IN')}</p>
+                             <span className={getStatusStyles(d.status)}>{d.status}</span>
+                          </div>
+                       </div>
+                    ))}
+                    {donations.length === 0 && <div className="p-10 text-center text-gray-400 text-sm font-bold">No recent donations</div>}
+                 </div>
+                 <div className="p-3 bg-gray-50/50 border-t border-gray-50">
+                    <button className="w-full py-2 text-xs font-black text-blue-500 uppercase tracking-widest hover:text-blue-600 transition-colors">View All Donations</button>
+                 </div>
               </div>
-            </div>
-          </div>
+           </div>
 
-          {/* Right Column - Events & Activity */}
-          <div className="space-y-4">
-            {/* Upcoming Events - EXACT match to NotificationsPuja settings card style */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-[15px] font-bold text-gray-800">Upcoming Events</h3>
-                <button className="text-sm font-medium text-orange-500 hover:text-orange-600">
-                  View All
-                </button>
+           <div className="space-y-6">
+              <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+                 <h3 className="text-base font-black text-gray-800 mb-4 flex items-center gap-2"><Star className="w-5 h-5 text-orange-500" /> Upcoming Events</h3>
+                 <div className="space-y-4">
+                    {events.slice(0, 3).map(e => (
+                       <div key={e._id} className="p-4 bg-gray-50 rounded-2xl border border-gray-50 group hover:border-orange-200 transition-all">
+                          <p className="text-xs font-black text-gray-400 uppercase tracking-tighter mb-1">{e.date}</p>
+                          <p className="text-sm font-bold text-gray-800 group-hover:text-orange-500 transition-colors">{e.name}</p>
+                          <div className="flex items-center justify-between mt-2">
+                             <span className="text-[10px] font-bold text-gray-500">{e.venue}</span>
+                             <span className="text-[10px] font-black text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">{e.registeredCount || 0} Reg.</span>
+                          </div>
+                       </div>
+                    ))}
+                    {events.length === 0 && <div className="text-center text-gray-400 text-xs font-bold py-4">No upcoming events</div>}
+                 </div>
               </div>
-              
-              <div className="space-y-3">
-                {upcomingEvents.map((event) => (
-                  <div key={event.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-purple-50 rounded">
-                        <Gift className="w-4 h-4 text-purple-600" />
-                      </div>
-                      <div>
-                        <span className="text-sm text-gray-700">{event.name}</span>
-                        <p className="text-xs text-gray-500 mt-0.5">{event.date}</p>
-                      </div>
-                    </div>
-                    <span className={getStatusStyles(event.status)}>
-                      {event.devotees}+
-                    </span>
-                  </div>
-                ))}
+
+              <div className="bg-gray-900 rounded-3xl p-6 text-white relative overflow-hidden">
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                 <h4 className="text-lg font-black mb-2 relative z-10">Quick Support</h4>
+                 <p className="text-xs text-gray-400 mb-4 relative z-10">Need help managing your temple dashboard? Contact our dedicated support team.</p>
+                 <button className="w-full py-3 bg-white text-gray-900 font-black rounded-2xl hover:bg-orange-500 hover:text-white transition-all text-xs uppercase tracking-widest relative z-10">Get Help Now</button>
               </div>
-            </div>
 
-            {/* Recent Activity - EXACT match to NotificationsPuja stats card style */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <h3 className="text-[15px] font-bold text-gray-800 mb-4">Recent Activity</h3>
-              
-              <div className="space-y-3">
-                {recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-start gap-2">
-                    <div className="p-1.5 bg-gray-100 rounded flex-shrink-0">
-                      {getIcon(activity.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-700 truncate">{activity.message}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-gray-500">{activity.time}</span>
-                        {activity.amount && (
-                          <>
-                            <span className="text-xs text-gray-300">•</span>
-                            <span className="text-xs font-medium text-green-600">
-                              ₹{activity.amount}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+                 <h4 className="text-sm font-black text-gray-800 mb-4">Quick Actions</h4>
+                 <div className="grid grid-cols-2 gap-3">
+                    <button className="flex flex-col items-center justify-center p-4 bg-orange-50 rounded-2xl hover:bg-orange-100 transition-all gap-2 group">
+                       <ShoppingBag className="w-6 h-6 text-orange-500 group-hover:scale-110 transition-transform" />
+                       <span className="text-[10px] font-black text-orange-600 uppercase">New Seva</span>
+                    </button>
+                    <button className="flex flex-col items-center justify-center p-4 bg-blue-50 rounded-2xl hover:bg-blue-100 transition-all gap-2 group">
+                       <IndianRupee className="w-6 h-6 text-blue-500 group-hover:scale-110 transition-transform" />
+                       <span className="text-[10px] font-black text-blue-600 uppercase">Donation</span>
+                    </button>
+                    <button className="flex flex-col items-center justify-center p-4 bg-purple-50 rounded-2xl hover:bg-purple-100 transition-all gap-2 group">
+                       <Gift className="w-6 h-6 text-purple-500 group-hover:scale-110 transition-transform" />
+                       <span className="text-[10px] font-black text-purple-600 uppercase">Add Event</span>
+                    </button>
+                    <button className="flex flex-col items-center justify-center p-4 bg-green-50 rounded-2xl hover:bg-green-100 transition-all gap-2 group">
+                       <Users className="w-6 h-6 text-green-500 group-hover:scale-110 transition-transform" />
+                       <span className="text-[10px] font-black text-green-600 uppercase">Staff</span>
+                    </button>
+                 </div>
               </div>
-            </div>
-
-            {/* Quick Tip Card - EXACT match */}
-            <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40 rounded-lg p-3 border border-orange-200">
-              <div className="flex items-start gap-2">
-                <div className="p-1.5 bg-orange-50 rounded">
-                  <Bell className="w-5 h-5 text-orange-500" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-800 mb-1">Today's Overview</h4>
-                  <p className="text-xs text-gray-700">
-                    45 devotees expected for Sandhya Aarti. 3 pending bookings.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions - EXACT match to NotificationsPuja button styles */}
-            <div className="space-y-2">
-              <button className="w-full px-3 py-2 bg-orange-50 text-orange-500 text-sm font-medium rounded border border-orange-300 hover:bg-orange-100 transition-colors flex items-center justify-center gap-2">
-                <ShoppingBag className="w-4 h-4" />
-                Add New Seva
-              </button>
-              
-              <button className="w-full px-3 py-2 bg-white text-gray-800 text-sm font-medium rounded border border-gray-300 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
-                <Gift className="w-4 h-4" />
-                Create New Event
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Section - EXACT match to NotificationsPuja */}
-        <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40 rounded-lg border border-gray-200 p-3">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="text-center sm:text-left">
-              <p className="text-sm text-gray-600">Need help with dashboard?</p>
-              <p className="text-[14px] text-gray-800">Contact support: +91 98765 43210</p>
-            </div>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => handleAction('refresh')}
-                className="px-3 py-1.5 text-sm bg-gray-100 text-gray-800 rounded border border-gray-300 hover:bg-gray-200"
-              >
-                Refresh Dashboard
-              </button>
-              <button className="px-3 py-1.5 text-sm bg-gradient-to-r from-orange-300 to-orange-300 text-gray-800 hover:text-white rounded hover:from-orange-500 hover:to-orange-600">
-                Get Help
-              </button>
-            </div>
-          </div>
+           </div>
         </div>
       </div>
     </div>

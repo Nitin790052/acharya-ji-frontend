@@ -1,7 +1,26 @@
 import React from "react";
 import { ShieldCheck, Upload, CreditCard, Landmark, FileCheck, Sparkles, CheckCircle, X } from "lucide-react";
 
+const INDIAN_BANKS = [
+  "State Bank of India", "HDFC Bank", "ICICI Bank", "Axis Bank", "Punjab National Bank",
+  "Bank of Baroda", "Canara Bank", "Union Bank of India", "IndusInd Bank", "Kotak Mahindra Bank",
+  "Bank of India", "Central Bank of India", "Indian Bank", "UCO Bank", "IDBI Bank",
+  "Yes Bank", "Federal Bank", "South Indian Bank", "Karnataka Bank", "Bandhan Bank",
+  "Standard Chartered Bank", "IDFC First Bank", "AU Small Finance Bank"
+].sort();
+
 const DocumentUploadSection = ({ formData, handleInputChange, handleFileChange, errors, vendorType }) => {
+
+  // Helper for IFSC validation feedback
+  const getIfscError = (code) => {
+    if (!code) return null;
+    if (code.length !== 11) return "IFSC must be 11 characters";
+    const pattern = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+    if (!pattern.test(code)) return "Invalid format (e.g. SBIN0012345)";
+    return null;
+  };
+
+  const ifscError = getIfscError(formData.ifscCode);
 
   // Helper: get the selected file name for a given field
   const getFileName = (fieldName) => {
@@ -119,30 +138,54 @@ const DocumentUploadSection = ({ formData, handleInputChange, handleFileChange, 
           Bank Details (for payouts)
         </label>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <input
-            type="text"
-            name="bankName"
-            value={formData.bankName || ""}
-            onChange={handleInputChange}
-            placeholder="Bank Name"
-            className="w-full bg-white border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-orange-500 outline-none"
-          />
-          <input
-            type="text"
-            name="accountNumber"
-            value={formData.accountNumber || ""}
-            onChange={handleInputChange}
-            placeholder="Account Number"
-            className="w-full bg-white border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-orange-500 outline-none"
-          />
-          <input
-            type="text"
-            name="ifscCode"
-            value={formData.ifscCode || ""}
-            onChange={handleInputChange}
-            placeholder="IFSC Code"
-            className="w-full bg-white border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-orange-500 outline-none"
-          />
+          <div className="space-y-1">
+            <select
+              name="bankName"
+              value={formData.bankName || ""}
+              onChange={handleInputChange}
+              className="w-full bg-white border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-orange-500 outline-none appearance-none"
+            >
+              <option value="">Select Bank Name</option>
+              {INDIAN_BANKS.map(bank => (
+                <option key={bank} value={bank}>{bank}</option>
+              ))}
+              <option value="Other">Other Bank</option>
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <input
+              type="text"
+              name="accountNumber"
+              value={formData.accountNumber || ""}
+              onChange={(e) => {
+                e.target.value = e.target.value.replace(/\D/g, '');
+                handleInputChange(e);
+              }}
+              placeholder="Account Number"
+              className="w-full bg-white border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-orange-500 outline-none"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <input
+              type="text"
+              name="ifscCode"
+              value={formData.ifscCode || ""}
+              onChange={(e) => {
+                e.target.value = e.target.value.toUpperCase().slice(0, 11);
+                handleInputChange(e);
+              }}
+              placeholder="IFSC Code (e.g. HDFC0001234)"
+              className={`w-full bg-white border-2 rounded-lg px-3 py-2 text-sm outline-none transition-colors ${
+                ifscError ? "border-red-300 focus:border-red-500" : "border-gray-200 focus:border-orange-500"
+              }`}
+            />
+            {ifscError && <p className="text-[10px] text-red-500 font-medium ml-1">{ifscError}</p>}
+            {!ifscError && formData.ifscCode?.length === 11 && (
+              <p className="text-[10px] text-green-600 font-medium ml-1">Valid IFSC Format</p>
+            )}
+          </div>
         </div>
       </div>
 

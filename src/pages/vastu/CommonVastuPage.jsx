@@ -40,6 +40,7 @@ import { usePageBanner } from "@/hooks/usePageBanner";
 import { BACKEND_URL, getImageUrl } from "@/config/apiConfig";
 import { useGetVastuPageBySlugQuery } from "@/services/vastuContentApi";
 import SEO from "@/components/layout/SEO";
+import { useUserAuth } from "@/app/user/auth/AuthContext";
 
 const IconMap = {
     CheckCircle, Phone, Calendar, Home, Building2, MapPin, Factory, Store, Building, TrendingUp, Heart, Users, Briefcase, Sun, Star, ArrowRight, MessageCircle, FileText, Upload, Search, FileCheck, IndianRupee, Clock, User, Quote, Sparkles, Sparkle, Award, Shield, BookOpen, ChevronRight, MessageSquare
@@ -49,6 +50,7 @@ const CommonVastuPage = ({ slugOverride }) => {
     const { slug: urlSlug } = useParams();
     const slug = slugOverride || urlSlug;
     const navigate = useNavigate();
+    const { user } = useUserAuth();
     const banner = usePageBanner({ pollingInterval: 3000 });
     const { data: pageData, isLoading, isError } = useGetVastuPageBySlugQuery(slug, { pollingInterval: 3000 });
 
@@ -217,7 +219,16 @@ const CommonVastuPage = ({ slugOverride }) => {
                                                         ))}
                                                     </div>
 
-                                                    <button className="mt-auto group/btn relative w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#2A1D13] text-amber-400 rounded-none font-black text-[10px] uppercase tracking-[0.2em] transition-all hover:bg-orange-600 hover:text-white shadow-lg">
+                                                    <button 
+                                                        onClick={() => {
+                                                            if (!user) {
+                                                                navigate('/user_login/registeration');
+                                                            } else {
+                                                                window.dispatchEvent(new CustomEvent('openPoojaDrawer', { detail: service.title }));
+                                                            }
+                                                        }}
+                                                        className="mt-auto group/btn relative w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#2A1D13] text-amber-400 rounded-none font-black text-[10px] uppercase tracking-[0.2em] transition-all hover:bg-orange-600 hover:text-white shadow-lg"
+                                                    >
                                                         Book Consultation <ChevronRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
                                                     </button>
                                                 </div>
@@ -337,7 +348,16 @@ const CommonVastuPage = ({ slugOverride }) => {
                                             <span>{plan.duration}</span>
                                         </div>
                                         <p className="text-gray-500 text-[10px] font-bold mb-8 uppercase tracking-widest leading-relaxed h-10 line-clamp-2">{plan.desc}</p>
-                                        <button className="w-full bg-[#E8453C] hover:bg-black text-white font-black text-xs uppercase tracking-[0.2em] py-4 transition-all shadow-lg">
+                                        <button 
+                                            onClick={() => {
+                                                if (!user) {
+                                                    navigate('/user_login/registeration');
+                                                } else {
+                                                    window.dispatchEvent(new CustomEvent('openPoojaDrawer', { detail: plan.name }));
+                                                }
+                                            }}
+                                            className="w-full bg-[#E8453C] hover:bg-black text-white font-black text-xs uppercase tracking-[0.2em] py-4 transition-all shadow-lg"
+                                        >
                                             Book Now
                                         </button>
                                     </div>

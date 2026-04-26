@@ -23,9 +23,9 @@ export default function KundliManager() {
     const [settingsLoaded, setSettingsLoaded] = useState(false);
     const fileRef = useRef();
 
-    const { data: services = [], isLoading } = useGetAllKundliServicesQuery(undefined, { pollingInterval: 3000 });
+    const { data: services = [], isLoading } = useGetAllKundliServicesQuery(undefined, { pollingInterval: 60000 });
     const { data: settings } = useGetKundliSettingsQuery(undefined, {
-        pollingInterval: 3000,
+        pollingInterval: 60000,
         onSuccess: (d) => { if (!settingsLoaded) { setSettingsForm({ badge: d.badge || '', title: d.title || '', subtitle: d.subtitle || '' }); setSettingsLoaded(true); } }
     });
     const [updateSettings] = useUpdateKundliSettingsMutation();

@@ -52,7 +52,7 @@ const ProcessingOrders = () => {
   })
 
   // ========== RTK QUERY ==========
-  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('all', { pollingInterval: 3000 });
+  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('all', { pollingInterval: 60000 });
   const allOrders = ordersResponse?.data || [];
   const processingOrders = allOrders.filter(o => ['processing', 'confirmed'].includes(o.status.toLowerCase()));
 

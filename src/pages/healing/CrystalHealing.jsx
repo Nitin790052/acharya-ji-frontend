@@ -27,7 +27,7 @@ import { usePageBanner } from "@/hooks/usePageBanner";
 import { BACKEND_URL } from "@/config/apiConfig";
 
 const CrystalHealing = () => {
-    const banner = usePageBanner({ pollingInterval: 3000 });
+    const banner = usePageBanner({ pollingInterval: 60000 });
     const [selectedFaq, setSelectedFaq] = useState(null);
 
     const crystals = [

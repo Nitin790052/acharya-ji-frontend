@@ -12,10 +12,10 @@ const TalkToAstrologer = () => {
 
   // RTK Query - with pollingInterval for real-time updates
   const { data: astrologers = [], isLoading: isAstrologersLoading } = useGetActiveAstrologersQuery(undefined, {
-    pollingInterval: 3000
+    pollingInterval: 60000
   });
   const { data: settings, isLoading: isSettingsLoading } = useGetSettingsQuery(undefined, {
-    pollingInterval: 3000
+    pollingInterval: 60000
   });
 
   useEffect(() => {

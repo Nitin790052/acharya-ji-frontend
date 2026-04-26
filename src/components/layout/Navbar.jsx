@@ -29,7 +29,7 @@ export default function Navbar() {
   const [activeDropdown, setActiveDropdown] = useState(null);
 
   const { data: navItems = [], isLoading, isError } = useGetNavbarItemsQuery(undefined, {
-    pollingInterval: 3000,
+    pollingInterval: 60000,
     refetchOnMountOrArgChange: true
   });
 

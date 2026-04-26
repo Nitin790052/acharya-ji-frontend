@@ -48,7 +48,7 @@ const UserHistory = () => {
   const printRef = useRef();
 
   // ========== RTK QUERY ==========
-  const { data: historyResponse, isLoading, isError, refetch } = useGetUserHistoryQuery(undefined, { pollingInterval: 3000 });
+  const { data: historyResponse, isLoading, isError, refetch } = useGetUserHistoryQuery(undefined, { pollingInterval: 60000 });
   const historyData = historyResponse?.data || [];
 
   const getIcon = (type) => {

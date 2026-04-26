@@ -11,7 +11,7 @@ const Invoice = ({ order }) => {
 
   const { id } = useParams();
   const location = useLocation();
-  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('all', { pollingInterval: 3000 });
+  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('all', { pollingInterval: 60000 });
 
   // Priority: 1. Navigation State, 2. RTK Query Cache, 3. Null
   const data = location.state || ordersResponse?.data?.find(o => o.id === id);

@@ -27,8 +27,8 @@ const CommonHealingPage = () => {
     const location = window.location.pathname;
     // Derive slug from params OR from the URL path (e.g., /reiki-healing → reiki-healing)
     const pageSlug = paramSlug || location.replace(/^\//, '').replace(/\/$/, '') || 'reiki-healing';
-    const { data: pageData, isLoading } = useGetHealingPageBySlugQuery(pageSlug, { pollingInterval: 3000 });
-    const banner = usePageBanner({ pollingInterval: 3000 });
+    const { data: pageData, isLoading } = useGetHealingPageBySlugQuery(pageSlug, { pollingInterval: 60000 });
+    const banner = usePageBanner({ pollingInterval: 60000 });
     const [selectedFaq, setSelectedFaq] = useState(null);
     const [selectedSession, setSelectedSession] = useState(null);
 

@@ -24,7 +24,7 @@ const fallbackImages = [
 ];
 
 const Gallery = () => {
-  const banner = usePageBanner({ pollingInterval: 3000 });
+  const banner = usePageBanner({ pollingInterval: 60000 });
   const { data: galleryData = [], isLoading: isGalleryLoading } = useGetAllGalleryQuery(undefined, { pollingInterval: 60000 });
   const { data: settings } = useGetGallerySettingsQuery();
   const ctaSettings = settings?.cta || {};

@@ -54,8 +54,8 @@ const DynamicShopManager = () => {
     const navigate = useNavigate();
     const selectedSlug = urlShopType || 'puja-samagri';
 
-    const { data: shopResponse, isLoading } = useGetShopDataQuery(selectedSlug, { pollingInterval: 3000 });
-    const { data: overviewResponse } = useGetShopOverviewQuery(undefined, { pollingInterval: 3000 });
+    const { data: shopResponse, isLoading } = useGetShopDataQuery(selectedSlug, { pollingInterval: 60000 });
+    const { data: overviewResponse } = useGetShopOverviewQuery(undefined, { pollingInterval: 60000 });
 
     const [updateContent] = useUpdateShopContentMutation();
     const [updateStatus] = useUpdateShopStatusMutation();

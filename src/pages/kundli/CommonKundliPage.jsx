@@ -45,7 +45,7 @@ import SEO from '@/components/layout/SEO';
 const CommonKundliPage = () => {
     const { slug } = useParams();
     const navigate = useNavigate();
-    const banner = usePageBanner({ pollingInterval: 3000 });
+    const banner = usePageBanner({ pollingInterval: 60000 });
     const { data: pageData, isLoading, isError } = useGetKundliPageBySlugQuery(slug);
     const bannerImage = getImageUrl(banner?.imageUrl);
 

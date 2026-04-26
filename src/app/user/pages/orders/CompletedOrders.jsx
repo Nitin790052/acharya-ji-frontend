@@ -43,7 +43,7 @@ const CompletedOrders = () => {
   });
 
   // ========== RTK QUERY ==========
-  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('completed', { pollingInterval: 3000 });
+  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('completed', { pollingInterval: 60000 });
   const completedOrders = ordersResponse?.data || [];
 
   const completedOrdersMock = [

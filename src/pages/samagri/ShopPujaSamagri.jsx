@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { Layout } from '@/components/layout/Layout';
 import { useCart } from "@/contexts/CartContext";
+import { useUserAuth } from "@/app/user/auth/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { usePageBanner } from "@/hooks/usePageBanner";
 import { BACKEND_URL, getImageUrl } from "@/config/apiConfig";
 import SEO from "@/components/layout/SEO";
@@ -51,6 +53,8 @@ const ShopPujaSamagri = ({ shopTypeOverride }) => {
     const shopType = shopTypeOverride || urlShopType || 'puja-samagri';
 
     const { addItem } = useCart();
+    const { user } = useUserAuth();
+    const navigate = useNavigate();
     const { data: apiResponse, isLoading } = useGetShopDataQuery(shopType, { pollingInterval: 3000 });
 
     // Core Layout Hooks
@@ -373,13 +377,19 @@ const ShopPujaSamagri = ({ shopTypeOverride }) => {
                                             <p className="text-[8px] text-gray-400 font-medium uppercase tracking-wider italic line-clamp-1 mb-3 leading-relaxed">{product.description}</p>
                                             <div className="mt-auto pt-3 border-t border-gray-50 flex items-center justify-between gap-3">
                                                 <span className="text-sm font-bold text-gray-900">₹{product.price}</span>
-                                                <button
-                                                    onClick={() => addItem(product)}
-                                                    className="group relative bg-[#1A1A1A] hover:bg-[#E8453C] text-white text-[7px] font-bold uppercase tracking-[0.1em] px-3 py-2 rounded-lg shadow-md transition-all flex items-center gap-1.5 overflow-hidden"
-                                                >
-                                                    <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                                                    <ShoppingCart className="w-3 h-3 relative" /> <span className="relative">Add</span>
-                                                </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            if (!user) {
+                                                                navigate('/user_login/registeration');
+                                                            } else {
+                                                                addItem(product);
+                                                            }
+                                                        }}
+                                                        className="group relative bg-[#1A1A1A] hover:bg-[#E8453C] text-white text-[7px] font-bold uppercase tracking-[0.1em] px-3 py-2 rounded-lg shadow-md transition-all flex items-center gap-1.5 overflow-hidden"
+                                                    >
+                                                        <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                                                        <ShoppingCart className="w-3 h-3 relative" /> <span className="relative">Add</span>
+                                                    </button>
                                             </div>
                                         </div>
                                     </div>
@@ -589,14 +599,29 @@ const ShopPujaSamagri = ({ shopTypeOverride }) => {
 
                                     <div className="flex flex-col sm:flex-row gap-4 mt-auto">
                                         <button
-                                            onClick={() => { addItem(selectedProduct); setSelectedProduct(null); }}
+                                            onClick={() => {
+                                                if (!user) {
+                                                    navigate('/user_login/registeration');
+                                                } else {
+                                                    addItem(selectedProduct); 
+                                                    setSelectedProduct(null);
+                                                }
+                                            }}
                                             className="group relative bg-black text-white hover:bg-[#E8453C] flex-grow py-5 font-bold text-[10px] md:text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 overflow-hidden rounded-xl"
                                         >
                                             <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                                             <ShoppingCart className="w-4 h-4 relative" /> <span className="relative">Add To Cart</span>
                                         </button>
                                         <button 
-                                            onClick={() => { addItem(selectedProduct); setSelectedProduct(null); navigate('/cart'); }}
+                                            onClick={() => {
+                                                if (!user) {
+                                                    navigate('/user_login/registeration');
+                                                } else {
+                                                    addItem(selectedProduct); 
+                                                    setSelectedProduct(null); 
+                                                    navigate('/cart');
+                                                }
+                                            }}
                                             className="group relative bg-[#E8453C] hover:bg-black text-white flex-grow py-5 font-bold text-[10px] md:text-xs uppercase tracking-[0.3em] transition-all overflow-hidden shadow-xl rounded-xl"
                                         >
                                             <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />

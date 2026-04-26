@@ -12,6 +12,7 @@ import BlockedUsers from "./pages/userManagment/BlockedUsers";
 import PagePlaceholder from "./pages/PagePlaceholder";
 import PendingVendors from "./pages/vendors/PendingVendors";
 import ApprovedVendors from "./pages/vendors/ApprovedVendors";
+import VendorServiceApprovals from "./pages/vendors/VendorServiceApprovals";
 import AllVendors from "./pages/vendors/AllVendors";
 import CategoryManager from "./pages/vendors/CategoryManager";
 import NavbarManager from "./pages/content/NavbarManager";
@@ -71,6 +72,7 @@ function AdminApp() {
           <Route path="vendors/all" element={<AllVendors />} />
           <Route path="vendors/pending" element={<PendingVendors />} />
           <Route path="vendors/approved" element={<ApprovedVendors />} />
+          <Route path="vendors/service-approvals" element={<VendorServiceApprovals />} />
 
           <Route path="vendors/earnings" element={<PagePlaceholder title="Vendor Earnings" />} />
           <Route path="content/navbar" element={<NavbarManager />} />

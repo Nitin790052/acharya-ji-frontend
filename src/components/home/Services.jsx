@@ -47,7 +47,7 @@ export function Services() {
   const dispatch = useDispatch();
   
   const { data: servicesData, isLoading, isError } = useGetActiveServicesQuery(undefined, {
-    pollingInterval: 3000,
+    pollingInterval: 60000,
     refetchOnMountOrArgChange: true
   });
 

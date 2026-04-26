@@ -38,7 +38,7 @@ import { getTranslation } from '../../../../utils/translations';
 
 const UserProfile = () => {
   // ========== RTK QUERY HOOKS ==========
-  const { data: profileResponse, isLoading, isError } = useGetProfileQuery(undefined, { pollingInterval: 3000 });
+  const { data: profileResponse, isLoading, isError } = useGetProfileQuery(undefined, { pollingInterval: 60000 });
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
   const [changePassword, { isLoading: isChangingPassword }] = useChangePasswordMutation();
   const [uploadAvatar, { isLoading: isUploadingAvatar }] = useUploadAvatarMutation();

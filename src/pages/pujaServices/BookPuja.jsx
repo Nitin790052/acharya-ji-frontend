@@ -19,6 +19,7 @@ import {
   useGetFAQsQuery
 } from "@/services/bookPujaContentApi";
 import { API_URL, getImageUrl } from '@/config/apiConfig';
+import { useUserAuth } from "@/app/user/auth/AuthContext";
 import { toast } from 'react-toastify';
 
 const BACKEND_URL = API_URL.replace(/\/api\/?$/, '');
@@ -26,6 +27,7 @@ const BACKEND_URL = API_URL.replace(/\/api\/?$/, '');
 export default function BookPuja() {
   const navigate = useNavigate();
   const banner = usePageBanner({ pollingInterval: 3000 });
+  const { user } = useUserAuth();
 
   // Dynamic Content Queries
   const { data: pujaServices = [] } = useGetAllOfferingsQuery(undefined, { pollingInterval: 3000 });
@@ -148,11 +150,11 @@ export default function BookPuja() {
       imageUrl: getImageUrl(puja.imageUrl)
     };
 
-    if (token) {
+    if (user) {
       dispatch(addToCart(cartItem));
       navigate('/cart');
     } else {
-      navigate('/user_login', { state: { returnTo: '/cart', addPujaToCart: cartItem } });
+      navigate('/user_login/registeration', { state: { returnTo: '/cart', addPujaToCart: cartItem } });
     }
   };
 

@@ -22,7 +22,7 @@ export default function BlogManager() {
     const [viewItem, setViewItem] = useState(null);
     const fileRef = useRef();
 
-    const { data: blogs = [], isLoading } = useGetAllBlogsQuery(undefined, { pollingInterval: 3000 });
+    const { data: blogs = [], isLoading } = useGetAllBlogsQuery(undefined, { pollingInterval: 60000 });
     const { data: settings } = useGetBlogSettingsQuery();
     const [createBlog] = useCreateBlogMutation();
     const [updateBlog] = useUpdateBlogMutation();

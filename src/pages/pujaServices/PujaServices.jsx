@@ -11,15 +11,23 @@ import { useGetAllOfferingsQuery } from "@/services/pujaOfferingApi";
 import { useGetActivePujasQuery } from "@/services/popularPujaApi";
 import { useGetActiveServicesQuery } from "@/services/serviceApi";
 import { BACKEND_URL, getImageUrl } from "@/config/apiConfig";
+import { useGetPublicVendorServicesQuery } from "@/services/vendorApi";
+import { useUserAuth } from "@/app/user/auth/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const PujaServices = () => {
   const banner = usePageBanner({ pollingInterval: 3000 });
   const bannerImage = getImageUrl(banner?.imageUrl);
+  const { user } = useUserAuth();
+  const navigate = useNavigate();
 
   // --- FETCHING FROM ALL RELEVANT APIs ---
   const { data: offerings = [], isLoading: isOfferingsLoading } = useGetAllOfferingsQuery();
   const { data: popularPujas = [], isLoading: isPopularLoading } = useGetActivePujasQuery();
   const { data: generalServices = [], isLoading: isServicesLoading } = useGetActiveServicesQuery();
+  const { data: vendorServicesRes, isLoading: isVendorLoading } = useGetPublicVendorServicesQuery();
+
+  const vendorServices = vendorServicesRes?.data || [];
 
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -78,17 +86,27 @@ const PujaServices = () => {
       source: 'service'
     }));
 
-    // De-duplicate based on title/slug to avoid showing the same thing twice if it's in multiple APIs
-    const merged = [...normalizedOfferings, ...normalizedPopular, ...normalizedServices];
-    const seen = new Set();
-    return merged.filter(item => {
-      const duplicate = seen.has(item.title);
-      seen.add(item.title);
-      return !duplicate;
-    });
-  }, [offerings, popularPujas, generalServices]);
+    // Normalize Vendor Services (The New Data)
+    const normalizedVendor = vendorServices.map(v => ({
+      ...v,
+      _id: v._id,
+      title: v.title,
+      shortDescription: v.description,
+      price: v.price,
+      duration: v.duration,
+      imageUrl: v.image, // Using the image from vendor dashboard
+      imageAlt: v.imageAlt, // Using the Alt Tag from vendor dashboard
+      category: v.category === 'puja' ? "Temple Rituals" : v.category.charAt(0).toUpperCase() + v.category.slice(1),
+      vendorName: v.vendor?.businessName,
+      slug: v.slug ? (v.slug.startsWith('vendor-service-') ? v.slug : `vendor-service-${v.slug}`) : `vendor-service-${v._id}`,
+      source: 'vendor'
+    }));
 
-  const isLoading = isOfferingsLoading || isPopularLoading || isServicesLoading;
+    // Return all merged services
+    return [...normalizedOfferings, ...normalizedPopular, ...normalizedServices, ...normalizedVendor];
+  }, [offerings, popularPujas, generalServices, vendorServices]);
+
+  const isLoading = isOfferingsLoading || isPopularLoading || isServicesLoading || isVendorLoading;
 
   const categories = useMemo(() => {
     const cats = ["All", ...new Set(allServicesCombined.map(o => o.category))];
@@ -106,6 +124,10 @@ const PujaServices = () => {
   }, [activeCategory, searchQuery, allServicesCombined]);
 
   const handleOpenDrawer = (puja = null) => {
+    if (!user) {
+      navigate('/user_login/registeration');
+      return;
+    }
     window.dispatchEvent(new CustomEvent('openPoojaDrawer', { detail: puja }));
   };
 
@@ -265,11 +287,21 @@ const PujaServices = () => {
                           <div className="absolute top-0 right-0 w-64 h-64 bg-amber-100/30 rounded-full blur-[90px] -mr-32 -mt-32 pointer-events-none" />                          {/* Top Image Area - REDUCED HEIGHT */}
                           <div className="relative m-2.5 mb-3 rounded-2xl overflow-hidden shadow-md h-44 md:h-52 z-10 flex items-center justify-center bg-amber-50 group-hover/card:bg-white transition-all duration-500">
                             <img
-                              src={getImageUrl(puja.imageUrl)}
-                              alt={puja.title}
+                              src={puja.imageUrl || "/placeholder-puja.jpg"}
+                              alt={puja.imageAlt || puja.title}
                               className="absolute inset-0 w-full h-full object-cover group-hover/card:scale-110 transition-transform duration-[2.5s]"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-[#1A130F]/70 via-transparent to-transparent opacity-60" />
+
+                            {/* Vendor Attribution */}
+                            {puja.vendorName && (
+                              <div className="absolute bottom-2 left-3 z-20 flex items-center gap-1.5">
+                                <div className="w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
+                                  <Home className="w-2 h-2 text-white" />
+                                </div>
+                                <span className="text-[8px] font-bold text-white uppercase tracking-tighter shadow-sm">{puja.vendorName}</span>
+                              </div>
+                            )}
 
                             {/* Category Mini Badge */}
                             <div className="absolute top-4 left-4 z-20">

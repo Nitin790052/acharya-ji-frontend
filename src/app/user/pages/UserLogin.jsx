@@ -95,8 +95,7 @@ const UserLogin = () => {
 
   const handleLoginSuccess = (response) => {
     const { token, data } = response;
-    localStorage.setItem("token", token);
-    login(data);
+    login(data, token);
     toast.success(`Welcome back, ${data.name}!`);
 
     if (location.state?.returnTo) {

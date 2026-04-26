@@ -47,7 +47,7 @@ import commercialVastuImg from "../../assets/vastuRamadies/commercialvastu.webp"
 import vastueAbout from "../../assets/vastuRamadies/vastueAbout.webp";
 
 const VastuConsultation = () => {
-    const banner = usePageBanner({ pollingInterval: 3000 });
+    const banner = usePageBanner({ pollingInterval: 60000 });
     const bannerImage = getImageUrl(banner?.imageUrl);
     const [selectedFaq, setSelectedFaq] = useState(null);
 

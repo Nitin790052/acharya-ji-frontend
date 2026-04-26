@@ -37,7 +37,7 @@ const AstrologyServicePage = ({ slug: propSlug }) => {
     const slug = propSlug || paramSlug;
 
     // Exactly match site-wide standard banner logic
-    const banner = usePageBanner({ pollingInterval: 3000 });
+    const banner = usePageBanner({ pollingInterval: 60000 });
     const { data: page, isLoading, isError } = useGetAstrologyPageBySlugQuery(slug, { skip: !slug });
 
     React.useEffect(() => {

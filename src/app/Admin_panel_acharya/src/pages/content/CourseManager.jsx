@@ -54,9 +54,9 @@ const CourseManager = () => {
 
     const { data: pageData, isLoading: pageLoading } = useGetLearningPageBySlugQuery(selectedSlug, {
         skip: selectedSlug === 'undefined' || !selectedSlug,
-        pollingInterval: 3000,
+        pollingInterval: 60000,
     });
-    const { data: overviewResponse } = useGetLearningOverviewQuery(undefined, { pollingInterval: 3000 });
+    const { data: overviewResponse } = useGetLearningOverviewQuery(undefined, { pollingInterval: 60000 });
 
     const [updateSettings] = useUpdatePageSettingsMutation();
     const [updateStatus] = useUpdatePortalStatusMutation();

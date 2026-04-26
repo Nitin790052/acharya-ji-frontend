@@ -12,11 +12,16 @@ import {
     useDeleteOfferingMutation,
     useSeedOfferingsMutation
 } from '../../../../../services/pujaOfferingApi';
+import { useGetAllAdminVendorServicesQuery } from '../../../../../services/vendorApi';
 import { toast } from 'react-toastify';
 import { BACKEND_URL, getImageUrl } from '../../../../../config/apiConfig';
 
 const PujaOfferingManager = () => {
     const { data: offerings = [], isLoading } = useGetAllOfferingsQuery();
+    const { data: vendorServicesRes, isLoading: isVendorLoading } = useGetAllAdminVendorServicesQuery();
+    const vendorServices = vendorServicesRes?.data || [];
+    
+    const [activeTab, setActiveTab] = useState('System Offerings');
     const [createOffering] = useCreateOfferingMutation();
     const [updateOffering] = useUpdateOfferingMutation();
     const [deleteOffering] = useDeleteOfferingMutation();
@@ -558,50 +563,78 @@ const PujaOfferingManager = () => {
                 </div>
             )}
 
+            {/* Tab Navigation */}
+            <div className="flex items-center gap-4 mb-8 bg-white p-2 rounded-2xl shadow-sm border border-gray-100 max-w-max">
+                {['System Offerings', 'Vendor Services'].map(tab => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                            activeTab === tab 
+                            ? 'bg-blue-900 text-white shadow-lg shadow-blue-200' 
+                            : 'bg-transparent text-gray-400 hover:bg-gray-50'
+                        }`}
+                    >
+                        {tab}
+                    </button>
+                ))}
+            </div>
+
             {/* List */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {offerings.map(item => (
+                {(activeTab === 'System Offerings' ? offerings : vendorServices).map(item => (
                     <div key={item._id} className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden group hover:shadow-2xl hover:shadow-blue-900/10 transition-all">
                         <div className="h-44 relative overflow-hidden">
                             <img
-                                src={getImageUrl(item.imageUrl)}
+                                src={getImageUrl(activeTab === 'System Offerings' ? item.imageUrl : item.image)}
                                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                             />
                             <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-2 shadow-sm">
                                 <span className="text-[10px] font-black text-gray-800 uppercase tracking-wider">₹{item.price}</span>
                             </div>
                             <div className="absolute inset-0 bg-blue-900/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                                <a href={`/puja/${item.slug}`} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-blue-900 shadow-lg hover:scale-110 transition-all"><Eye size={18} /></a>
+                                {activeTab === 'System Offerings' ? (
+                                    <a href={`/puja/${item.slug}`} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-blue-900 shadow-lg hover:scale-110 transition-all"><Eye size={18} /></a>
+                                ) : (
+                                    <a href={`/puja/${item.slug ? (item.slug.startsWith('vendor-service-') ? item.slug : `vendor-service-${item.slug}`) : `vendor-service-${item._id}`}`} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-orange-600 shadow-lg hover:scale-110 transition-all"><Eye size={18} /></a>
+                                )}
                             </div>
                         </div>
                         <div className="p-6">
                             <h3 className="font-black text-gray-800 text-xl leading-tight mb-2 group-hover:text-blue-900 transition-colors uppercase tracking-tight">{item.title}</h3>
-                            <p className="text-gray-500 text-sm line-clamp-2 font-medium mb-4">{item.shortDescription}</p>
+                            <p className="text-gray-500 text-sm line-clamp-2 font-medium mb-4">{activeTab === 'System Offerings' ? item.shortDescription : item.description}</p>
                             <div className="flex items-center justify-between pt-4 border-t border-gray-50">
                                 <div className="flex items-center gap-3">
                                     <div className="flex items-center gap-1 text-[10px] font-bold text-blue-900 bg-blue-50 px-2 py-1 rounded-md">
                                         <Clock size={12} /> {item.duration}
                                     </div>
+                                    {activeTab === 'Vendor Services' && (
+                                        <div className="flex items-center gap-1 text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded-md">
+                                            {item.vendor?.businessName}
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="flex items-center gap-1">
-                                    <button
-                                        onClick={() => handleEdit(item)}
-                                        className="p-2 text-gray-300 hover:text-blue-900 transition-colors"
-                                    >
-                                        <Edit2 size={18} />
-                                    </button>
-                                    <button
-                                        onClick={async () => {
-                                            if (window.confirm('Delete offering?')) {
-                                                try { await deleteOffering(item._id).unwrap(); toast.success('Deleted'); }
-                                                catch (e) { toast.error('Delete failed'); }
-                                            }
-                                        }}
-                                        className="p-2 text-gray-300 hover:text-red-500 transition-colors"
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
-                                </div>
+                                {activeTab === 'System Offerings' && (
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            onClick={() => handleEdit(item)}
+                                            className="p-2 text-gray-300 hover:text-blue-900 transition-colors"
+                                        >
+                                            <Edit2 size={18} />
+                                        </button>
+                                        <button
+                                            onClick={async () => {
+                                                if (window.confirm('Delete offering?')) {
+                                                    try { await deleteOffering(item._id).unwrap(); toast.success('Deleted'); }
+                                                    catch (e) { toast.error('Delete failed'); }
+                                                }
+                                            }}
+                                            className="p-2 text-gray-300 hover:text-red-500 transition-colors"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

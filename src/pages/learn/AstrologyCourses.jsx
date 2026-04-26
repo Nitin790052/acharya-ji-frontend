@@ -196,7 +196,7 @@ const categoryFilters = [
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 const AstrologyCourses = () => {
-    const banner = usePageBanner({ pollingInterval: 3000 });
+    const banner = usePageBanner({ pollingInterval: 60000 });
     const bannerImage = getImageUrl(banner?.imageUrl);
     const [activeCategory, setActiveCategory] = useState('all');
 

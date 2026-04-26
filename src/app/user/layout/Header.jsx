@@ -28,7 +28,7 @@ import { useSelector } from 'react-redux';
 import { useCart } from '../../../contexts/CartContext';
 
 const Header = ({ toggleSidebar, sidebarOpen, isCollapsed, toggleCollapse, isMobile }) => {
-  const { data: dashboardData } = useGetUserDashboardQuery(undefined, { pollingInterval: 3000 });
+  const { data: dashboardData } = useGetUserDashboardQuery(undefined, { pollingInterval: 60000 });
   const { setIsCartOpen, totalItems: samagriCount } = useCart();
   const poojaCartItems = useSelector(state => state.cart?.cartItems || []);
   const cartCount = samagriCount + poojaCartItems.length;

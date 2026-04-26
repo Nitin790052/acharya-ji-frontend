@@ -43,7 +43,7 @@ const PendingOrders = () => {
   })
 
   // ========== RTK QUERY ==========
-  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('pending', { pollingInterval: 3000 });
+  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('pending', { pollingInterval: 60000 });
   const [cancelOrder] = useCancelOrderMutation();
   const [payOrder] = usePayOrderMutation();
 

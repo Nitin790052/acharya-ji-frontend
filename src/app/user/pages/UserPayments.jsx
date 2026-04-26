@@ -68,8 +68,8 @@ const UserPayments = () => {
   const invoiceRef = useRef();
 
   // ========== RTK QUERY ==========
-  const { data: dashboardResponse, isLoading: isDashboardLoading } = useGetUserDashboardQuery(selectedTime, { pollingInterval: 3000 });
-  const { data: historyResponse, isLoading: isHistoryLoading } = useGetUserHistoryQuery(selectedTime, { pollingInterval: 3000 });
+  const { data: dashboardResponse, isLoading: isDashboardLoading } = useGetUserDashboardQuery(selectedTime, { pollingInterval: 60000 });
+  const { data: historyResponse, isLoading: isHistoryLoading } = useGetUserHistoryQuery(selectedTime, { pollingInterval: 60000 });
 
   const dashboardData = dashboardResponse?.data;
   const historyData = historyResponse?.data || [];

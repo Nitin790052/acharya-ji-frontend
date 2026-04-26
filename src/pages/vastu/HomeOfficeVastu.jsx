@@ -59,7 +59,7 @@ import officeVastuImg from "../../assets/vastuRamadies/Office Vastu.webp";
 import vastueAbout from "../../assets/vastuRamadies/vastueAbout.webp";
 
 const HomeOfficeVastu = () => {
-    const banner = usePageBanner({ pollingInterval: 3000 });
+    const banner = usePageBanner({ pollingInterval: 60000 });
     const bannerImage = banner?.imageUrl ? (banner.imageUrl.startsWith('http') ? banner.imageUrl : `${BACKEND_URL}${banner.imageUrl}`) : null;
     useEffect(() => {
         window.scrollTo(0, 0);

@@ -184,14 +184,14 @@ const Sidebar = ({
     {
       key: "vendor-categories", icon: <FiGrid />, label: "Vendor Categories",
       children: [
-        { key: "cat-pandit", icon: <FiUserCheck />, label: "Pandit", path: "/admin-acharya/dashboard/vendors/category/pandit" },
-        { key: "cat-astrologer", icon: <FiActivity />, label: "Astrologer", path: "/admin-acharya/dashboard/vendors/category/astrologer" },
-        { key: "cat-puja-samagri", icon: <FiShoppingBag />, label: "Puja Samagri", path: "/admin-acharya/dashboard/vendors/category/puja-samagri" },
-        { key: "cat-temple", icon: <FiHome />, label: "Temple Services", path: "/admin-acharya/dashboard/vendors/category/temple" },
-        { key: "cat-event", icon: <FiCalendar />, label: "Event Organizer", path: "/admin-acharya/dashboard/vendors/category/event" },
-        { key: "cat-spiritual-guide", icon: <FiStar />, label: "Spiritual Guide", path: "/admin-acharya/dashboard/vendors/category/guide" },
-        { key: "cat-healer", icon: <FiHeart />, label: "Spiritual Healer", path: "/admin-acharya/dashboard/vendors/category/healer" },
-        { key: "cat-scholar", icon: <FiBookOpen />, label: "Vedic Scholar", path: "/admin-acharya/dashboard/vendors/category/scholar" },
+        { key: "cat-pandit", icon: <FiUserCheck />, label: "Pandit", path: "/admin-acharya/dashboard/vendors/category/Pandit" },
+        { key: "cat-astrologer", icon: <FiActivity />, label: "Astrologer", path: "/admin-acharya/dashboard/vendors/category/Astrologer" },
+        { key: "cat-puja-samagri", icon: <FiShoppingBag />, label: "Puja Samagri", path: "/admin-acharya/dashboard/vendors/category/Puja Samagri Seller" },
+        { key: "cat-temple", icon: <FiHome />, label: "Temple Services", path: "/admin-acharya/dashboard/vendors/category/Temple Services" },
+        { key: "cat-event", icon: <FiCalendar />, label: "Event Organizer", path: "/admin-acharya/dashboard/vendors/category/Event Organizer" },
+        { key: "cat-spiritual-guide", icon: <FiStar />, label: "Spiritual Guide", path: "/admin-acharya/dashboard/vendors/category/Spiritual Guide" },
+        { key: "cat-healer", icon: <FiHeart />, label: "Spiritual Healer", path: "/admin-acharya/dashboard/vendors/category/Spiritual Healer" },
+        { key: "cat-scholar", icon: <FiBookOpen />, label: "Vedic Scholar", path: "/admin-acharya/dashboard/vendors/category/Vedic Scholar" },
       ]
     },
 
@@ -201,6 +201,7 @@ const Sidebar = ({
         { key: "all-vendors", icon: <FiUsers />, label: "All Vendors", path: "/admin-acharya/dashboard/vendors/all" },
         { key: "pending-approvals", icon: <FiClock />, label: "Pending Approvals", path: "/admin-acharya/dashboard/vendors/pending" },
         { key: "approved-vendors", icon: <FiCheckCircle />, label: "Approved Vendors", path: "/admin-acharya/dashboard/vendors/approved" },
+        { key: "service-approvals", icon: <FiLayout />, label: "Service Approvals", path: "/admin-acharya/dashboard/vendors/service-approvals" },
         { key: "vendor-earnings", icon: <FiDollarSign />, label: "Vendor Earnings", path: "/admin-acharya/dashboard/vendors/earnings" },
       ]
     },

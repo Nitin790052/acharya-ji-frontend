@@ -46,7 +46,7 @@ const CancelledOrders = () => {
   });
 
   // ========== RTK QUERY ==========
-  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('cancelled', { pollingInterval: 3000 });
+  const { data: ordersResponse, isLoading } = useGetUserOrdersQuery('cancelled', { pollingInterval: 60000 });
   const [deleteOrder] = useDeleteOrderMutation();
 
   const handleDeleteOrder = async (orderId) => {

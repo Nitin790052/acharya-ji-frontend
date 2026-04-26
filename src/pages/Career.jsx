@@ -27,8 +27,8 @@ const LUCIDE_ICONS = {
 };
 
 export default function Career() {
-  const banner = usePageBanner({ pollingInterval: 3000 });
-  const { data: careerContent, isLoading } = useGetCareerContentQuery(undefined, { pollingInterval: 3000 });
+  const banner = usePageBanner({ pollingInterval: 60000 });
+  const { data: careerContent, isLoading } = useGetCareerContentQuery(undefined, { pollingInterval: 60000 });
 
   const [formData, setFormData] = useState({
     fullName: '',

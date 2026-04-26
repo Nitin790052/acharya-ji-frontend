@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import HeroBanner from '../components/home/HeroBanner';
 import { useGetOfferingBySlugQuery } from '../services/pujaOfferingApi';
+import { useGetPublicVendorServiceByIdQuery } from '../services/vendorApi';
 import homeImg from "@/assets/grihaPraveshPuja/home_visit.webp"
 import onlineImg from "@/assets/grihaPraveshPuja/online_puja.webp"
 import muhuratImg from "@/assets/grihaPraveshPuja/muhurat.webp"
@@ -15,12 +16,44 @@ import {
 import { API_URL, BACKEND_URL, getImageUrl } from '../config/apiConfig';
 import { usePageBanner } from '../hooks/usePageBanner';
 import SEO from '../components/layout/SEO';
+import { useUserAuth } from '../app/user/auth/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 
 const PujaDetails = () => {
     const { slug } = useParams();
-    const { data: offering, isLoading, isError } = useGetOfferingBySlugQuery(slug, { pollingInterval: 3000 });
+    const isVendorService = slug.startsWith('vendor-service-');
+    const vendorServiceRef = isVendorService ? slug : null;
+
+    // Fetch from appropriate API
+    const { 
+        data: systemOffering, 
+        isLoading: isSystemLoading, 
+        isError: isSystemError 
+    } = useGetOfferingBySlugQuery(slug, { skip: isVendorService, pollingInterval: 3000 });
+
+    const { 
+        data: vendorServiceRes, 
+        isLoading: isVendorLoading, 
+        isError: isVendorError 
+    } = useGetPublicVendorServiceByIdQuery(vendorServiceRef, { skip: !isVendorService });
+
     const banner = usePageBanner();
+    const { user } = useUserAuth();
+    const navigate = useNavigate();
+
+    // Data Normalization
+    const isLoading = isSystemLoading || isVendorLoading;
+    const isError = isSystemError || isVendorError;
+    
+    const offering = isVendorService ? (vendorServiceRes?.data ? {
+        ...vendorServiceRes.data,
+        shortDescription: vendorServiceRes.data.description,
+        longDescription: vendorServiceRes.data.description, // Vendor services only have one description field
+        imageUrl: vendorServiceRes.data.image,
+        benefits: ['Sacred Vedic Rituals', 'Experienced Guidance', 'Complete Samagri Support', 'Shastra Compliant'],
+        faqs: []
+    } : null) : systemOffering;
 
 
     // Modal States
@@ -101,9 +134,9 @@ const PujaDetails = () => {
 
     return (
         <Layout>
-            <SEO 
-                title={offering.metaTitle || banner.metaTitle} 
-                description={offering.metaDescription || banner.metaDescription} 
+            <SEO
+                title={offering.metaTitle || banner.metaTitle}
+                description={offering.metaDescription || banner.metaDescription}
                 keywords={offering.metaKeywords || banner.metaKeywords}
                 canonical={offering.canonicalUrl || banner.canonicalUrl}
                 schemaData={faqSchema}
@@ -129,7 +162,9 @@ const PujaDetails = () => {
                         <div className="max-w-4xl mx-auto text-center">
                             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-xl border border-white/30 mb-4 md:mb-8 shadow-2xl">
                                 <Award className="w-4 h-4 text-[#FFC107]" />
-                                <span className="text-[#FFC107] text-xs md:text-sm font-black uppercase tracking-widest">{banner.badge || 'DIVINE SERVICES HUB'}</span>
+                                <span className="text-[#FFC107] text-xs md:text-sm font-black uppercase tracking-widest">
+                                    {isVendorService ? `SACRED PROVIDER: ${offering?.vendor?.businessName || 'TEMPLE PARTNER'}` : (banner.badge || 'DIVINE SERVICES HUB')}
+                                </span>
                             </div>
 
                             <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)] uppercase">
@@ -264,7 +299,13 @@ const PujaDetails = () => {
                                                     ))}
                                                 </ul>
                                                 <button
-                                                    onClick={() => service.title.includes('Muhurat') ? setShowMuhuratModal(true) : setShowBookingModal(true)}
+                                                    onClick={() => {
+                                                        if (!user) {
+                                                            navigate('/user_login/registeration');
+                                                        } else {
+                                                            service.title.includes('Muhurat') ? setShowMuhuratModal(true) : setShowBookingModal(true);
+                                                        }
+                                                    }}
                                                     className="w-full py-3 bg-[#2A1D13] text-amber-400 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-orange-600 hover:text-white transition-all shadow-lg"
                                                 >
                                                     Book Selection
@@ -388,7 +429,13 @@ const PujaDetails = () => {
                         {/* Buttons - Compact and Squared */}
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             <button
-                                onClick={() => window.dispatchEvent(new CustomEvent('openPoojaDrawer'))}
+                                onClick={() => {
+                                    if (!user) {
+                                        navigate('/user_login/registeration');
+                                    } else {
+                                        window.dispatchEvent(new CustomEvent('openPoojaDrawer'));
+                                    }
+                                }}
                                 className="flex items-center justify-center gap-3 bg-[#E8453C] text-white px-8 py-3.5  font-black text-xs uppercase tracking-widest shadow-lg hover:brightness-110 transition-all w-full sm:w-60"
                             >
                                 <MessageCircle size={18} />
@@ -396,7 +443,13 @@ const PujaDetails = () => {
                             </button>
 
                             <button
-                                onClick={() => setShowMuhuratModal(true)}
+                                onClick={() => {
+                                    if (!user) {
+                                        navigate('/user_login/registeration');
+                                    } else {
+                                        setShowMuhuratModal(true);
+                                    }
+                                }}
                                 className="flex items-center justify-center gap-3 bg-[#F59E0B] text-white px-8 py-3.5  font-black text-xs uppercase tracking-widest shadow-lg hover:brightness-110 transition-all w-full sm:w-60"
                             >
                                 <Phone size={18} />

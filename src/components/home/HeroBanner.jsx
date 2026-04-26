@@ -8,7 +8,7 @@ import { BACKEND_URL, getImageUrl } from '../../config/apiConfig';
 const HeroBanner = () => {
     const location = useLocation();
     const { data: bannersData, isLoading } = useGetActiveBannersQuery(undefined, {
-        pollingInterval: 3000,
+        pollingInterval: 60000,
         refetchOnMountOrArgChange: true
     });
 

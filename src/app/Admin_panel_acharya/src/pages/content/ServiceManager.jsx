@@ -17,7 +17,7 @@ import { toast } from 'react-toastify';
 import { BACKEND_URL, getImageUrl } from '../../../../../config/apiConfig';
 
 const ServiceManager = () => {
-    const { data: services = [], isLoading, isError } = useGetAllServicesQuery(undefined, { pollingInterval: 3000 });
+    const { data: services = [], isLoading, isError } = useGetAllServicesQuery(undefined, { pollingInterval: 60000 });
     const [createService] = useCreateServiceMutation();
     const [updateService] = useUpdateServiceMutation();
     const [deleteService] = useDeleteServiceMutation();

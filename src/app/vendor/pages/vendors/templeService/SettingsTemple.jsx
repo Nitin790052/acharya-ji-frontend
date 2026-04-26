@@ -1,5 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import VendorPageHeader from '../../../components/VendorPageHeader';
+import { useAuth } from '../../../auth/AuthContext';
+import { useGetVendorProfileQuery, useUpdateVendorProfileMutation, useUploadVendorFileMutation } from '../../../../../services/vendorApi';
+import { toast } from 'react-toastify';
+import { getImageUrl } from '../../../../../config/apiConfig';
 
 import {
   // Core Icons
@@ -46,7 +50,29 @@ import {
 } from 'lucide-react';
 
 const SettingsTemple = () => {
+  const { user } = useAuth();
+  const { data: profileResponse, isLoading: isFetching, refetch } = useGetVendorProfileQuery(user?._id, {
+    skip: !user?._id
+  });
+  const [updateProfile, { isLoading: isUpdating }] = useUpdateVendorProfileMutation();
+  const [uploadFile] = useUploadVendorFileMutation();
+
   const [isLoading, setIsLoading] = useState(false);
+
+  // ============ HANDLE COPY ============
+  const handleCopy = (text, label) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copied to clipboard!`, {
+      position: "bottom-center",
+      autoClose: 2000,
+      hideProgressBar: true,
+      closeOnClick: true,
+      pauseOnHover: false,
+      draggable: false,
+      theme: "dark",
+    });
+  };
   const [activeTab, setActiveTab] = useState('temple');
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -56,6 +82,8 @@ const SettingsTemple = () => {
   const [deleteItem, setDeleteItem] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadType, setUploadType] = useState('');
+
+  const vendorData = profileResponse?.data;
 
   // ============ UNREAD COUNT ============
   const unreadCount = 2;
@@ -71,103 +99,99 @@ const SettingsTemple = () => {
 
   // ============ TEMPLE INFO DATA ============
   const [templeInfo, setTempleInfo] = useState({
-    name: 'Shri Ram Mandir',
-    subtitle: 'श्री राम मंदिर',
-    established: '1952',
-    registrationNo: 'TRUST/1952/00123',
-    pan: 'ABCDE1234F',
-    tan: 'MUMT12345A',
-    gstin: '27ABCDE1234F1Z5',
+    name: '',
+    subtitle: '',
+    established: '',
+    registrationNo: '',
+    pan: '',
+    tan: '',
+    gstin: '',
     address: {
-      line1: '12, Temple Road',
-      line2: 'Juhu Scheme',
-      city: 'Mumbai',
-      district: 'Mumbai Suburban',
-      state: 'Maharashtra',
-      pincode: '400049',
-      country: 'India'
+      line1: '', line2: '', city: '', district: '', state: '', pincode: '', country: 'India'
     },
     contact: {
-      phone: '+91 98765 43210',
-      alternatePhone: '+91 98765 43211',
-      email: 'contact@rammandir.com',
-      alternateEmail: 'admin@rammandir.com',
-      website: 'www.rammandir.com'
+      phone: '', alternatePhone: '', email: '', alternateEmail: '', website: ''
     },
     social: {
-      facebook: 'facebook.com/rammandir',
-      twitter: 'twitter.com/rammandir',
-      instagram: 'instagram.com/rammandir',
-      youtube: 'youtube.com/rammandir'
+      facebook: '', twitter: '', instagram: '', youtube: ''
     },
-    about: 'Shri Ram Mandir is a historic temple dedicated to Lord Rama, established in 1952. The temple is known for its beautiful architecture, peaceful atmosphere, and regular spiritual programs. We serve thousands of devotees daily and conduct various religious and cultural events throughout the year.',
-    facilities: ['Parking', 'Prasadam', 'Book Shop', 'Shoe Stand', 'Drinking Water', 'Wheelchair Access'],
+    about: '',
+    facilities: [],
     logo: null,
-    coverPhoto: null,
-    read: false
+    avatar: null,
+    coverPhoto: null
   });
+
+  useEffect(() => {
+    if (vendorData) {
+      setTempleInfo({
+        name: vendorData.name || '',
+        subtitle: vendorData.businessName || '',
+        established: vendorData.categoryData?.established || '',
+        registrationNo: vendorData.categoryData?.registrationNo || '',
+        pan: vendorData.panNumber || '',
+        tan: vendorData.categoryData?.tan || '',
+        gstin: vendorData.categoryData?.gstin || '',
+        address: {
+          line1: vendorData.categoryData?.address?.line1 || '',
+          line2: vendorData.categoryData?.address?.line2 || '',
+          city: vendorData.categoryData?.address?.city || vendorData.categoryData?.location || '',
+          district: vendorData.categoryData?.address?.district || '',
+          state: vendorData.categoryData?.address?.state || '',
+          pincode: vendorData.categoryData?.address?.pincode || '',
+          country: vendorData.categoryData?.address?.country || 'India'
+        },
+        contact: {
+          phone: vendorData.phone || '',
+          alternatePhone: vendorData.categoryData?.alternatePhone || '',
+          email: vendorData.email || '',
+          alternateEmail: vendorData.categoryData?.alternateEmail || '',
+          website: vendorData.categoryData?.website || ''
+        },
+        social: vendorData.categoryData?.social || { facebook: '', twitter: '', instagram: '', youtube: '' },
+        about: vendorData.categoryData?.about || '',
+        facilities: vendorData.categoryData?.facilities || [],
+        logo: vendorData.logo || null,
+        avatar: vendorData.avatar || null,
+        coverPhoto: vendorData.categoryData?.coverPhoto || null
+      });
+    }
+  }, [vendorData]);
 
   // ============ TIMINGS DATA ============
   const [timings, setTimings] = useState({
     temple: {
-      monday: { morning: '05:30 AM - 12:00 PM', evening: '04:00 PM - 09:00 PM', closed: false },
-      tuesday: { morning: '05:30 AM - 12:00 PM', evening: '04:00 PM - 09:00 PM', closed: false },
-      wednesday: { morning: '05:30 AM - 12:00 PM', evening: '04:00 PM - 09:00 PM', closed: false },
-      thursday: { morning: '05:30 AM - 12:00 PM', evening: '04:00 PM - 09:00 PM', closed: false },
-      friday: { morning: '05:30 AM - 12:00 PM', evening: '04:00 PM - 09:00 PM', closed: false },
-      saturday: { morning: '05:00 AM - 01:00 PM', evening: '03:00 PM - 10:00 PM', closed: false },
-      sunday: { morning: '05:00 AM - 01:00 PM', evening: '03:00 PM - 10:00 PM', closed: false },
-      holidays: 'Open on all major festivals. Closed on Diwali day.'
+      monday: { morning: '', evening: '', closed: false },
+      tuesday: { morning: '', evening: '', closed: false },
+      wednesday: { morning: '', evening: '', closed: false },
+      thursday: { morning: '', evening: '', closed: false },
+      friday: { morning: '', evening: '', closed: false },
+      saturday: { morning: '', evening: '', closed: false },
+      sunday: { morning: '', evening: '', closed: false },
+      holidays: ''
     },
-    aarti: [
-      { id: 1, name: 'Mangala Aarti', time: '05:30 AM', duration: '30 mins', description: 'Morning awakening aarti', active: true },
-      { id: 2, name: 'Shringar Aarti', time: '08:30 AM', duration: '30 mins', description: 'Decorating the deity', active: true },
-      { id: 3, name: 'Rajbhog Aarti', time: '12:00 PM', duration: '30 mins', description: 'Midday offering', active: true },
-      { id: 4, name: 'Sandhya Aarti', time: '07:00 PM', duration: '30 mins', description: 'Evening aarti', active: true },
-      { id: 5, name: 'Shayan Aarti', time: '08:30 PM', duration: '30 mins', description: 'Night bedtime aarti', active: true }
-    ],
-    specialTimings: [
-      { id: 1, name: 'Mahashivratri', date: '26 Feb 2026', timings: '04:00 AM - 11:00 PM', description: 'Special puja and abhishek' },
-      { id: 2, name: 'Ram Navami', date: '06 Apr 2026', timings: '04:00 AM - 11:00 PM', description: 'Birth celebration of Lord Rama' },
-      { id: 3, name: 'Hanuman Jayanti', date: '12 Apr 2026', timings: '04:00 AM - 10:00 PM', description: 'Birth celebration of Lord Hanuman' }
-    ],
-    read: false
+    aarti: [],
+    specialTimings: []
   });
 
   // ============ BANK DETAILS DATA ============
   const [bankDetails, setBankDetails] = useState({
-    primary: {
-      id: 1,
-      bankName: 'ICICI Bank',
-      branch: 'Juhu Branch, Mumbai',
-      accountName: 'Shri Ram Mandir Trust',
-      accountNumber: '123456789012',
-      maskedAccount: 'XXXX XXXX 9012',
-      ifsc: 'ICIC001234',
-      micr: '400229012',
-      accountType: 'Current Account',
-      upiId: 'rammandir@icici',
-      swiftCode: 'ICICINBBXXX',
-      verified: true,
-      isPrimary: true
-    },
-    secondary: {
-      id: 2,
-      bankName: 'State Bank of India',
-      branch: 'Juhu Branch, Mumbai',
-      accountName: 'Shri Ram Mandir Donation',
-      accountNumber: '12345678901',
-      maskedAccount: 'XXXX XXXX 8901',
-      ifsc: 'SBIN001234',
-      micr: '400002012',
-      accountType: 'Savings Account',
-      upiId: 'rammandir@sbi',
-      swiftCode: 'SBININBBXXX',
-      verified: false,
-      isPrimary: false
-    },
-    read: false
+    primary: { bankName: '', branch: '', accountName: '', accountNumber: '', ifsc: '', upiId: '', verified: false, isPrimary: true },
+    secondary: { bankName: '', branch: '', accountName: '', accountNumber: '', ifsc: '', upiId: '', verified: false, isPrimary: false }
   });
+
+  useEffect(() => {
+    if (vendorData) {
+      // ... previous templeInfo set ...
+      
+      if (vendorData.categoryData?.timings) {
+        setTimings(vendorData.categoryData.timings);
+      }
+      if (vendorData.categoryData?.bankDetails) {
+        setBankDetails(vendorData.categoryData.bankDetails);
+      }
+    }
+  }, [vendorData]);
 
   // ============ DOCUMENTS DATA ============
   const [documents, setDocuments] = useState({
@@ -269,14 +293,59 @@ const SettingsTemple = () => {
   };
 
   // ============ HANDLE SAVE ============
-  const handleSave = (section, message = 'Settings saved successfully!') => {
-    setIsLoading(true);
-    setTimeout(() => {
+  const handleSave = async (section, message = 'Settings saved successfully!', updatedData = null, updatedBankDetails = null, updatedTimings = null) => {
+    try {
+      setIsLoading(true);
+      
+      const dataToSave = updatedData || templeInfo;
+      const bankToSave = updatedBankDetails || bankDetails;
+      const timingsToSave = updatedTimings || timings;
+
+      const formData = new FormData();
+      
+      formData.append('name', dataToSave.name);
+      formData.append('businessName', dataToSave.subtitle);
+      formData.append('phone', dataToSave.contact.phone);
+      formData.append('email', dataToSave.contact.email);
+      
+      if (dataToSave.logoFile) formData.append('logo', dataToSave.logoFile);
+      if (dataToSave.avatarFile) formData.append('avatar', dataToSave.avatarFile);
+
+      const categoryData = {
+        ...vendorData?.categoryData,
+        established: dataToSave.established,
+        registrationNo: dataToSave.registrationNo,
+        tan: dataToSave.tan,
+        gstin: dataToSave.gstin,
+        address: dataToSave.address,
+        alternatePhone: dataToSave.contact.alternatePhone,
+        alternateEmail: dataToSave.contact.alternateEmail,
+        website: dataToSave.contact.website,
+        social: dataToSave.social,
+        about: dataToSave.about,
+        facilities: dataToSave.facilities,
+        coverPhoto: dataToSave.coverPhoto,
+        timings: timingsToSave,
+        bankDetails: bankToSave
+      };
+      
+      formData.append('categoryData', JSON.stringify(categoryData));
+      formData.append('panNumber', dataToSave.pan);
+
+      const result = await updateProfile({ id: user?._id, data: formData }).unwrap();
+      
+      if (result.success) {
+        setSuccessMessage(message);
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 3000);
+        refetch();
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      toast.error(error.data?.message || 'Failed to update settings');
+    } finally {
       setIsLoading(false);
-      setSuccessMessage(message);
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
-    }, 800);
+    }
   };
 
   // ============ TEMPLE INFO UPDATES ============
@@ -499,118 +568,279 @@ const SettingsTemple = () => {
   // Edit Modal
   const EditModal = () => {
     const [formData, setFormData] = useState({});
+    const [errors, setErrors] = useState({});
+    const [imagePreview, setImagePreview] = useState(null);
 
     if (!showEditModal) return null;
 
+    const INDIAN_BANKS = [
+      "State Bank of India", "HDFC Bank", "ICICI Bank", "Axis Bank", "Punjab National Bank", 
+      "Bank of Baroda", "Canara Bank", "Union Bank of India", "Bank of India", "Indian Bank",
+      "IndusInd Bank", "Kotak Mahindra Bank", "Yes Bank", "IDFC First Bank", "Federal Bank",
+      "Standard Chartered Bank", "IDBI Bank", "RBL Bank", "Bandhan Bank", "UCO Bank"
+    ];
+
+    const validateIFSC = (ifsc) => {
+      const regex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+      return regex.test(ifsc);
+    };
+
     const handleInputChange = (e) => {
-      setFormData({
-        ...formData,
-        [e.target.name]: e.target.value
-      });
+      const { name, value, type, files } = e.target;
+      
+      if (type === 'file') {
+        const file = files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setImagePreview(reader.result);
+            // Store the base64 for preview, and the file object for upload
+            setFormData(prev => ({ 
+              ...prev, 
+              [name]: reader.result,
+              [`${name}File`]: file 
+            }));
+          };
+          reader.readAsDataURL(file);
+        }
+        return;
+      }
+
+      setFormData(prev => ({ ...prev, [name]: value }));
+      
+      // Clear error when typing
+      if (errors[name]) {
+        setErrors(prev => ({ ...prev, [name]: '' }));
+      }
     };
 
     const handleSubmit = () => {
-      // Handle different edit types
+      // Create a temporary object to hold updates
+      let updatedInfo = { ...templeInfo };
+
+      // Validation for Bank Details
+      if (editType === 'Bank Details' || editType === 'Secondary Bank') {
+        const newErrors = {};
+        if (formData.ifsc && !validateIFSC(formData.ifsc)) {
+          newErrors.ifsc = 'Invalid IFSC Format (e.g., ICIC0001234)';
+        }
+        if (formData.ifsc && formData.ifsc.length !== 11) {
+          newErrors.ifsc = 'IFSC must be exactly 11 characters';
+        }
+        
+        if (Object.keys(newErrors).length > 0) {
+          setErrors(newErrors);
+          toast.error('Please fix validation errors');
+          return;
+        }
+      }
+
+      // Merge formData into updatedInfo
       switch(editType) {
         case 'Temple Info':
-        case 'Contact Info':
-        case 'Address':
-        case 'Tax Info':
-        case 'About':
-          handleSave(editType, `${editType} updated successfully!`);
+          if (formData.field1) updatedInfo.name = formData.field1;
+          if (formData.subtitle) updatedInfo.subtitle = formData.subtitle;
+          if (formData.established) updatedInfo.established = formData.established;
           break;
-        case 'Temple Timings':
-        case 'Aarti Timings':
-        case 'Special Timings':
-          handleSave(editType, `${editType} updated successfully!`);
+        case 'Contact Info':
+          updatedInfo.contact = {
+            ...updatedInfo.contact,
+            phone: formData.phone || updatedInfo.contact.phone,
+            email: formData.email || updatedInfo.contact.email,
+            alternatePhone: formData.alternatePhone || updatedInfo.contact.alternatePhone,
+            alternateEmail: formData.alternateEmail || updatedInfo.contact.alternateEmail
+          };
+          break;
+        case 'Address Details':
+          updatedInfo.address = {
+            ...updatedInfo.address,
+            line1: formData.line1 || updatedInfo.address.line1,
+            line2: formData.line2 || updatedInfo.address.line2,
+            city: formData.city || updatedInfo.address.city,
+            state: formData.state || updatedInfo.address.state,
+            pincode: formData.pincode || updatedInfo.address.pincode
+          };
+          break;
+        case 'Tax Info':
+          if (formData.pan) updatedInfo.pan = formData.pan;
+          if (formData.tan) updatedInfo.tan = formData.tan;
+          if (formData.gstin) updatedInfo.gstin = formData.gstin;
+          break;
+        case 'Logo':
+          if (formData.logoFile) {
+            updatedInfo.logoFile = formData.logoFile;
+            updatedInfo.logo = formData.logo; 
+          }
+          break;
+        case 'Profile Photo':
+          if (formData.avatarFile) {
+            updatedInfo.avatarFile = formData.avatarFile;
+            updatedInfo.avatar = formData.avatar;
+          }
           break;
         case 'Bank Details':
         case 'Secondary Bank':
-          handleSave(editType, `${editType} updated successfully!`);
-          break;
-        case 'Notifications':
-        case 'Display':
-        case 'Booking':
-        case 'Privacy':
-          handleSave(editType, `${editType} updated successfully!`);
-          break;
-        default:
-          handleSave('Settings', 'Settings updated successfully!');
+          const bankType = editType === 'Bank Details' ? 'primary' : 'secondary';
+          const newBankData = {
+            ...bankDetails[bankType],
+            bankName: formData.bankName || bankDetails[bankType].bankName,
+            ifsc: formData.ifsc || bankDetails[bankType].ifsc,
+            accountNumber: formData.accountNumber || bankDetails[bankType].accountNumber,
+            accountName: formData.accountName || bankDetails[bankType].accountName,
+            upiId: formData.upiId || bankDetails[bankType].upiId
+          };
+          
+          // Update the local state
+          updateBankAccount(bankType, 'bankName', newBankData.bankName);
+          updateBankAccount(bankType, 'ifsc', newBankData.ifsc);
+          updateBankAccount(bankType, 'accountNumber', newBankData.accountNumber);
+          
+          // Pass the fresh bank data to handleSave
+          const freshBankDetails = { ...bankDetails, [bankType]: newBankData };
+          handleSave(editType, `${editType} updated successfully!`, updatedInfo, freshBankDetails);
+          setShowEditModal(false);
+          setImagePreview(null);
+          return; // Exit early as we called handleSave manually with freshBankDetails
       }
+
+      handleSave(editType, `${editType} updated successfully!`, updatedInfo);
       setShowEditModal(false);
+      setImagePreview(null);
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg w-full max-w-md">
-          {/* Modal Header - EXACT match */}
-          <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40 px-4 py-3 border-b border-orange-100">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-orange-50 rounded flex items-center justify-center">
-                  <Edit3 className="w-5 h-5 text-orange-500" />
-                </div>
-                <h3 className="text-[15px] font-bold text-gray-800">
-                  Edit {editType}
-                </h3>
-              </div>
-              <button 
-                onClick={() => setShowEditModal(false)}
-                className="p-1 hover:bg-gray-100 rounded transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-[110] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-200">
+          <div className="bg-gradient-to-r from-orange-100/30 via-yellow-200/20 to-amber-300/40 px-6 py-4 border-b border-orange-100 flex items-center justify-between">
+            <h3 className="text-lg font-black text-gray-800">Edit {editType}</h3>
+            <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5 text-gray-500" /></button>
           </div>
 
-          {/* Modal Content */}
-          <div className="p-6 space-y-4">
-            <p className="text-sm text-gray-600">
-              Update your {editType.toLowerCase()} information below.
-            </p>
-            
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  {editType} Field
-                </label>
-                <input
-                  type="text"
-                  name="field1"
-                  placeholder={`Enter ${editType.toLowerCase()}`}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm"
-                />
+          <div className="p-8 space-y-4">
+            {(editType === 'Bank Details' || editType === 'Secondary Bank') ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Select Bank</label>
+                  <select name="bankName" onChange={handleInputChange} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 transition-all font-bold text-gray-800 outline-none shadow-sm">
+                    <option value="">Choose Bank...</option>
+                    {INDIAN_BANKS.map(bank => <option key={bank} value={bank}>{bank}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">IFSC Code</label>
+                  <input type="text" name="ifsc" placeholder="e.g. ICIC0001234" maxLength={11} onChange={handleInputChange} className={`w-full px-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 transition-all font-bold text-gray-800 uppercase outline-none shadow-sm ${errors.ifsc ? 'ring-2 ring-red-300 border-red-500' : ''}`} />
+                  {errors.ifsc && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1">{errors.ifsc}</p>}
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Account Number</label>
+                  <input type="text" name="accountNumber" placeholder="Enter account number" onChange={handleInputChange} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 transition-all font-bold text-gray-800 outline-none shadow-sm" />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Additional Details
-                </label>
-                <textarea
-                  name="field2"
-                  rows="3"
-                  placeholder="Enter additional details..."
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm"
-                />
+            ) : editType === 'Logo' ? (
+              <div className="space-y-4">
+                <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-orange-100 rounded-3xl bg-orange-50/30">
+                  {imagePreview ? (
+                    <div className="relative w-32 h-32 rounded-2xl overflow-hidden shadow-lg border-2 border-white mb-4">
+                      <img src={imagePreview} className="w-full h-full object-cover" alt="Preview" />
+                      <button onClick={() => setImagePreview(null)} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full"><X className="w-3 h-3" /></button>
+                    </div>
+                  ) : (
+                    <div className="w-32 h-32 bg-white rounded-2xl flex flex-col items-center justify-center text-orange-300 mb-4 border border-orange-100">
+                      <Camera className="w-8 h-8 mb-1" />
+                      <span className="text-[8px] font-black uppercase tracking-widest">No Logo</span>
+                    </div>
+                  )}
+                  <input type="file" id="logo-upload" name="logo" accept="image/*" onChange={handleInputChange} className="hidden" />
+                  <button onClick={() => document.getElementById('logo-upload').click()} className="px-6 py-2 bg-white text-orange-600 font-black rounded-xl border border-orange-200 hover:bg-orange-50 transition-all text-[10px] uppercase tracking-widest shadow-sm">
+                    Select Logo
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : editType === 'Temple Info' ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Temple Name</label>
+                  <input type="text" name="field1" defaultValue={templeInfo.name} onChange={handleInputChange} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 transition-all font-bold text-gray-800 outline-none shadow-sm" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Subtitle / Business Name</label>
+                  <input type="text" name="subtitle" defaultValue={templeInfo.subtitle} onChange={handleInputChange} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 transition-all font-bold text-gray-800 outline-none shadow-sm" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Established Year</label>
+                  <input type="text" name="established" defaultValue={templeInfo.established} onChange={handleInputChange} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 transition-all font-bold text-gray-800 outline-none shadow-sm" />
+                </div>
+              </div>
+            ) : editType === 'Contact Info' ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Primary Phone</label>
+                    <input type="text" name="phone" defaultValue={templeInfo.contact.phone} onChange={handleInputChange} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 transition-all font-bold text-gray-800 outline-none shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Alternate Phone</label>
+                    <input type="text" name="alternatePhone" defaultValue={templeInfo.contact.alternatePhone} onChange={handleInputChange} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 transition-all font-bold text-gray-800 outline-none shadow-sm" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Primary Email</label>
+                  <input type="email" name="email" defaultValue={templeInfo.contact.email} onChange={handleInputChange} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 transition-all font-bold text-gray-800 outline-none shadow-sm" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Alternate Email</label>
+                  <input type="email" name="alternateEmail" defaultValue={templeInfo.contact.alternateEmail} onChange={handleInputChange} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 transition-all font-bold text-gray-800 outline-none shadow-sm" />
+                </div>
+              </div>
+            ) : editType === 'Address Details' ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Address Line 1</label>
+                  <input type="text" name="line1" defaultValue={templeInfo.address.line1} onChange={handleInputChange} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 transition-all font-bold text-gray-800 outline-none shadow-sm" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">City</label>
+                  <input type="text" name="city" defaultValue={templeInfo.address.city} onChange={handleInputChange} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 transition-all font-bold text-gray-800 outline-none shadow-sm" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">State</label>
+                    <input type="text" name="state" defaultValue={templeInfo.address.state} onChange={handleInputChange} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 transition-all font-bold text-gray-800 outline-none shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Pincode</label>
+                    <input type="text" name="pincode" defaultValue={templeInfo.address.pincode} onChange={handleInputChange} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 transition-all font-bold text-gray-800 outline-none shadow-sm" />
+                  </div>
+                </div>
+              </div>
+            ) : editType === 'Tax Info' ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">PAN Number</label>
+                  <input type="text" name="pan" defaultValue={templeInfo.pan} onChange={handleInputChange} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 transition-all font-bold text-gray-800 outline-none shadow-sm" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">TAN Number</label>
+                  <input type="text" name="tan" defaultValue={templeInfo.tan} onChange={handleInputChange} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 transition-all font-bold text-gray-800 outline-none shadow-sm" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">GSTIN</label>
+                  <input type="text" name="gstin" defaultValue={templeInfo.gstin} onChange={handleInputChange} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 transition-all font-bold text-gray-800 outline-none shadow-sm" />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{editType} Field</label>
+                  <input type="text" name="field1" placeholder={`Enter ${editType}`} onChange={handleInputChange} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-500 transition-all font-bold text-gray-800 outline-none shadow-sm" />
+                </div>
+              </div>
+            )}
             
-            {/* Modal Actions - EXACT match */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-              <button
-                type="button"
-                onClick={() => setShowEditModal(false)}
-                className="px-4 py-2 text-sm bg-gray-100 text-gray-800 rounded border border-gray-300 hover:bg-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                className="px-4 py-2 text-sm bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors flex items-center gap-2"
-              >
-                <Save className="w-4 h-4" />
-                Save Changes
+            <div className="flex gap-3 pt-6">
+              <button onClick={() => setShowEditModal(false)} className="flex-1 px-6 py-3 bg-gray-100 text-gray-600 font-black rounded-2xl hover:bg-gray-200 transition-all uppercase tracking-widest text-xs">Cancel</button>
+              <button onClick={handleSubmit} className="flex-1 px-6 py-3 bg-orange-500 text-white font-black rounded-2xl hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/20 uppercase tracking-widest text-xs flex items-center justify-center gap-2">
+                <Save className="w-4 h-4" /> Save Changes
               </button>
             </div>
           </div>
@@ -830,9 +1060,9 @@ const SettingsTemple = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="relative group">
-                <div className="w-16 h-16 bg-gradient-to-r from-orange-100 to-amber-100 rounded-lg flex items-center justify-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-orange-100 to-amber-100 rounded-lg flex items-center justify-center overflow-hidden">
                   {templeInfo.logo ? (
-                    <img src={templeInfo.logo} alt="Temple Logo" className="w-full h-full object-cover rounded-lg" />
+                    <img src={templeInfo.logo.startsWith('data:') ? templeInfo.logo : getImageUrl(templeInfo.logo)} alt="Temple Logo" className="w-full h-full object-cover" />
                   ) : (
                     <Building2 className="w-8 h-8 text-orange-600" />
                   )}
@@ -907,7 +1137,10 @@ const SettingsTemple = () => {
                   <p className="text-xs text-gray-500">Primary Phone</p>
                   <p className="text-sm font-medium text-gray-800">{templeInfo.contact.phone}</p>
                 </div>
-                <button className="p-1 text-gray-400 hover:text-gray-600">
+                <button 
+                  onClick={() => handleCopy(templeInfo.contact.phone, 'Phone number')}
+                  className="p-1 text-gray-400 hover:text-orange-600 transition-colors"
+                >
                   <Copy className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -928,7 +1161,10 @@ const SettingsTemple = () => {
                   <p className="text-xs text-gray-500">Email</p>
                   <p className="text-sm font-medium text-gray-800">{templeInfo.contact.email}</p>
                 </div>
-                <button className="p-1 text-gray-400 hover:text-gray-600">
+                <button 
+                  onClick={() => handleCopy(templeInfo.contact.email, 'Email address')}
+                  className="p-1 text-gray-400 hover:text-orange-600 transition-colors"
+                >
                   <Copy className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -962,7 +1198,7 @@ const SettingsTemple = () => {
               </h3>
               <button
                 onClick={() => {
-                  setEditType('Address');
+                  setEditType('Address Details');
                   setShowEditModal(true);
                 }}
                 className="p-1.5 text-gray-600 hover:bg-orange-50 hover:text-orange-600 rounded transition-colors"
@@ -1003,7 +1239,10 @@ const SettingsTemple = () => {
                 <span className="text-xs text-gray-600">PAN</span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-gray-800">{templeInfo.pan}</span>
-                  <button className="p-1 text-gray-400 hover:text-gray-600">
+                  <button 
+                    onClick={() => handleCopy(templeInfo.pan, 'PAN Number')}
+                    className="p-1 text-gray-400 hover:text-orange-600 transition-colors"
+                  >
                     <Copy className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -2019,12 +2258,6 @@ const SettingsTemple = () => {
 
       {/* Main Content - EXACT spacing */}
       <div className="p-6">
-        <div className='flex justify-end mb-4'>
-          <button className="px-3 py-1.5 bg-white text-gray-700 text-sm font-medium rounded border border-gray-300 hover:bg-gray-50 transition-colors flex items-center gap-2">
-              <RefreshCw className="w-4 h-4" />
-              Sync
-            </button>
-        </div>
         {/* Tabs Navigation - EXACT match to NotificationsPuja filter bar style */}
         <div className="bg-white rounded-lg border border-gray-200 p-1 mb-4 overflow-x-auto">
           <div className="flex flex-wrap gap-1 min-w-max">
@@ -2059,7 +2292,6 @@ const SettingsTemple = () => {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="text-center sm:text-left">
               <p className="text-sm text-gray-600">All changes are auto-saved</p>
-              <p className="text-[14px] text-gray-800">Last synced: {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</p>
             </div>
             <div className="flex gap-2">
               <button className="px-3 py-1.5 text-sm bg-gray-100 text-gray-800 rounded border border-gray-300 hover:bg-gray-200">

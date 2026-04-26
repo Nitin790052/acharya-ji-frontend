@@ -107,12 +107,12 @@ const CommonLearningPage = ({ slug: slugOverride }) => {
     const slug = (derivedSlug && derivedSlug !== 'undefined') ? derivedSlug : 'astrology';
     const validSlug = slug;
 
-    const banner = usePageBanner({ pollingInterval: 3000 });
+    const banner = usePageBanner({ pollingInterval: 60000 });
     const bannerImage = getImageUrl(banner?.imageUrl);
 
     const { data: pageData, isLoading, isError } = useGetLearningPageBySlugQuery(validSlug, {
         skip: validSlug === 'undefined' || !validSlug,
-        pollingInterval: 3000,
+        pollingInterval: 60000,
     });
 
 

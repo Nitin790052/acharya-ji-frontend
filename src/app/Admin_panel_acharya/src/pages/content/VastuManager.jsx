@@ -23,8 +23,8 @@ export default function VastuManager() {
     const [settingsLoaded, setSettingsLoaded] = useState(false);
     const fileRef = useRef();
 
-    const { data: services = [], isLoading } = useGetAllVastuServicesQuery(undefined, { pollingInterval: 3000 });
-    const { data: settings } = useGetVastuSettingsQuery(undefined, { pollingInterval: 3000 });
+    const { data: services = [], isLoading } = useGetAllVastuServicesQuery(undefined, { pollingInterval: 60000 });
+    const { data: settings } = useGetVastuSettingsQuery(undefined, { pollingInterval: 60000 });
     const [updateSettings] = useUpdateVastuSettingsMutation();
     const [createService] = useCreateVastuServiceMutation();
     const [updateService] = useUpdateVastuServiceMutation();

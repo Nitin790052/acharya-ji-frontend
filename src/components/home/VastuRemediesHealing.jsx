@@ -16,8 +16,8 @@ const VastuRemediesHealing = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [hoveredCard, setHoveredCard] = useState(null);
 
-  const { data: services = [], isLoading: isServicesLoading } = useGetActiveVastuServicesQuery(undefined, { pollingInterval: 3000 });
-  const { data: settings, isLoading: isSettingsLoading } = useGetVastuSettingsQuery(undefined, { pollingInterval: 3000 });
+  const { data: services = [], isLoading: isServicesLoading } = useGetActiveVastuServicesQuery(undefined, { pollingInterval: 60000 });
+  const { data: settings, isLoading: isSettingsLoading } = useGetVastuSettingsQuery(undefined, { pollingInterval: 60000 });
 
   useEffect(() => {
     setTimeout(() => setIsVisible(true), 150);

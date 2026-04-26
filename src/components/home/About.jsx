@@ -9,7 +9,7 @@ import { API_URL, getImageUrl } from '../../config/apiConfig';
 
 export function About() {
   const { data: aboutData, isLoading, isError } = useGetActiveAboutUsQuery(undefined, {
-    pollingInterval: 3000,
+    pollingInterval: 60000,
     refetchOnMountOrArgChange: true
   });
 

@@ -14,7 +14,7 @@ const Blog = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMedia, setSelectMedia] = useState(null);
 
-  const banner = usePageBanner({ pollingInterval: 3000 });
+  const banner = usePageBanner({ pollingInterval: 60000 });
   const { data: blogData = [], isLoading } = useGetActiveBlogsQuery(undefined, { pollingInterval: 60000 });
   const { data: blogSettings } = useGetBlogSettingsQuery();
 

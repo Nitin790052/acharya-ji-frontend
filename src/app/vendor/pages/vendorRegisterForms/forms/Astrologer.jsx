@@ -113,6 +113,22 @@ export default function Astrologer({ commonData, onBack, onSubmit }) {
       newErrors.aadharNumber = 'Aadhar number must be 12 digits';
     }
 
+    if (!formData.bankName) {
+      newErrors.bankName = 'Bank name is required';
+    }
+
+    if (!formData.accountNumber) {
+      newErrors.accountNumber = 'Account number is required';
+    }
+
+    if (!formData.ifscCode) {
+      newErrors.ifscCode = 'IFSC code is required';
+    } else if (formData.ifscCode.length !== 11) {
+      newErrors.ifscCode = 'IFSC must be exactly 11 characters';
+    } else if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifscCode)) {
+      newErrors.ifscCode = 'Invalid IFSC format (e.g. ABCD0123456)';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };

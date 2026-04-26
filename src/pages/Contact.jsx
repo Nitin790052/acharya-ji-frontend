@@ -11,7 +11,7 @@ import SEO from "@/components/layout/SEO";
 
 
 export default function ContactPage() {
-  const banner = usePageBanner({ pollingInterval: 3000 });
+  const banner = usePageBanner({ pollingInterval: 60000 });
   const { data: contactSettings, isLoading } = useGetContactSettingsQuery();
 
   const [formData, setFormData] = useState({

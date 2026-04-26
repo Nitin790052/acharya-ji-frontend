@@ -50,7 +50,7 @@ const emptyForm = {
 };
 
 export default function MediaManager() {
-    const { data: records = [], isLoading, refetch } = useGetAllMediaQuery(undefined, { pollingInterval: 3000 });
+    const { data: records = [], isLoading, refetch } = useGetAllMediaQuery(undefined, { pollingInterval: 60000 });
     const [createMedia, { isLoading: isCreating }] = useCreateMediaMutation();
     const [updateMedia, { isLoading: isUpdating }] = useUpdateMediaMutation();
     const [deleteMedia] = useDeleteMediaMutation();
@@ -222,7 +222,7 @@ export default function MediaManager() {
         }
     };
 
-    const { data: mediaSettings, isLoading: isSettingsLoading } = useGetMediaSettingsQuery(undefined, { pollingInterval: 3000 });
+    const { data: mediaSettings, isLoading: isSettingsLoading } = useGetMediaSettingsQuery(undefined, { pollingInterval: 60000 });
     const [updateSettings, { isLoading: isUpdatingSettings }] = useUpdateMediaSettingsMutation();
     const [stats, setStats] = useState([]);
     const [cta, setCta] = useState({

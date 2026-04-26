@@ -23,7 +23,7 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
     const [registerUser, { isLoading: isRegistering }] = useRegisterUserMutation();
     
     // Get user from AuthContext as primary source
-    const { user: contextUser } = useUserAuth();
+    const { user: contextUser, login: contextLogin } = useUserAuth();
 
     // Fallback source: Dashboard API (if logged in but context is empty)
     const token = localStorage.getItem('token');
@@ -178,8 +178,7 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                 const regRes = await registerUser(regPayload).unwrap();
                 
                 if (regRes.token && regRes.data) {
-                    localStorage.setItem("token", regRes.token);
-                    localStorage.setItem("authUser", JSON.stringify(regRes.data));
+                    contextLogin(regRes.data, regRes.token);
                     userId = regRes.data._id;
                 }
                 toast.success("Account securely created! Redirecting to cart...");
