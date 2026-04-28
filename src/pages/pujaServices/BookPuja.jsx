@@ -11,7 +11,8 @@ import { Layout } from '@/components/layout/Layout';
 import { usePageBanner } from "@/hooks/usePageBanner";
 import { useGetAllOfferingsQuery } from "@/services/pujaOfferingApi";
 import { useCreateBookingMutation } from "@/services/bookingApi";
-import { useRegisterUserMutation } from "@/services/userApi";
+import { useRegisterUserMutation, useSendOtpMutation, useVerifyOtpMutation, useLoginUserMutation } from "@/services/userApi";
+import { useUserAuth } from "@/app/user/auth/AuthContext";
 import {
   useGetStepsQuery,
   useGetExpertsQuery,
@@ -19,7 +20,6 @@ import {
   useGetFAQsQuery
 } from "@/services/bookPujaContentApi";
 import { API_URL, getImageUrl } from '@/config/apiConfig';
-import { useUserAuth } from "@/app/user/auth/AuthContext";
 import { toast } from 'react-toastify';
 
 const BACKEND_URL = API_URL.replace(/\/api\/?$/, '');
@@ -27,7 +27,7 @@ const BACKEND_URL = API_URL.replace(/\/api\/?$/, '');
 export default function BookPuja() {
   const navigate = useNavigate();
   const banner = usePageBanner({ pollingInterval: 3000 });
-  const { user } = useUserAuth();
+  const { user, login } = useUserAuth();
 
   // Dynamic Content Queries
   const { data: pujaServices = [] } = useGetAllOfferingsQuery(undefined, { pollingInterval: 3000 });
@@ -37,6 +37,9 @@ export default function BookPuja() {
   const { data: dbFAQs = [] } = useGetFAQsQuery();
   const [createBooking] = useCreateBookingMutation();
   const [registerUser] = useRegisterUserMutation();
+  const [sendOtp] = useSendOtpMutation();
+  const [verifyOtp] = useVerifyOtpMutation();
+  const [loginUserApi] = useLoginUserMutation();
 
   // Mapping DB Steps to local format
   const bookingSteps = useMemo(() => {
@@ -47,17 +50,14 @@ export default function BookPuja() {
     }
     return [
       { n: "1", t: "Select Puja", s: "Browse catalog", d: "अपनी पूजा चुनें", f: [] },
-      { n: "2", t: "Date & Time", s: "Pick a slot", d: "तारीख और समय", f: [] },
-      {
-        n: "3", t: "Provide Info", s: "Fill detail form", d: "जानकारी दें", f: [
-          { name: "name", label: "Full Name", placeholder: "Karan Singh", type: "text", required: true },
-          { name: "mobile", label: "Mobile Number", placeholder: "98XXXXXXXX", type: "tel", required: true },
-          { name: "city", label: "City / Location", placeholder: "Mumbai", type: "text", required: true },
-          { name: "message", label: "Personal Message", placeholder: "Any specific requirements for your puja?", type: "textarea", required: false }
-        ]
-      },
-      { n: "4", t: "Priest Match", s: "Expert assigned", d: "आचार्य नियुक्ति", f: [] },
-      { n: "5", t: "Ritual Done", s: "Divine blessings", d: "पूजा संपन्न", f: [] }
+      { n: "2", t: "Ritual Details", s: "Schedule & Info", d: "विवरण भरें", f: [
+        { name: "name", label: "Full Name", placeholder: "Karan Singh", type: "text", required: true },
+        { name: "mobile", label: "Mobile Number", placeholder: "98XXXXXXXX", type: "tel", required: true },
+        { name: "city", label: "City / Location", placeholder: "Mumbai", type: "text", required: true },
+        { name: "message", label: "Personal Message", placeholder: "Any specific requirements?", type: "textarea", required: false }
+      ]},
+      { n: "3", t: "Final Review", s: "Assigning Expert", d: "पुष्टि करें", f: [] },
+      { n: "4", t: "Confirmed", s: "Divine Blessings", d: "सफल", f: [] }
     ];
   }, [dbSteps]);
 
@@ -74,12 +74,14 @@ export default function BookPuja() {
   ];
 
   const dispatch = useDispatch();
-  const savedUserString = localStorage.getItem('authUser');
+  const savedUserString = localStorage.getItem('aji_user_data');
   let savedUser = null;
   try {
-      savedUser = savedUserString ? JSON.parse(savedUserString) : null;
-  } catch(e) {
-      console.error("Failed to parse authUser");
+    const parsed = savedUserString ? JSON.parse(savedUserString) : null;
+    // Only use real user data, never vendor data
+    savedUser = (parsed && parsed.role !== 'vendor') ? parsed : null;
+  } catch (e) {
+    console.error("Failed to parse user data");
   }
 
   const [selectedPuja, setSelectedPuja] = useState(null);
@@ -90,6 +92,73 @@ export default function BookPuja() {
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
+
+  // Auth Flow State
+  const [authStep, setAuthStep] = useState('phone'); // 'phone', 'otp', 'details'
+  const [otp, setOtp] = useState('');
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  const handleSendOtp = async () => {
+    if (!formData.mobile) {
+      toast.error("Please enter your mobile number or email");
+      return;
+    }
+    try {
+      setIsSendingOtp(true);
+      const identifier = formData.mobile;
+      const isEmail = identifier.includes('@');
+      const res = await sendOtp({ identifier, type: isEmail ? 'email' : 'mobile' }).unwrap();
+      
+      if (!isEmail && res.debugOtp) {
+        // Mobile OTP → show in browser console
+        console.log(`%c📱 OTP for ${identifier}: ${res.debugOtp}`, 'color: #E8453C; font-size: 18px; font-weight: bold; background: #FFF3E0; padding: 8px 16px; border-radius: 8px;');
+        toast.success("OTP sent! Check browser console (F12)");
+      } else {
+        // Email OTP → sent to actual email
+        toast.success(`OTP sent to your email ${identifier}`);
+      }
+      setAuthStep('otp');
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to send OTP");
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp) {
+      toast.error("Please enter the OTP");
+      return;
+    }
+    try {
+      setIsVerifying(true);
+      const res = await verifyOtp({ identifier: formData.mobile, otp }).unwrap();
+      if (res.success) {
+         try {
+           const loginRes = await loginUserApi({ identifier: formData.mobile }).unwrap();
+           if (loginRes.success) {
+             login(loginRes.data, loginRes.token);
+             toast.success("Welcome back! Verified successfully.");
+             setFormData(prev => ({
+               ...prev,
+               name: loginRes.data.name || prev.name,
+               mobile: loginRes.data.phone || loginRes.data.email || prev.mobile,
+               city: loginRes.data.address || loginRes.data.location || prev.city,
+             }));
+             setAuthStep('details');
+           }
+         } catch (loginErr) {
+           toast.info("Please complete your basic details to continue.");
+           setAuthStep('details');
+         }
+      }
+    } catch (err) {
+      toast.error(err?.data?.message || "Invalid OTP");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   const validateStep = (step) => {
     let newErrors = {};
@@ -124,11 +193,9 @@ export default function BookPuja() {
   };
 
   const nextStep = () => {
-    console.log("Current Booking Steps Data:", bookingSteps);
     if (validateStep(currentStep)) {
-      if (currentStep === 3) {
-        // Automatically move to step 4 (Simulated match)
-        setCurrentStep(4);
+      if (currentStep === 2) {
+        setCurrentStep(3);
         handleSubmit();
       } else {
         setCurrentStep(prev => prev + 1);
@@ -141,21 +208,10 @@ export default function BookPuja() {
   };
 
   const handlePujaSelect = (puja) => {
-    const token = localStorage.getItem("token");
-    const cartItem = {
-      id: puja._id,
-      title: puja.title,
-      price: puja.price || 1100,
-      description: puja.shortDescription || puja.description,
-      imageUrl: getImageUrl(puja.imageUrl)
-    };
-
-    if (user) {
-      dispatch(addToCart(cartItem));
-      navigate('/cart');
-    } else {
-      navigate('/user_login/registeration', { state: { returnTo: '/cart', addPujaToCart: cartItem } });
-    }
+    setSelectedPuja(puja);
+    setFormData(prev => ({ ...prev, pujaType: puja.title }));
+    setCurrentStep(2);
+    setShowBookingForm(true);
   };
 
   const handleChange = (e) => {
@@ -167,66 +223,67 @@ export default function BookPuja() {
       if (!formData.name || !formData.mobile || !formData.city) {
         throw new Error("Core fields are missing. Please ensure Step 3 is correctly populated.");
       }
-      
+
       let userId = savedUser?._id || savedUser?.id;
 
       if (!savedUser) {
-          try {
-              const regRes = await registerUser({
-                  name: formData.name,
-                  phone: formData.mobile,
-                  email: `${formData.mobile}@acharyaji.com`,
-                  password: `${formData.mobile}@AJI`,
-                  location: formData.city
-              }).unwrap();
-              
-              if (regRes.token && regRes.data) {
-                  localStorage.setItem("token", regRes.token);
-                  localStorage.setItem("authUser", JSON.stringify(regRes.data));
-                  userId = regRes.data._id;
-              }
-              toast.success("Account securely created! Adding to cart...");
-          } catch (err) {
-              if (err.status === 400 && err.data?.message?.toLowerCase().includes('exists')) {
-                  toast.info("Account already exists. Please login to continue to cart.");
-                  
-                  const activePuja = pujaServices.find(p => p.title === formData.pujaType);
-                  if (activePuja) {
-                      const cartItemObj = {
-                          id: activePuja._id,
-                          title: activePuja.title,
-                          price: activePuja.price || 1100,
-                          description: activePuja.shortDescription,
-                          imageUrl: getImageUrl(activePuja.imageUrl),
-                          date: formData.date,
-                          mode: formData.mode || 'Morning',
-                      };
-                      navigate('/user_login', { state: { returnTo: '/cart', addPujaToCart: cartItemObj } });
-                      return;
-                  }
-              } else {
-                  throw new Error(err.data?.message || "Registration failed.");
-              }
+        try {
+          const regRes = await registerUser({
+            name: formData.name,
+            phone: formData.mobile,
+            email: `${formData.mobile}@acharyaji.com`,
+            password: `${formData.mobile}@AJI`,
+            location: formData.city
+          }).unwrap();
+
+          if (regRes.token && regRes.data) {
+            localStorage.setItem("token", regRes.token);
+            localStorage.setItem("authUser", JSON.stringify(regRes.data));
+            if (login) login(regRes.data, regRes.token);
+            userId = regRes.data._id;
           }
+          toast.success("Account securely created! Adding to cart...");
+        } catch (err) {
+          if (err.status === 400 && err.data?.message?.toLowerCase().includes('exists')) {
+            toast.info("Account already exists. Please login to continue to cart.");
+
+            const activePuja = pujaServices.find(p => p.title === formData.pujaType);
+            if (activePuja) {
+              const cartItemObj = {
+                id: activePuja._id,
+                title: activePuja.title,
+                price: activePuja.price || 1100,
+                description: activePuja.shortDescription,
+                imageUrl: getImageUrl(activePuja.imageUrl),
+                date: formData.date,
+                mode: formData.mode || 'Morning',
+              };
+              navigate('/user_login', { state: { returnTo: '/cart', addPujaToCart: cartItemObj } });
+              return;
+            }
+          } else {
+            throw new Error(err.data?.message || "Registration failed.");
+          }
+        }
       }
 
       const activePuja = pujaServices.find(p => p.title === formData.pujaType);
       if (activePuja) {
-          const cartItem = {
-             id: activePuja._id,
-             title: activePuja.title,
-             price: activePuja.price || 1100,
-             description: activePuja.shortDescription,
-             imageUrl: getImageUrl(activePuja.imageUrl),
-             date: formData.date,
-             mode: formData.mode || 'Morning',
-          };
-          dispatch(addToCart(cartItem));
+        const cartItem = {
+          id: activePuja._id,
+          title: activePuja.title,
+          price: activePuja.price || 1100,
+          description: activePuja.shortDescription,
+          imageUrl: getImageUrl(activePuja.imageUrl),
+          date: formData.date,
+          mode: formData.mode || 'Morning',
+        };
+        dispatch(addToCart(cartItem));
       }
 
       setSubmitted(true);
       setCurrentStep(5);
-      
+
       setTimeout(() => {
         setSubmitted(false);
         setShowBookingForm(false);
@@ -235,7 +292,7 @@ export default function BookPuja() {
         setFormData({
           name: savedUser?.name || '', mobile: savedUser?.phone || '', city: '', pujaType: '', date: '', mode: '', message: ''
         });
-        
+
         navigate('/cart');
       }, 3500);
 
@@ -622,118 +679,180 @@ export default function BookPuja() {
 
                         {currentStep === 2 && (
                           <div className="space-y-10 animate-fade-in-up">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                              <div className="space-y-3">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] flex items-center gap-2">
-                                  <Calendar className="w-4 h-4 text-orange-600" /> Preferred Date *
-                                </label>
-                                <input
-                                  type="date"
-                                  name="date"
-                                  min={new Date().toISOString().split('T')[0]}
-                                  value={formData.date}
-                                  onChange={handleChange}
-                                  className={`w-full bg-white border-2 ${errors.date ? 'border-red-300' : 'border-orange-50'} px-6 py-5 font-black text-[#4A3427] text-sm focus:border-orange-500 outline-none transition-all`}
-                                />
-                                {errors.date && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">{errors.date}</p>}
-                              </div>
-
-                              <div className="space-y-3">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] flex items-center gap-2">
-                                  <Shield className="w-4 h-4 text-orange-600" /> Puja Mode *
-                                </label>
-                                <div className="grid grid-cols-1 gap-3">
-                                  {['Online', 'Home Visit'].map(mode => (
-                                    <button
-                                      key={mode}
-                                      type="button"
-                                      onClick={() => setFormData(prev => ({ ...prev, mode }))}
-                                      className={`flex items-center gap-4 p-5 border-2 transition-all duration-300 ${formData.mode === mode
-                                        ? 'border-orange-500 bg-white shadow-xl'
-                                        : 'border-white bg-white/50 hover:border-orange-50'
-                                        }`}
-                                    >
-                                      <div className={`w-10 h-10 flex items-center justify-center transition-all ${formData.mode === mode ? 'bg-orange-600 text-white' : 'bg-orange-50 text-orange-600'}`}>
-                                        {mode === 'Online' ? <Video className="w-5 h-5" /> : <Home className="w-5 h-5" />}
-                                      </div>
-                                      <div className="text-left">
-                                        <h4 className="text-[10px] font-black uppercase tracking-wider">{mode}</h4>
-                                        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.1em] mt-0.5">{mode === 'Online' ? 'Sacred Video Call' : 'Acharya at Home'}</p>
-                                      </div>
-                                    </button>
-                                  ))}
+                            {/* Auth Section for Guests */}
+                            {!user && !savedUser && authStep === 'phone' && (
+                              <div className="max-w-md mx-auto space-y-6 py-4 bg-white p-8 border border-orange-100 shadow-sm">
+                                <div className="text-center">
+                                  <h3 className="text-lg font-black uppercase text-[#2A1D13] mb-1">Verify to Continue</h3>
+                                  <p className="text-[10px] text-gray-400 font-bold tracking-[0.2em] uppercase">Safety First for Sacred Rituals</p>
                                 </div>
-                                {errors.mode && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">{errors.mode}</p>}
+                                <div className="space-y-3">
+                                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] flex items-center gap-2">
+                                    <Phone className="w-4 h-4 text-orange-600" /> Mobile / Email *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    name="mobile"
+                                    value={formData.mobile || ''}
+                                    onChange={handleChange}
+                                    className={`w-full border-2 ${errors.mobile ? 'border-red-300' : 'border-orange-50'} px-6 py-4 font-black text-[#4A3427] text-sm focus:border-orange-500 outline-none transition-all bg-white`}
+                                    placeholder="Enter Mobile or Email"
+                                  />
+                                  {errors.mobile && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">{errors.mobile}</p>}
+                                </div>
+                                <button
+                                  onClick={handleSendOtp}
+                                  disabled={isSendingOtp}
+                                  className="w-full bg-[#E8453C] hover:bg-black text-white font-black text-[10px] uppercase tracking-[0.3em] py-5 shadow-xl transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                >
+                                  {isSendingOtp ? "Sending..." : "Send Verification Code"} <ChevronRight className="w-5 h-5" />
+                                </button>
                               </div>
-                            </div>
+                            )}
 
-                            <div className="pt-10 flex justify-between items-center border-t border-orange-50">
-                              <button onClick={prevStep} className="text-gray-400 hover:text-orange-600 font-black text-[10px] uppercase tracking-[0.3em] flex items-center gap-2 transition-colors">
-                                <ChevronRight className="w-4 h-4 rotate-180" /> Previous
-                              </button>
-                              <button onClick={nextStep} className="bg-[#E8453C] hover:bg-black text-white font-black text-[10px] uppercase tracking-[0.3em] px-14 py-4 shadow-xl transition-all flex items-center gap-3">
-                                Set Schedule <ChevronRight className="w-5 h-5" />
-                              </button>
-                            </div>
+                            {!user && !savedUser && authStep === 'otp' && (
+                              <div className="max-w-md mx-auto space-y-6 py-4 bg-white p-8 border border-orange-100 shadow-sm">
+                                <div className="text-center">
+                                  <h3 className="text-lg font-black uppercase text-[#2A1D13] mb-1">Security Code</h3>
+                                  <p className="text-[10px] text-orange-600 font-bold tracking-wider uppercase">Sent to {formData.mobile}</p>
+                                </div>
+                                <div className="space-y-3">
+                                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] flex items-center gap-2">
+                                    <Shield className="w-4 h-4 text-orange-600" /> Enter 6-Digit OTP *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={otp}
+                                    onChange={(e) => setOtp(e.target.value)}
+                                    className="w-full border-2 border-orange-50 px-6 py-4 font-black text-[#4A3427] text-sm focus:border-orange-500 outline-none transition-all bg-white tracking-[0.5em] text-center"
+                                    placeholder="••••••"
+                                    maxLength={6}
+                                  />
+                                </div>
+                                <div className="flex gap-4">
+                                  <button
+                                    onClick={() => setAuthStep('phone')}
+                                    className="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-400 font-black text-[10px] uppercase tracking-[0.2em] py-4 transition-all"
+                                  >
+                                    Back
+                                  </button>
+                                  <button
+                                    onClick={handleVerifyOtp}
+                                    disabled={isVerifying}
+                                    className="flex-[2] bg-[#E8453C] hover:bg-black text-white font-black text-[10px] uppercase tracking-[0.3em] py-4 shadow-xl transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                  >
+                                    {isVerifying ? "Verifying..." : "Verify Identity"} <ChevronRight className="w-5 h-5" />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Detailed Form (Visible once verified or if logged in) */}
+                            {(user || savedUser || authStep === 'details') && (
+                              <div className="space-y-12 animate-fade-in-up">
+                                {/* Top: Personal Info (Autofilled) */}
+                                <div className="space-y-6">
+                                  <div className="flex items-center gap-4 text-orange-600 border-b border-orange-50 pb-4">
+                                    <Users className="w-5 h-5" />
+                                    <h4 className="text-[11px] font-black uppercase tracking-[0.4em]">Personal Information</h4>
+                                  </div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    {(bookingSteps.find(s => s.n === "2")?.f || []).filter(f => f.name !== 'message').map((field, idx) => (
+                                      <div key={idx} className="space-y-3">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">{field.label} {field.required && '*'}</label>
+                                        <div className="relative">
+                                          {field.name === 'mobile' ? <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-200" /> : <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-200" />}
+                                          <input
+                                            type={field.type === 'tel' ? 'tel' : 'text'}
+                                            name={field.name}
+                                            value={formData[field.name] || ''}
+                                            onChange={handleChange}
+                                            className={`w-full border-2 ${errors[field.name] ? 'border-red-300' : 'border-orange-50'} pl-12 pr-6 py-5 font-black text-[#4A3427] text-sm focus:border-orange-500 outline-none transition-all ${((field.name === 'name' && formData.name) || field.name === 'mobile') && (user || savedUser) ? 'bg-slate-50 cursor-not-allowed text-gray-400' : 'bg-white'}`}
+                                            placeholder={field.placeholder}
+                                            disabled={((field.name === 'name' && !!formData.name) || field.name === 'mobile') && !!(user || savedUser)}
+                                          />
+                                        </div>
+                                        {errors[field.name] && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">{errors[field.name]}</p>}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* Middle: Schedule Details */}
+                                <div className="space-y-8">
+                                  <div className="flex items-center gap-4 text-orange-600 border-b border-orange-50 pb-4">
+                                    <Calendar className="w-5 h-5" />
+                                    <h4 className="text-[11px] font-black uppercase tracking-[0.4em]">Ritual Schedule</h4>
+                                  </div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                    <div className="space-y-3">
+                                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Preferred Date *</label>
+                                      <input
+                                        type="date"
+                                        name="date"
+                                        min={new Date().toISOString().split('T')[0]}
+                                        value={formData.date}
+                                        onChange={handleChange}
+                                        className="w-full border-2 border-orange-50 px-6 py-5 font-black text-[#4A3427] text-sm focus:border-orange-500 outline-none transition-all bg-white"
+                                      />
+                                      {errors.date && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">{errors.date}</p>}
+                                    </div>
+                                    <div className="space-y-3">
+                                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Puja Mode *</label>
+                                      <div className="grid grid-cols-2 gap-4">
+                                        {['Online', 'Home Visit'].map(mode => (
+                                          <button
+                                            key={mode}
+                                            type="button"
+                                            onClick={() => setFormData(prev => ({ ...prev, mode }))}
+                                            className={`flex flex-col items-center justify-center p-4 border-2 transition-all duration-300 ${formData.mode === mode
+                                              ? 'border-orange-500 bg-white shadow-lg scale-105'
+                                              : 'border-orange-50 bg-white/50 hover:border-orange-200'
+                                              }`}
+                                          >
+                                            {mode === 'Online' ? <Video className={`w-5 h-5 mb-2 ${formData.mode === mode ? 'text-orange-600' : 'text-gray-300'}`} /> : <Home className={`w-5 h-5 mb-2 ${formData.mode === mode ? 'text-orange-600' : 'text-gray-300'}`} />}
+                                            <span className={`text-[9px] font-black uppercase tracking-widest ${formData.mode === mode ? 'text-orange-600' : 'text-gray-400'}`}>{mode}</span>
+                                          </button>
+                                        ))}
+                                      </div>
+                                      {errors.mode && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">{errors.mode}</p>}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Bottom: Special Requirements */}
+                                <div className="space-y-6">
+                                  <div className="flex items-center gap-4 text-orange-600 border-b border-orange-50 pb-4">
+                                    <MessageCircle className="w-5 h-5" />
+                                    <h4 className="text-[11px] font-black uppercase tracking-[0.4em]">Additional Notes</h4>
+                                  </div>
+                                  <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Specific Requirements</label>
+                                    <textarea
+                                      name="message"
+                                      value={formData.message}
+                                      onChange={handleChange}
+                                      rows="3"
+                                      className="w-full bg-white border-2 border-orange-50 px-6 py-5 font-medium text-[#4A3427] text-sm focus:border-orange-500 outline-none transition-all resize-none"
+                                      placeholder="Example: Specific samagri needed, gotra details, or any medical considerations..."
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="pt-10 flex justify-between items-center border-t border-orange-50">
+                                  <button onClick={prevStep} className="text-gray-400 hover:text-orange-600 font-black text-[10px] uppercase tracking-[0.3em] flex items-center gap-2 transition-colors">
+                                    <ChevronRight className="w-4 h-4 rotate-180" /> Previous Step
+                                  </button>
+                                  <button onClick={nextStep} className="bg-orange-600 hover:bg-black text-white font-black text-[10px] uppercase tracking-[0.3em] px-14 py-5 shadow-xl transition-all flex items-center gap-3">
+                                    Proceed to Cart <ChevronRight className="w-5 h-5" />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
 
                         {currentStep === 3 && (
-                          <div className="space-y-8 animate-fade-in-up">
-                            <div className="space-y-6">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {(bookingSteps.find(s => Number(s.n) === 3)?.f || []).filter(f => f.type !== 'textarea').map((field, idx) => (
-                                  <div key={idx} className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">{field.label} {field.required && '*'}</label>
-                                    <div className="relative">
-                                      {field.type === 'tel' ? <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-200" /> : <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-200" />}
-                                      <input
-                                        type={field.type === 'tel' ? 'tel' : 'text'}
-                                        name={field.name}
-                                        value={formData[field.name] || ''}
-                                        onChange={handleChange}
-                                        className={`w-full border-2 ${errors[field.name] ? 'border-red-300' : 'border-orange-50'} pl-12 pr-6 py-4 font-black text-[#4A3427] text-sm focus:border-orange-500 outline-none transition-all ${(field.name === 'name' || field.name === 'mobile') && savedUser ? 'bg-slate-50 cursor-not-allowed' : 'bg-white'}`}
-                                        placeholder={field.placeholder}
-                                        disabled={(field.name === 'name' || field.name === 'mobile') && !!savedUser}
-                                      />
-                                    </div>
-                                    {errors[field.name] && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">{errors[field.name]}</p>}
-                                  </div>
-                                ))}
-                              </div>
-
-                              {/* Textarea fields */}
-                              {(bookingSteps.find(s => Number(s.n) === 3)?.f || []).filter(f => f.type === 'textarea').map((field, idx) => (
-                                <div key={idx} className="space-y-2">
-                                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">{field.label} {field.required && '*'}</label>
-                                  <div className="relative">
-                                    <MessageCircle className="absolute left-4 top-6 w-4 h-4 text-orange-200" />
-                                    <textarea
-                                      name={field.name}
-                                      value={formData[field.name] || ''}
-                                      onChange={handleChange}
-                                      rows="3"
-                                      className={`w-full bg-white border-2 ${errors[field.name] ? 'border-red-300' : 'border-orange-50'} pl-12 pr-6 py-4 font-black text-[#4A3427] text-sm focus:border-orange-500 outline-none transition-all resize-none font-medium`}
-                                      placeholder={field.placeholder}
-                                    ></textarea>
-                                  </div>
-                                  {errors[field.name] && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">{errors[field.name]}</p>}
-                                </div>
-                              ))}
-                            </div>
-
-                            <div className="pt-10 flex justify-between items-center border-t border-orange-50">
-                              <button onClick={prevStep} className="text-gray-400 hover:text-orange-600 font-black text-[10px] uppercase tracking-[0.3em] flex items-center gap-2 transition-colors">
-                                <ChevronRight className="w-4 h-4 rotate-180" /> Previous
-                              </button>
-                              <button onClick={nextStep} className="bg-orange-600 hover:bg-black text-white font-black text-[10px] uppercase tracking-[0.3em] px-14 py-4 shadow-xl transition-all flex items-center gap-3">
-                                Final Review <ChevronRight className="w-5 h-5" />
-                              </button>
-                            </div>
-                          </div>
-                        )}
-
-                        {currentStep === 4 && (
                           <div className="h-full flex flex-col items-center justify-center text-center py-10 animate-fade-in">
                             <div className="relative mb-12">
                               <div className="w-40 h-40 bg-orange-50/50 rounded-full flex items-center justify-center animate-[spin_10s_linear_infinite] border-4 border-dashed border-orange-200">
@@ -746,10 +865,10 @@ export default function BookPuja() {
                               </div>
                             </div>
                             <h2 className="text-2xl font-black text-[#2A1D13] uppercase tracking-tighter mb-4">
-                              {bookingSteps[3]?.t || "Assigning Verified Acharya"}
+                              {bookingSteps[2]?.t || "Assigning Verified Expert"}
                             </h2>
                             <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.3em] max-w-sm mx-auto leading-relaxed">
-                              {bookingSteps[3]?.s || `Matching the most qualified specialist for your ${formData.pujaType}...`}
+                              {bookingSteps[2]?.s || `Matching the most qualified specialist for your ${formData.pujaType}...`}
                             </p>
 
                             <div className="mt-16 bg-white p-5 border border-orange-50 inline-flex items-center gap-4">
@@ -758,12 +877,12 @@ export default function BookPuja() {
                                 <span className="w-2.5 h-2.5 bg-orange-600 animate-bounce" style={{ animationDelay: '0.2s' }}></span>
                                 <span className="w-2.5 h-2.5 bg-orange-600 animate-bounce" style={{ animationDelay: '0.4s' }}></span>
                               </span>
-                              <span className="text-[9px] font-black uppercase text-orange-600 tracking-[0.2em]">{bookingSteps[3]?.d || "Locating Expert"}</span>
+                              <span className="text-[9px] font-black uppercase text-orange-600 tracking-[0.2em]">Locating Expert</span>
                             </div>
                           </div>
                         )}
 
-                        {currentStep === 5 && (
+                        {currentStep === 4 && (
                           <div className="h-full flex flex-col items-center justify-center text-center py-10 animate-fade-in-up">
                             <div className="w-32 h-32 bg-green-50 rounded-full flex items-center justify-center mb-10 shadow-inner relative">
                               <CheckCircle className="w-20 h-20 text-green-600 animate-[bounce_2s_ease-in-out_infinite]" />
@@ -771,16 +890,16 @@ export default function BookPuja() {
                             </div>
 
                             <h2 className="text-3xl md:text-4xl font-black text-[#2A1D13] uppercase tracking-tighter mb-8 bg-gradient-to-r from-orange-600 to-amber-500 bg-clip-text text-transparent">
-                              {bookingSteps[4]?.t || "Booking Confirmed!"}
+                              {bookingSteps[3]?.t || "Booking Confirmed!"}
                             </h2>
 
                             <div className="space-y-4 mb-10">
                               <p className="text-[#4A3427] font-black text-lg md:text-xl leading-relaxed uppercase">
-                                {bookingSteps[4]?.d || "आपकी पूजा सफलतापूर्वक बुक हो गई है।"}
+                                {bookingSteps[3]?.d || "आपकी पूजा सफलतापूर्वक बुक हो गई है।"}
                               </p>
                               <div className="w-16 h-[2px] bg-orange-600 mx-auto" />
                               <p className="text-gray-500 text-[10px] font-bold uppercase tracking-[0.2em] max-w-md mx-auto leading-relaxed">
-                                {bookingSteps[4]?.s || `Our spiritual desk will reach you at ${formData.mobile} within 15-30 minutes to confirm final schedule details.`}
+                                {bookingSteps[3]?.s || `Our spiritual desk will reach you at ${formData.mobile} within 15-30 minutes to confirm final schedule details.`}
                               </p>
                             </div>
 

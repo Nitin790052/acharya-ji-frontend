@@ -12,9 +12,10 @@ import { useNavigate } from "react-router-dom";
 import { addToCart } from "@/store/slices/cartSlice";
 import { useGetAllOfferingsQuery } from "@/services/pujaOfferingApi";
 import { useUserAuth } from "@/app/user/auth/AuthContext";
-import { useRegisterUserMutation, useGetUserDashboardQuery } from "@/services/userApi";
+import { useRegisterUserMutation, useGetUserDashboardQuery, useSendOtpMutation, useVerifyOtpMutation, useLoginUserMutation } from "@/services/userApi";
 import { toast } from "react-toastify";
 import { getImageUrl } from "@/config/apiConfig";
+import { AlertCircle, Shield, ChevronRight, Phone as PhoneIcon, Mail as MailIcon } from "lucide-react";
 
 const BookPoojaDrawer = ({ open, onClose, initialService }) => {
     const dispatch = useDispatch();
@@ -25,9 +26,9 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
     // Get user from AuthContext as primary source
     const { user: contextUser, login: contextLogin } = useUserAuth();
 
-    // Fallback source: Dashboard API (if logged in but context is empty)
-    const token = localStorage.getItem('token');
-    const { data: dashData } = useGetUserDashboardQuery(undefined, { skip: !token });
+    // Fallback source: Dashboard API (ONLY use user-specific token, never vendor token)
+    const userToken = localStorage.getItem('aji_user_token');
+    const { data: dashData } = useGetUserDashboardQuery(undefined, { skip: !userToken });
     const dashUser = dashData?.data?.user;
 
     // We will track the local user state when the drawer opens to ensure fresh data
@@ -46,18 +47,100 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
         mode: 'Home Visit'
     };
     const [formData, setFormData] = useState(defaultFormData);
+    
+    // Auth Flow State
+    const [authStep, setAuthStep] = useState('phone'); // 'phone', 'otp', 'verified'
+    const [otp, setOtp] = useState('');
+    const [isSendingOtp, setIsSendingOtp] = useState(false);
+    const [isVerifying, setIsVerifying] = useState(false);
+    
+    const [sendOtp] = useSendOtpMutation();
+    const [verifyOtp] = useVerifyOtpMutation();
+    const [loginUserApi] = useLoginUserMutation();
 
-    // Helper to get user data from all possible sources
+    const handleSendOtp = async () => {
+        if (!formData.mobile && !formData.email) {
+            toast.error("Please enter your mobile number or email");
+            return;
+        }
+        const identifier = formData.mobile || formData.email;
+        try {
+            setIsSendingOtp(true);
+            const isEmail = identifier.includes('@');
+            const res = await sendOtp({ 
+                identifier, 
+                type: isEmail ? 'email' : 'mobile' 
+            }).unwrap();
+            
+            if (!isEmail && res.debugOtp) {
+                // Mobile OTP → show in browser console for testing
+                console.log(`%c📱 OTP for ${identifier}: ${res.debugOtp}`, 'color: #E8453C; font-size: 18px; font-weight: bold; background: #FFF3E0; padding: 8px 16px; border-radius: 8px;');
+                toast.success("OTP sent! Check browser console (F12)");
+            } else {
+                // Email OTP → sent to actual email
+                toast.success(`OTP sent to your email ${identifier}`);
+            }
+            setAuthStep('otp');
+        } catch (err) {
+            toast.error(err?.data?.message || "Failed to send OTP");
+        } finally {
+            setIsSendingOtp(false);
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        if (!otp) {
+            toast.error("Please enter the OTP");
+            return;
+        }
+        const identifier = formData.mobile || formData.email;
+        try {
+            setIsVerifying(true);
+            const res = await verifyOtp({ identifier, otp }).unwrap();
+            if (res.success) {
+                try {
+                    const loginRes = await loginUserApi({ identifier }).unwrap();
+                    if (loginRes.success) {
+                        contextLogin(loginRes.data, loginRes.token);
+                        setLocalUser(loginRes.data);
+                        setFormData(prev => ({
+                            ...prev,
+                            name: loginRes.data.name || prev.name,
+                            mobile: loginRes.data.phone || loginRes.data.mobile || prev.mobile,
+                            email: loginRes.data.email || prev.email,
+                            location: loginRes.data.address || loginRes.data.location || prev.location
+                        }));
+                        toast.success("Welcome back! Verified successfully.");
+                    }
+                } catch (loginErr) {
+                    toast.info("Verified! Please complete your registration details.");
+                }
+                setAuthStep('verified');
+            }
+        } catch (err) {
+            toast.error(err?.data?.message || "Invalid OTP");
+        } finally {
+            setIsVerifying(false);
+        }
+    };
+
+    // Helper to get user data from all possible sources (ONLY real users, never vendors)
     const getFreshUserData = useCallback(() => {
         console.log('[DRAWER AUTH] Checking for user data...');
         
         // Helper to extract fields from any object
         const extract = (obj) => {
             if (!obj || typeof obj !== 'object') return null;
+            // CRITICAL: Skip vendor accounts - they should NOT auto-fill the drawer
+            if (obj.role === 'vendor' || obj.role === 'admin') {
+                console.log('[DRAWER AUTH] ⛔ Skipping non-user role:', obj.role);
+                return null;
+            }
             return {
                 name: obj.name || obj.fullName || obj.userName || '',
                 phone: obj.phone || obj.mobile || obj.phoneNumber || obj.identifier || '',
                 email: obj.email || obj.emailId || '',
+                location: obj.address || obj.location || '',
                 _id: obj._id || obj.id || null
             };
         };
@@ -69,18 +152,15 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
             return fromContext;
         }
         
-        // Source 2: localStorage (multiple keys for redundancy)
+        // Source 2: localStorage - ONLY check user-specific key
         try {
-            const storageKeys = ['authUser', 'user', 'userdata'];
-            for (const key of storageKeys) {
-                const data = localStorage.getItem(key);
-                if (data) {
-                    const parsed = JSON.parse(data);
-                    const fromStorage = extract(parsed);
-                    if (fromStorage && (fromStorage.name || fromStorage.phone)) {
-                        console.log(`[DRAWER AUTH] ✅ Got user from localStorage ${key}:`, fromStorage);
-                        return fromStorage;
-                    }
+            const data = localStorage.getItem('aji_user_data');
+            if (data) {
+                const parsed = JSON.parse(data);
+                const fromStorage = extract(parsed);
+                if (fromStorage && (fromStorage.name || fromStorage.phone)) {
+                    console.log('[DRAWER AUTH] ✅ Got user from aji_user_data:', fromStorage);
+                    return fromStorage;
                 }
             }
         } catch(e) {
@@ -93,27 +173,40 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
     useEffect(() => {
         if (open) {
             const freshUser = getFreshUserData();
-            const dashUserObj = dashUser ? {
-                name: dashUser.name,
-                phone: dashUser.phone || dashUser.mobile,
-                email: dashUser.email,
-                _id: dashUser._id
-            } : null;
+            
+            // Dashboard fallback - but ONLY if it's a real user, not a vendor
+            let dashUserObj = null;
+            if (dashUser && dashUser.membershipType) {
+                // Extra safety: check localStorage for role
+                try {
+                    const stored = localStorage.getItem('aji_user_data');
+                    const parsed = stored ? JSON.parse(stored) : null;
+                    if (!parsed || parsed.role !== 'vendor') {
+                        dashUserObj = {
+                            name: dashUser.name,
+                            phone: dashUser.phone || dashUser.mobile,
+                            email: dashUser.email,
+                            location: dashUser.location || dashUser.address || '',
+                            _id: dashUser._id
+                        };
+                    }
+                } catch(e) { /* skip */ }
+            }
 
             const effectiveUser = freshUser || dashUserObj;
             setLocalUser(effectiveUser);
             
             if (effectiveUser) {
-                setFormData(prev => {
-                    // Only autofill if the current field is empty
-                    // This prevents overwriting what the user might have just typed
-                    return {
-                        ...prev,
-                        name: prev.name === '' ? (effectiveUser.name || '') : prev.name,
-                        mobile: prev.mobile === '' ? (effectiveUser.phone || '') : prev.mobile,
-                        email: prev.email === '' ? (effectiveUser.email || '') : prev.email
-                    };
-                });
+                setAuthStep('verified');
+                setFormData(prev => ({
+                    ...prev,
+                    name: effectiveUser.name || prev.name,
+                    mobile: effectiveUser.phone || prev.mobile,
+                    email: effectiveUser.email || prev.email,
+                    location: effectiveUser.location || prev.location
+                }));
+            } else {
+                setAuthStep('phone');
             }
 
             // Pre-select initial service logic
@@ -136,7 +229,7 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                 }
             }
         }
-    }, [open, initialService, offerings, getFreshUserData, dashUser]);
+    }, [open, initialService, offerings, getFreshUserData, dashUser, contextUser]);
 
     useEffect(() => {
         if (!open) {
@@ -162,67 +255,71 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        let userId = localUser?._id || localUser?.id;
+        try {
+            let userId = localUser?._id || localUser?.id;
 
-        // Auto-Register if user is a guest
-        if (!localUser) {
-            try {
-                const generatedPassword = `${formData.mobile}@AJI`;
-                const regPayload = {
-                    name: formData.name,
-                    phone: formData.mobile,
-                    email: formData.email || `${formData.mobile}@acharyaji.com`,
-                    password: generatedPassword,
-                    location: formData.location
-                };
-                const regRes = await registerUser(regPayload).unwrap();
-                
-                if (regRes.token && regRes.data) {
-                    contextLogin(regRes.data, regRes.token);
-                    userId = regRes.data._id;
-                }
-                toast.success("Account securely created! Redirecting to cart...");
-            } catch (err) {
-                if (err.status === 400 && err.data?.message?.toLowerCase().includes('exists')) {
-                    toast.info("Account already exists. Please login to continue to cart.");
-                    onClose();
-                    
-                    const cartItemObj = {
-                        id: selectedService._id,
-                        title: selectedService.title,
-                        price: selectedService.price || 1100,
-                        description: selectedService.shortDescription,
-                        imageUrl: selectedService.imageUrl,
-                        date: formData.date,
-                        time: formData.time || 'Morning',
-                        mode: formData.mode || 'Home Visit',
-                        location: formData.location || '',
+            // Auto-Register if user is a guest
+            if (!localUser) {
+                try {
+                    const generatedPassword = `${formData.mobile}@AJI`;
+                    const regPayload = {
+                        name: formData.name,
+                        phone: formData.mobile,
+                        email: formData.email || `${formData.mobile}@acharyaji.com`,
+                        password: generatedPassword,
+                        location: formData.location
                     };
+                    const regRes = await registerUser(regPayload).unwrap();
                     
-                    navigate('/user_login', { state: { returnTo: '/cart', addPujaToCart: cartItemObj } });
-                    return;
-                } else {
-                    toast.error(err.data?.message || "Registration failed. Try logging in.");
-                    return;
+                    if (regRes.token && regRes.data) {
+                        contextLogin(regRes.data, regRes.token);
+                        userId = regRes.data._id;
+                    }
+                    toast.success("Account securely created! Redirecting to cart...");
+                } catch (err) {
+                    if (err.status === 400 && err.data?.message?.toLowerCase().includes('exists')) {
+                        toast.info("Account already exists. Please login to continue to cart.");
+                        onClose();
+                        
+                        const cartItemObj = {
+                            id: selectedService._id,
+                            title: selectedService.title,
+                            price: selectedService.price || 1100,
+                            description: selectedService.shortDescription,
+                            imageUrl: selectedService.imageUrl,
+                            date: formData.date,
+                            time: formData.time || 'Morning',
+                            mode: formData.mode || 'Home Visit',
+                            location: formData.location || '',
+                        };
+                        
+                        navigate('/user_login', { state: { returnTo: '/cart', addPujaToCart: cartItemObj } });
+                        return;
+                    } else {
+                        toast.error(err.data?.message || "Registration failed. Try logging in.");
+                        return;
+                    }
                 }
             }
-        }
 
-        const cartItem = {
-           id: selectedService._id,
-           title: selectedService.title,
-           price: selectedService.price || 1100,
-           description: selectedService.shortDescription,
-           imageUrl: selectedService.imageUrl,
-           date: formData.date,
-           time: formData.time || 'Morning',
-           mode: formData.mode || 'Home Visit',
-           location: formData.location || '',
-        };
-        
-        dispatch(addToCart(cartItem));
-        onClose();
-        navigate('/cart');
+            const cartItem = {
+               id: selectedService._id,
+               title: selectedService.title,
+               price: selectedService.price || 1100,
+               description: selectedService.shortDescription,
+               imageUrl: selectedService.imageUrl,
+               date: formData.date,
+               time: formData.time || 'Morning',
+               mode: formData.mode || 'Home Visit',
+               location: formData.location || '',
+            };
+            
+            dispatch(addToCart(cartItem));
+            onClose();
+            navigate('/cart');
+        } catch (error) {
+            console.error("Booking error:", error);
+        }
     };
 
     const handleServiceSelect = (service) => {
@@ -365,52 +462,152 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="flex flex-col gap-8 animate-fade-in">
-
-                            {/* Personal Information */}
+                            {/* Personal Information & Auth Flow */}
                             <div className="space-y-5">
                                 <div className="flex items-center gap-2 mb-2 border-b border-slate-100 pb-2">
                                     <User className="w-4 h-4 text-[#E8453C]" />
-                                    <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Direct Contact Details</h4>
+                                    <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Contact Information</h4>
                                 </div>
 
-                                <div className="grid grid-cols-1 gap-5">
-                                    <div>
-                                        <Label className={labelClasses}>Full Name</Label>
-                                        <Input 
-                                            name="name"
-                                            required 
-                                            placeholder="Your Name" 
-                                            className={inputClasses} 
-                                            value={formData.name}
-                                            onChange={handleChange}
-                                        />
+                                {authStep === 'phone' && !localUser && (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-4">
+                                        <div className="bg-orange-50 border border-orange-100 p-3 flex gap-3 items-start mb-2">
+                                            <AlertCircle className="w-4 h-4 text-orange-600 mt-0.5 shrink-0" />
+                                            <p className="text-[10px] text-orange-800 font-medium leading-relaxed">
+                                                To ensure a secure booking, we verify your contact details first.
+                                            </p>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-4">
+                                            <div>
+                                                <Label className={labelClasses}>Mobile Number or Email</Label>
+                                                <div className="relative">
+                                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-slate-400">
+                                                        <PhoneIcon className="w-3.5 h-3.5" />
+                                                        <span className="text-slate-300">|</span>
+                                                        <MailIcon className="w-3.5 h-3.5" />
+                                                    </div>
+                                                    <Input 
+                                                        name="mobile"
+                                                        placeholder="Enter Phone or Email" 
+                                                        className={`${inputClasses} pl-16`}
+                                                        value={formData.mobile || formData.email}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value;
+                                                            if (val.includes('@')) {
+                                                                setFormData(prev => ({ ...prev, email: val, mobile: '' }));
+                                                            } else {
+                                                                setFormData(prev => ({ ...prev, mobile: val, email: '' }));
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <Button 
+                                                type="button"
+                                                onClick={handleSendOtp}
+                                                disabled={isSendingOtp}
+                                                className="w-full h-10 rounded-none bg-[#E8453C] hover:bg-[#D43F37] text-white font-bold text-[10px] uppercase tracking-widest"
+                                            >
+                                                {isSendingOtp ? "Sending OTP..." : "Get Verification Code"}
+                                            </Button>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
-                                <div className="grid grid-cols-2 gap-5">
-                                    <div>
-                                        <Label className={labelClasses}>Phone Number</Label>
-                                        <Input 
-                                            name="mobile"
-                                            required 
-                                            placeholder="+91 XXXX XXXX" 
-                                            className={inputClasses} 
-                                            value={formData.mobile}
-                                            onChange={handleChange}
-                                        />
+                                {authStep === 'otp' && !localUser && (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-4">
+                                        <div className="text-center py-2">
+                                            <p className="text-xs text-slate-500 font-medium">OTP sent to <span className="text-[#E8453C] font-bold">{formData.mobile || formData.email}</span></p>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-4">
+                                            <div>
+                                                <Label className={labelClasses}>Enter 6-Digit OTP</Label>
+                                                <div className="relative">
+                                                    <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                                    <Input 
+                                                        placeholder="••••••" 
+                                                        maxLength={6}
+                                                        className={`${inputClasses} pl-10 text-center tracking-[0.5em] font-bold text-lg`}
+                                                        value={otp}
+                                                        onChange={(e) => setOtp(e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <Button 
+                                                    type="button"
+                                                    variant="outline"
+                                                    onClick={() => setAuthStep('phone')}
+                                                    className="flex-1 h-10 rounded-none text-slate-500 font-bold text-[10px] uppercase tracking-widest"
+                                                >
+                                                    Back
+                                                </Button>
+                                                <Button 
+                                                    type="button"
+                                                    onClick={handleVerifyOtp}
+                                                    disabled={isVerifying}
+                                                    className="flex-[2] h-10 rounded-none bg-[#E8453C] hover:bg-[#D43F37] text-white font-bold text-[10px] uppercase tracking-widest"
+                                                >
+                                                    {isVerifying ? "Verifying..." : "Verify & Continue"}
+                                                </Button>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <Label className={labelClasses}>Email Address</Label>
-                                        <Input 
-                                            name="email"
-                                            type="email" 
-                                            placeholder="Optional" 
-                                            className={inputClasses} 
-                                            value={formData.email}
-                                            onChange={handleChange}
-                                        />
+                                )}
+
+                                {authStep === 'verified' && (
+                                    <div className="grid grid-cols-1 gap-5 animate-in fade-in zoom-in-95">
+                                        <div className="flex items-center justify-between bg-green-50 border border-green-100 p-2.5 mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <CheckCircle className="w-3.5 h-3.5 text-green-600" />
+                                                <span className="text-[10px] text-green-700 font-bold uppercase tracking-wider">Verified Identity</span>
+                                            </div>
+                                            {!localUser && (
+                                                <button type="button" onClick={() => setAuthStep('phone')} className="text-[9px] text-slate-400 font-bold uppercase underline hover:text-[#E8453C]">Change</button>
+                                            )}
+                                        </div>
+
+                                        <div>
+                                            <Label className={labelClasses}>Full Name</Label>
+                                            <Input 
+                                                name="name"
+                                                required 
+                                                placeholder="Your Name" 
+                                                className={inputClasses} 
+                                                value={formData.name}
+                                                onChange={handleChange}
+                                                disabled={!!localUser && formData.name !== ''}
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-5">
+                                            <div>
+                                                <Label className={labelClasses}>Phone Number</Label>
+                                                <Input 
+                                                    name="mobile"
+                                                    required 
+                                                    placeholder="+91 XXXX XXXX" 
+                                                    className={inputClasses} 
+                                                    value={formData.mobile}
+                                                    onChange={handleChange}
+                                                    disabled={!!(localUser || authStep === 'verified')}
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label className={labelClasses}>Email Address</Label>
+                                                <Input 
+                                                    name="email"
+                                                    type="email" 
+                                                    placeholder="Email" 
+                                                    className={inputClasses} 
+                                                    value={formData.email}
+                                                    onChange={handleChange}
+                                                    disabled={!!(localUser || (authStep === 'verified' && formData.email !== ''))}
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
 
                             {/* Pooja Details */}
@@ -512,8 +709,8 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
 
                             <Button
                                 type="submit"
-                                disabled={isRegistering}
-                                className="h-12 rounded-none bg-[#E8453C] hover:bg-[#D43F37] text-white font-bold text-sm uppercase tracking-widest transition-all shadow-xl shadow-[#E8453C]/20 flex items-center justify-center gap-3 mb-6 group"
+                                disabled={isRegistering || (!localUser && authStep !== 'verified')}
+                                className={`h-12 rounded-none bg-[#E8453C] hover:bg-[#D43F37] text-white font-bold text-sm uppercase tracking-widest transition-all shadow-xl shadow-[#E8453C]/20 flex items-center justify-center gap-3 mb-6 group ${(!localUser && authStep !== 'verified') ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
                             >
                                 {isRegistering ? "Processing Ritual..." : "Proceed to Cart"} 
                                 {!isRegistering && <Send className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />}

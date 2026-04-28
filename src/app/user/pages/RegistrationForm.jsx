@@ -247,14 +247,14 @@ const RegistrationForm = () => {
         return toast.warning('Please verify both Mobile and Email first');
       }
 
-      // Prepare data as JSON (since we removed multer for debugging)
-      const submitData = {
-        name: formData.fullName,
-        email: formData.email,
-        phone: formData.mobile,
-        password: formData.password,
-        location: `${formData.city}, ${formData.state}, ${formData.country}`
-      };
+      // Prepare FormData for multipart/form-data support (for image upload)
+      const submitData = new FormData();
+      submitData.append('name', formData.fullName);
+      submitData.append('email', formData.email);
+      submitData.append('phone', formData.mobile);
+      submitData.append('password', formData.password);
+      submitData.append('location', `${formData.city}, ${formData.state}, ${formData.country}`);
+
 
       // Submit form using RTK Mutation
       toast.promise(
@@ -266,12 +266,8 @@ const RegistrationForm = () => {
               const { token, data: userData } = response;
               login(userData, token);
               
-              // If there is a puja to add to cart, the CartCheckout page will handle it via state
               setTimeout(() => {
-                if (location.state?.addPujaToCart) {
-                  // Direct to cart with the item state
-                  navigate('/cart', { state: location.state });
-                } else if (location.state?.returnTo) {
+                if (location.state?.returnTo) {
                   navigate(location.state.returnTo, { state: location.state });
                 } else {
                   navigate('/user/dashboard');

@@ -9,31 +9,29 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     try {
-      const savedUser = localStorage.getItem('authUser');
+      const savedUser = localStorage.getItem('aji_user_data');
       if (savedUser) {
         setUser(JSON.parse(savedUser));
       }
     } catch (e) {
       console.error("Error loading auth state from storage:", e);
-      localStorage.removeItem('authUser');
+      localStorage.removeItem('aji_user_data');
     }
     setLoading(false);
   }, []);
 
   const login = (userData, token = null) => {
     setUser(userData);
-    localStorage.setItem("authUser", JSON.stringify(userData));
+    localStorage.setItem("aji_user_data", JSON.stringify(userData));
     if (token) {
-      localStorage.setItem("token", token);
+      localStorage.setItem("aji_user_token", token);
     }
   };
 
-
-
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('authUser');
-    localStorage.removeItem('token');
+    localStorage.removeItem('aji_user_data');
+    localStorage.removeItem('aji_user_token');
   };
 
   return (

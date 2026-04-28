@@ -6,7 +6,7 @@ export const userApi = createApi({
   baseQuery: fetchBaseQuery({ 
     baseUrl: `${API_URL}/users`,
     prepareHeaders: (headers) => {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const token = localStorage.getItem('aji_user_token') || localStorage.getItem('token');
       if (token) {
         headers.set('authorization', `Bearer ${token}`);
       }

@@ -125,7 +125,20 @@ const PujaServices = () => {
 
   const handleOpenDrawer = (puja = null) => {
     if (!user) {
-      navigate('/user_login/registeration');
+      const cartItem = puja ? {
+        id: puja._id,
+        title: puja.title,
+        price: puja.price,
+        description: puja.shortDescription,
+        imageUrl: getImageUrl(puja.imageUrl)
+      } : null;
+
+      navigate('/user_login/registeration', { 
+        state: { 
+          returnTo: '/cart', 
+          addPujaToCart: cartItem 
+        } 
+      });
       return;
     }
     window.dispatchEvent(new CustomEvent('openPoojaDrawer', { detail: puja }));

@@ -12,10 +12,6 @@ const FloatingButtons = ({ isHomePage }) => {
   
   React.useEffect(() => {
     const handleOpen = (e) => {
-        if (!user) {
-            navigate('/user_login/registeration');
-            return;
-        }
         setPoojaOpen(true);
         if (e.detail) {
             setInitialService(e.detail);
@@ -33,11 +29,7 @@ const FloatingButtons = ({ isHomePage }) => {
       <div className="fixed left-0 top-1/2 -translate-y-1/2 z-[999]">
         <button
           onClick={() => {
-            if (!user) {
-              navigate('/user_login/registeration');
-            } else {
-              setPoojaOpen(true);
-            }
+            setPoojaOpen(true);
           }}
           className={`group relative bg-[#E8453C] text-yellow-300 px-2 py-5 rounded-r-xl shadow-[4px_0_15px_rgba(232,69,60,0.25)] flex items-center justify-center gap-3 [writing-mode:vertical-lr] border-y border-r border-[#c73530] transition-all hover:translate-x-1 active:scale-95 ${isHomePage ? 'animate-slide-in-left' : 'opacity-100'}`}
           style={isHomePage ? { animationDelay: '0.5s' } : {}}

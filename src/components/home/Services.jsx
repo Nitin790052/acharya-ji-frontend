@@ -53,23 +53,17 @@ export function Services() {
 
   const handleBookNow = (e, service) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
     const displayImage = getImageUrl(service.imageUrl) || (imageFallbackMap[service.title] || OnlinePuja);
     
-    const cartItem = {
-      id: service._id,
-      title: service.title,
-      price: service.price || 1100, // Fallback if no price field directly
-      description: service.description,
-      imageUrl: displayImage
-    };
-
-    if (token) {
-      dispatch(addToCart(cartItem));
-      navigate('/cart');
-    } else {
-      navigate('/user_login', { state: { returnTo: '/cart', addPujaToCart: cartItem } });
-    }
+    window.dispatchEvent(new CustomEvent('openPoojaDrawer', { 
+        detail: { 
+            _id: service._id, 
+            title: service.title, 
+            price: service.price || 1100, 
+            shortDescription: service.description, 
+            imageUrl: displayImage 
+        } 
+    }));
   };
 
   if (isLoading || isError || !servicesData) {

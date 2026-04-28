@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, useMemo } from "react";
 
 const AuthContext = createContext(null);
 
-const STORAGE_KEY = "authUser";
+const STORAGE_KEY = "aji_vendor_data";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);

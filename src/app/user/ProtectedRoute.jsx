@@ -4,8 +4,8 @@ import { useUserAuth } from './auth/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading, user } = useUserAuth();
-  const token = localStorage.getItem('token');
-  const savedUser = localStorage.getItem('authUser');
+  const token = localStorage.getItem('aji_user_token') || localStorage.getItem('token');
+  const savedUser = localStorage.getItem('aji_user_data') || localStorage.getItem('authUser');
 
   if (loading) {
     return (

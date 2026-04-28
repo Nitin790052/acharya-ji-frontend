@@ -6,7 +6,7 @@ export const vendorApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: `${API_URL}/vendors`,
     prepareHeaders: (headers) => {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const token = localStorage.getItem('aji_vendor_token') || localStorage.getItem('token');
       if (token) {
         headers.set('authorization', `Bearer ${token}`);
       }
