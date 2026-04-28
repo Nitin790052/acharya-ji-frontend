@@ -1,30 +1,29 @@
 const getApiUrl = () => {
-  // 1. Check if VITE_API_URL is explicitly set in .env
   const envUrl = import.meta.env.VITE_API_URL;
-  
-  // 2. Check if we are in development mode (npm run dev)
   const isDevMode = import.meta.env.DEV;
   
-  // 3. Check if we are running on a local hostname
   const isLocalhost = 
     window.location.hostname === 'localhost' || 
     window.location.hostname === '127.0.0.1' ||
     window.location.hostname.startsWith('192.168.') ||
     window.location.hostname.endsWith('.local');
 
-  // Logic: 
-  // - If we are on localhost AND in dev mode, prefer localhost:5000
-  // - Otherwise, use the ENV variable if it exists
-  // - Fallback to the production render URL
-  let baseApiUrl = 'https://acharya-ji-backend.onrender.com/api';
+  let baseApiUrl;
 
-  if (isLocalhost && isDevMode) {
-    baseApiUrl = `${window.location.protocol}//${window.location.hostname}:5000/api`;
-  } else if (envUrl) {
+  if (envUrl) {
+    // If VITE_API_URL is set, use it as is
     baseApiUrl = envUrl;
+  } else if (isLocalhost && isDevMode) {
+    // Local development fallback
+    baseApiUrl = `${window.location.protocol}//${window.location.hostname}:5000/api`;
+  } else {
+    // Production fallback
+    baseApiUrl = 'https://acharya-ji-backend.onrender.com/api';
   }
 
-  return baseApiUrl.replace(/\/+$/, '');
+  const finalUrl = baseApiUrl.replace(/\/+$/, '');
+  console.log(`[API Config] Final API_URL: ${finalUrl} (Mode: ${isDevMode ? 'DEV' : 'PROD'}, Host: ${window.location.hostname})`);
+  return finalUrl;
 };
 
 const getBackendUrl = () => {
@@ -35,15 +34,19 @@ const getBackendUrl = () => {
     window.location.hostname === '127.0.0.1' ||
     window.location.hostname.startsWith('192.168.');
 
-  let baseBackendUrl = 'https://acharya-ji-backend.onrender.com';
+  let baseBackendUrl;
 
-  if (isLocalhost && isDevMode) {
-    baseBackendUrl = `${window.location.protocol}//${window.location.hostname}:5000`;
-  } else if (envUrl) {
+  if (envUrl) {
     baseBackendUrl = envUrl;
+  } else if (isLocalhost && isDevMode) {
+    baseBackendUrl = `${window.location.protocol}//${window.location.hostname}:5000`;
+  } else {
+    baseBackendUrl = 'https://acharya-ji-backend.onrender.com';
   }
 
-  return baseBackendUrl.replace(/\/+$/, '');
+  const finalUrl = baseBackendUrl.replace(/\/+$/, '');
+  console.log(`[API Config] Final BACKEND_URL: ${finalUrl}`);
+  return finalUrl;
 };
 
 export const API_URL = getApiUrl();

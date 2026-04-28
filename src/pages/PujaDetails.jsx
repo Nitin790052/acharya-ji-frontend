@@ -57,7 +57,6 @@ const PujaDetails = () => {
 
 
     // Modal States
-    const [showBookingModal, setShowBookingModal] = useState(false);
     const [showMuhuratModal, setShowMuhuratModal] = useState(false);
 
     // Form States
@@ -107,11 +106,7 @@ const PujaDetails = () => {
     const handleInputChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
     const handleMuhuratChange = (e) => setMuhuratData({ ...muhuratData, [e.target.name]: e.target.value });
 
-    const handleBookingSubmit = (e) => {
-        e.preventDefault();
-        alert('Booking request submitted! Our team will contact you soon.');
-        setShowBookingModal(false);
-    };
+
 
     const handleMuhuratSubmit = (e) => {
         e.preventDefault();
@@ -300,10 +295,10 @@ const PujaDetails = () => {
                                                 </ul>
                                                 <button
                                                     onClick={() => {
-                                                        if (!user) {
-                                                            navigate('/user_login/registeration');
+                                                        if (service.title.includes('Muhurat')) {
+                                                            setShowMuhuratModal(true);
                                                         } else {
-                                                            service.title.includes('Muhurat') ? setShowMuhuratModal(true) : setShowBookingModal(true);
+                                                            window.dispatchEvent(new CustomEvent('openPoojaDrawer', { detail: offering }));
                                                         }
                                                     }}
                                                     className="w-full py-3 bg-[#2A1D13] text-amber-400 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-orange-600 hover:text-white transition-all shadow-lg"
@@ -430,11 +425,7 @@ const PujaDetails = () => {
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             <button
                                 onClick={() => {
-                                    if (!user) {
-                                        navigate('/user_login/registeration');
-                                    } else {
-                                        window.dispatchEvent(new CustomEvent('openPoojaDrawer'));
-                                    }
+                                    window.dispatchEvent(new CustomEvent('openPoojaDrawer', { detail: offering }));
                                 }}
                                 className="flex items-center justify-center gap-3 bg-[#E8453C] text-white px-8 py-3.5  font-black text-xs uppercase tracking-widest shadow-lg hover:brightness-110 transition-all w-full sm:w-60"
                             >
@@ -460,28 +451,7 @@ const PujaDetails = () => {
                 </section>
 
                 {/* Modals from user demo */}
-                {showBookingModal && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-2xl max-w-md w-full p-8 relative animate-scale-in">
-                            <button onClick={() => setShowBookingModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-orange-600"><X size={24} /></button>
-                            <h3 className="text-2xl font-black mb-6 uppercase">Book <span className="text-orange-600">{title}</span></h3>
-                            <form onSubmit={handleBookingSubmit} className="space-y-4">
-                                <input name="name" onChange={handleInputChange} className="w-full border-2 border-gray-100 p-4 rounded-xl outline-none focus:border-orange-500 font-bold" placeholder="Full Name" required />
-                                <input name="phone" onChange={handleInputChange} className="w-full border-2 border-gray-100 p-4 rounded-xl outline-none focus:border-orange-500 font-bold" placeholder="Phone Number" required />
-                                <input name="email" type="email" onChange={handleInputChange} className="w-full border-2 border-gray-100 p-4 rounded-xl outline-none focus:border-orange-500 font-bold" placeholder="Email Address" required />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <input name="city" onChange={handleInputChange} className="w-full border-2 border-gray-100 p-4 rounded-xl outline-none focus:border-orange-500 font-bold" placeholder="City" required />
-                                    <input name="preferredDate" type="date" onChange={handleInputChange} className="w-full border-2 border-gray-100 p-4 rounded-xl outline-none focus:border-orange-500 font-bold" required />
-                                </div>
-                                <select name="pujaType" onChange={handleInputChange} className="w-full border-2 border-gray-100 p-4 rounded-xl outline-none focus:border-orange-500 font-bold">
-                                    <option value="home">Home Visit Puja</option>
-                                    <option value="online">Online Puja (Video)</option>
-                                </select>
-                                <button className="w-full py-4 bg-orange-600 text-white font-black uppercase tracking-widest hover:bg-black transition-all">Confirm Request</button>
-                            </form>
-                        </div>
-                    </div>
-                )}
+
 
                 {showMuhuratModal && (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">

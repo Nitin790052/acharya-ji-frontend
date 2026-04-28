@@ -199,12 +199,17 @@ const RegistrationForm = () => {
       if (type === 'mobile') {
         setPhoneOtpStep('sent');
         setPhoneTimer(30);
+        if (response.debugOtp) {
+          console.log(`%c📱 OTP for ${identifier}: ${response.debugOtp}`, 'color: #E8453C; font-size: 18px; font-weight: bold; background: #FFF3E0; padding: 8px 16px; border-radius: 8px;');
+          toast.success("OTP sent! Check browser console (F12)");
+        } else {
+          toast.success(response.message || "OTP sent to mobile");
+        }
       } else {
         setEmailOtpStep('sent');
         setEmailTimer(30);
+        toast.success(response.message || `OTP sent to your email ${identifier}`);
       }
-      if (response.debugOtp && type === 'mobile') toast.info(`OTP: ${response.debugOtp}`);
-      toast.success(response.message || `OTP sent to ${type}`);
     } catch (err) {
       toast.error(err.data?.message || `Failed to send OTP to ${type}`);
     }

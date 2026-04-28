@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { useCart } from "@/contexts/CartContext";
 import { addToCart } from "@/store/slices/cartSlice";
 import { useGetAllOfferingsQuery } from "@/services/pujaOfferingApi";
 import { useUserAuth } from "@/app/user/auth/AuthContext";
@@ -20,6 +21,7 @@ import { AlertCircle, Shield, ChevronRight, Phone as PhoneIcon, Mail as MailIcon
 const BookPoojaDrawer = ({ open, onClose, initialService }) => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const { setIsCartOpen } = useCart();
     const { data: offerings = [] } = useGetAllOfferingsQuery();
     const [registerUser, { isLoading: isRegistering }] = useRegisterUserMutation();
     
@@ -316,7 +318,8 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
             
             dispatch(addToCart(cartItem));
             onClose();
-            navigate('/cart');
+            // Open the Cart Drawer instead of navigating to a new page
+            setIsCartOpen(true);
         } catch (error) {
             console.error("Booking error:", error);
         }

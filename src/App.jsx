@@ -156,8 +156,8 @@ const App = () => (
             <ScrollToTop />
             <VendorAuthProvider>
                 <UserAuthProvider>
-                    <GlobalFloatingButtons />
                     <CartProvider>
+                        <GlobalFloatingButtons />
                         <TooltipProvider>
                             <Suspense fallback={
                                 <div className="flex items-center justify-center min-h-screen bg-orange-50/30">
