@@ -10,6 +10,7 @@ import TempleServices from "../../vendor/pages/vendorRegisterForms/forms/TempleS
 import VedicScholar from "../../vendor/pages/vendorRegisterForms/forms/VedicScholar";
 import SpiritualHealer from "../../vendor/pages/vendorRegisterForms/forms/SpiritualHealer";
 import SuccessPage from "../../vendor/pages/vendorRegisterForms/SuccessPage";
+import { API_URL } from "../../../config/apiConfig";
 import { ArrowLeft, CheckCircle, Circle, User, FileText, Home, Mail } from "lucide-react";
 
 const VendorRegister = () => {
@@ -51,7 +52,7 @@ const VendorRegister = () => {
         }
       });
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/vendors/register`, {
+      const response = await fetch(`${API_URL}/vendors/register`, {
         method: 'POST',
         body: formData,
         // Don't set Content-Type header when sending FormData, the browser will do it automatically with boundary
