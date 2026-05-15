@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import VendorPageHeader from '../../../components/VendorPageHeader';
 import { useAuth } from '../../../auth/AuthContext';
-import { 
-  useGetVendorBookingsQuery, 
-  useUpdateBookingMutation 
+import {
+  useGetVendorBookingsQuery,
+  useUpdateBookingMutation,
+  useGetDashboardStatsQuery
 } from '../../../../../services/vendorApi';
 import { toast } from 'react-toastify';
 
@@ -35,8 +36,36 @@ import {
   Church,
   Award,
   PlusCircle,
-  RefreshCw
+  RefreshCw,
+  Activity
 } from 'lucide-react';
+
+const StatValue = ({ value, prefix = "" }) => {
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    let start = 0;
+    const end = typeof value === 'number' ? value : parseInt(value.toString().replace(/[^0-9]/g, '')) || 0;
+    if (end === 0) {
+      setDisplayValue(0);
+      return;
+    }
+    const duration = 1000;
+    const increment = end / (duration / 16);
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= end) {
+        setDisplayValue(end);
+        clearInterval(timer);
+      } else {
+        setDisplayValue(Math.floor(start));
+      }
+    }, 16);
+    return () => clearInterval(timer);
+  }, [value]);
+
+  return <span>{prefix}{typeof value === 'number' ? displayValue.toLocaleString('en-IN') : value}</span>;
+};
 
 const BookingsTemple = () => {
   const { user } = useAuth();
@@ -50,10 +79,37 @@ const BookingsTemple = () => {
   const { data: bookingsResponse, isLoading: isFetching, refetch } = useGetVendorBookingsQuery(user?._id, {
     skip: !user?._id
   });
+
+  // Also fetch dashboard stats for more detailed info
+  const { data: dashboardStatsRes } = useGetDashboardStatsQuery(user?._id, {
+    skip: !user?._id
+  });
+
   const [updateBooking, { isLoading: isUpdating }] = useUpdateBookingMutation();
 
   const bookings = bookingsResponse?.data || [];
+  const dashboardStats = dashboardStatsRes?.data?.stats || [];
   const isLoading = isFetching || isUpdating;
+
+  // ============ ANIMATED COUNTER HOOK ============
+  const useCountUp = (end, duration = 1000) => {
+    const [count, setCount] = useState(0);
+    useEffect(() => {
+      let start = 0;
+      const increment = end / (duration / 16);
+      const timer = setInterval(() => {
+        start += increment;
+        if (start >= end) {
+          setCount(end);
+          clearInterval(timer);
+        } else {
+          setCount(Math.floor(start));
+        }
+      }, 16);
+      return () => clearInterval(timer);
+    }, [end, duration]);
+    return count;
+  };
 
   // ============ STATS ============
   const getTodayDateString = () => {
@@ -77,21 +133,24 @@ const BookingsTemple = () => {
 
   const stats = {
     total: bookings.length,
-    pending: bookings.filter(b => b.status.toLowerCase() === 'pending').length,
-    confirmed: bookings.filter(b => b.status.toLowerCase() === 'confirmed').length,
-    completed: bookings.filter(b => b.status.toLowerCase() === 'completed').length,
-    cancelled: bookings.filter(b => b.status.toLowerCase() === 'cancelled').length,
+    pending: bookings.filter(b => b.status?.toLowerCase() === 'pending').length,
+    confirmed: bookings.filter(b => b.status?.toLowerCase() === 'confirmed').length,
+    completed: bookings.filter(b => b.status?.toLowerCase() === 'completed').length,
+    cancelled: bookings.filter(b => b.status?.toLowerCase() === 'cancelled').length,
     todayRevenue: bookings
-      .filter(b => b.date === getTodayDateString() && b.status.toLowerCase() !== 'cancelled')
+      .filter(b => b.date?.includes(getTodayDateString()) && b.status?.toLowerCase() !== 'cancelled')
       .reduce((acc, b) => acc + (b.amount || 0), 0),
-    todayBookings: bookings.filter(b => b.date === getTodayDateString()).length
+    todayBookings: bookings.filter(b => b.date?.includes(getTodayDateString())).length
   };
 
   const unreadCount = bookings.filter(b => !b.isRead).length;
 
+  // Real-time stats from API if available
+  const apiTotalRevenue = dashboardStats.find(s => s.label === 'Total Revenue')?.value || `₹${stats.todayRevenue.toLocaleString('en-IN')}`;
+
   // ============ HELPERS ============
   const getTypeIcon = (type) => {
-    switch(type?.toLowerCase()) {
+    switch (type?.toLowerCase()) {
       case 'seva': return <ShoppingBag className="w-5 h-5 text-green-600" />;
       case 'puja': return <Bell className="w-5 h-5 text-orange-500" />;
       case 'katha': return <FileText className="w-5 h-5 text-purple-600" />;
@@ -103,7 +162,7 @@ const BookingsTemple = () => {
 
   const getPriorityStyles = (priority) => {
     const base = "px-2 py-0.5 rounded-full text-xs font-medium capitalize";
-    switch(priority?.toLowerCase()) {
+    switch (priority?.toLowerCase()) {
       case 'critical': return `${base} bg-red-50 text-red-700`;
       case 'high': return `${base} bg-orange-50 text-orange-500`;
       case 'medium': return `${base} bg-blue-50 text-blue-600`;
@@ -113,19 +172,19 @@ const BookingsTemple = () => {
   };
 
   const getStatusStyles = (status) => {
-    const base = "px-2 py-0.5 rounded-full text-xs font-medium capitalize";
-    switch(status?.toLowerCase()) {
-      case 'confirmed': return `${base} bg-green-50 text-green-700`;
-      case 'pending': return `${base} bg-orange-50 text-orange-500`;
-      case 'completed': return `${base} bg-blue-50 text-blue-600`;
-      case 'cancelled': return `${base} bg-red-50 text-red-700`;
-      default: return `${base} bg-gray-100 text-gray-600`;
+    const base = "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300";
+    switch (status?.toLowerCase()) {
+      case 'confirmed': return `${base} bg-green-100 text-green-700 border border-green-200 shadow-sm shadow-green-100`;
+      case 'pending': return `${base} bg-orange-100 text-orange-700 border border-orange-200 shadow-sm shadow-orange-100`;
+      case 'completed': return `${base} bg-blue-100 text-blue-700 border border-blue-200 shadow-sm shadow-blue-100`;
+      case 'cancelled': return `${base} bg-red-100 text-red-700 border border-red-200 shadow-sm shadow-red-100`;
+      default: return `${base} bg-gray-100 text-gray-700 border border-gray-200`;
     }
   };
 
   const handleAction = async (action, booking = null) => {
     try {
-      switch(action) {
+      switch (action) {
         case 'view':
           setSelectedBooking(booking);
           setShowDetailsModal(true);
@@ -133,27 +192,27 @@ const BookingsTemple = () => {
             await updateBooking({ id: booking._id, isRead: true }).unwrap();
           }
           break;
-        
+
         case 'accept':
-          await updateBooking({ 
-            id: booking._id, 
-            status: 'Confirmed', 
-            isRead: true 
+          await updateBooking({
+            id: booking._id,
+            status: 'Confirmed',
+            isRead: true
           }).unwrap();
           toast.success('Booking confirmed');
           break;
-        
+
         case 'reject':
           if (window.confirm('Are you sure you want to reject this booking?')) {
-            await updateBooking({ 
-              id: booking._id, 
-              status: 'Cancelled', 
-              isRead: true 
+            await updateBooking({
+              id: booking._id,
+              status: 'Cancelled',
+              isRead: true
             }).unwrap();
             toast.success('Booking cancelled');
           }
           break;
-        
+
         case 'assignPandit':
           const pandit = prompt('Enter pandit name:', booking?.pandit || '');
           if (pandit) {
@@ -161,11 +220,11 @@ const BookingsTemple = () => {
             toast.success('Pandit assigned');
           }
           break;
-        
+
         case 'markAsRead':
           await updateBooking({ id: booking._id, isRead: true }).unwrap();
           break;
-        
+
         case 'refresh':
           refetch();
           toast.info('Refreshing bookings...');
@@ -185,15 +244,17 @@ const BookingsTemple = () => {
     // Category/Status filter
     if (filter === 'all') return true;
     if (['seva', 'puja', 'katha', 'hall', 'special'].includes(filter)) {
-      return (b.pujaType || b.type)?.toLowerCase() === filter;
+      const bType = (b.pujaType || b.type || '').toLowerCase();
+      // Improved match: check if the type contains the filter word
+      return bType.includes(filter);
     }
     return b.status?.toLowerCase() === filter;
   }).filter(b => {
     // Date filter
     const today = getTodayDateString();
     const tomorrow = getTomorrowDateString();
-    if (dateFilter === 'today') return b.date === today;
-    if (dateFilter === 'tomorrow') return b.date === tomorrow;
+    if (dateFilter === 'today') return b.date?.includes(today);
+    if (dateFilter === 'tomorrow') return b.date?.includes(tomorrow);
     if (dateFilter === 'week') return isThisWeek(b.date);
     return true;
   }).filter(b => {
@@ -330,20 +391,25 @@ const BookingsTemple = () => {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Total', val: stats.total, icon: CalendarDays, color: 'orange', sub: `+${stats.todayBookings} today` },
-            { label: 'Pending', val: stats.pending, icon: AlertCircle, color: 'amber', sub: 'Action required' },
-            { label: 'Confirmed', val: stats.confirmed, icon: CheckCircle2, color: 'green', sub: 'Live services' },
-            { label: 'Completed', val: stats.completed, icon: CheckCircle2, color: 'blue', sub: 'Successfully done' }
+            { label: 'Total', val: stats.total, icon: CalendarDays, color: 'orange', sub: `+${stats.todayBookings} today`, bg: 'bg-orange-50', text: 'text-orange-500' },
+            { label: 'Pending', val: stats.pending, icon: AlertCircle, color: 'amber', sub: 'Action required', bg: 'bg-amber-50', text: 'text-amber-500' },
+            { label: 'Confirmed', val: stats.confirmed, icon: CheckCircle2, color: 'green', sub: 'Live services', bg: 'bg-green-50', text: 'text-green-500' },
+            { label: 'Completed', val: stats.completed, icon: CheckCircle2, color: 'blue', sub: 'Successfully done', bg: 'bg-blue-50', text: 'text-blue-500' }
           ].map((s, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-all group">
+            <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">{s.label}</p>
-                <div className={`p-2 bg-${s.color}-50 rounded-xl group-hover:scale-110 transition-transform`}>
-                  <s.icon className={`w-5 h-5 text-${s.color}-500`} />
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{s.label}</p>
+                <div className={`p-2 ${s.bg} rounded-xl group-hover:scale-110 transition-transform duration-500`}>
+                  <s.icon className={`w-5 h-5 ${s.text}`} />
                 </div>
               </div>
-              <p className="text-2xl font-black text-gray-800">{s.val}</p>
-              <p className={`text-xs font-medium text-${s.color}-500 mt-1`}>{s.sub}</p>
+              <p className="text-2xl font-black text-gray-800 tracking-tight">
+                <StatValue value={s.val} />
+              </p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <div className={`w-1.5 h-1.5 rounded-full ${s.text} animate-pulse`}></div>
+                <p className={`text-[10px] font-bold ${s.text}`}>{s.sub}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -372,8 +438,8 @@ const BookingsTemple = () => {
 
           <div className="flex flex-wrap gap-2">
             {['all', 'seva', 'puja', 'katha', 'hall', 'special'].map((f) => (
-              <button key={f} onClick={() => setFilter(f)} className={`px-4 py-2 rounded-xl text-sm font-bold capitalize border-2 transition-all ${filter === f ? 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/20' : 'bg-white border-gray-100 text-gray-500 hover:border-orange-200'}`}>
-                {f} ({f === 'all' ? stats.total : bookings.filter(b => (b.pujaType || b.type)?.toLowerCase() === f).length})
+              <button key={f} onClick={() => setFilter(f)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 transition-all duration-300 ${filter === f ? 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/20 scale-105' : 'bg-white border-gray-100 text-gray-400 hover:border-orange-200 hover:text-gray-600'}`}>
+                {f} ({f === 'all' ? stats.total : bookings.filter(b => (b.pujaType || b.type || '').toLowerCase().includes(f)).length})
               </button>
             ))}
           </div>
@@ -389,8 +455,11 @@ const BookingsTemple = () => {
 
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
           <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-            <h3 className="text-base font-black text-gray-800">Recent Bookings</h3>
-            <span className="text-sm font-bold text-orange-500 bg-orange-50 px-3 py-1 rounded-full">{filteredBookings.length} Bookings</span>
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-orange-500 animate-pulse" />
+              <h3 className="text-base font-black text-gray-800">Recent Bookings Feed</h3>
+            </div>
+            <span className="text-[10px] font-black text-orange-500 bg-orange-50 px-3 py-1 rounded-full uppercase tracking-widest">{filteredBookings.length} Active</span>
           </div>
 
           <div className="overflow-x-auto">
@@ -470,35 +539,35 @@ const BookingsTemple = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-           <div className="lg:col-span-2 space-y-6">
-              {/* Dynamic support card */}
-              <div className="bg-gray-900 rounded-3xl p-6 text-white flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">
-                 <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
-                 <div className="relative z-10">
-                    <h4 className="text-xl font-bold mb-2">Grow your Temple Services</h4>
-                    <p className="text-gray-400 text-sm max-w-md">Check out our latest insights on how to improve your devotee engagement and booking experience.</p>
-                 </div>
-                 <button className="relative z-10 px-6 py-3 bg-white text-gray-900 font-bold rounded-2xl hover:bg-orange-500 hover:text-white transition-all active:scale-95 whitespace-nowrap">Explore Guide</button>
+          <div className="lg:col-span-2 space-y-6">
+            {/* Dynamic support card */}
+            <div className="bg-gray-900 rounded-3xl p-6 text-white flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
+              <div className="relative z-10">
+                <h4 className="text-xl font-bold mb-2">Grow your Temple Services</h4>
+                <p className="text-gray-400 text-sm max-w-md">Check out our latest insights on how to improve your devotee engagement and booking experience.</p>
               </div>
-           </div>
+              <button className="relative z-10 px-6 py-3 bg-white text-gray-900 font-bold rounded-2xl hover:bg-orange-500 hover:text-white transition-all active:scale-95 whitespace-nowrap">Explore Guide</button>
+            </div>
+          </div>
 
-           <div className="space-y-6">
-              <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
-                 <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2"><Filter className="w-5 h-5 text-orange-500" /> Quick Overview</h4>
-                 <div className="space-y-4">
-                    {[
-                      { label: 'Unread Bookings', val: unreadCount, color: 'orange' },
-                      { label: 'Avg. Value', val: `₹${bookings.length > 0 ? Math.round(bookings.reduce((a, b) => a + (b.amount || 0), 0) / bookings.length) : 0}`, color: 'blue' },
-                      { label: 'Completion Rate', val: `${bookings.length > 0 ? Math.round((stats.completed / bookings.length) * 100) : 0}%`, color: 'green' }
-                    ].map((item, i) => (
-                      <div key={i} className="flex items-center justify-between">
-                         <span className="text-sm text-gray-500 font-medium">{item.label}</span>
-                         <span className={`text-sm font-bold text-${item.color}-600 bg-${item.color}-50 px-2.5 py-1 rounded-lg`}>{item.val}</span>
-                      </div>
-                    ))}
-                 </div>
+          <div className="space-y-6">
+            <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+              <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2"><Filter className="w-5 h-5 text-orange-500" /> Quick Overview</h4>
+              <div className="space-y-4">
+                {[
+                  { label: 'Unread Bookings', val: unreadCount, color: 'orange' },
+                  { label: 'Avg. Value', val: `₹${bookings.length > 0 ? Math.round(bookings.reduce((a, b) => a + (b.amount || 0), 0) / bookings.length) : 0}`, color: 'blue' },
+                  { label: 'Completion Rate', val: `${bookings.length > 0 ? Math.round((stats.completed / bookings.length) * 100) : 0}%`, color: 'green' }
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <span className="text-sm text-gray-500 font-medium">{item.label}</span>
+                    <span className={`text-sm font-bold text-${item.color}-600 bg-${item.color}-50 px-2.5 py-1 rounded-lg`}>{item.val}</span>
+                  </div>
+                ))}
               </div>
-           </div>
+            </div>
+          </div>
         </div>
       </div>
       <DetailsModal />

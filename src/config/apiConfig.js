@@ -17,7 +17,7 @@ const getApiUrl = () => {
     baseApiUrl = envUrl;
   } else if (isLocalhost && isDevMode) {
     // Local development fallback
-    baseApiUrl = `${window.location.protocol}//${window.location.hostname}:5000/api`;
+    baseApiUrl = `${window.location.protocol}//${window.location.hostname}:5001/api`;
   } else {
     // Production fallback - ALWAYS use Render if we are not on localhost
     baseApiUrl = 'https://acharya-ji-backend.onrender.com/api';
@@ -26,7 +26,7 @@ const getApiUrl = () => {
   // 🔥 CRITICAL FIX: Ensure the URL ends with /api if it's missing
   // This handles cases where VITE_API_URL is set to the base domain without /api
   let finalUrl = baseApiUrl.replace(/\/+$/, '');
-  if (!finalUrl.endsWith('/api') && (finalUrl.includes('onrender.com') || finalUrl.includes(':5000'))) {
+  if (!finalUrl.endsWith('/api') && (finalUrl.includes('onrender.com') || finalUrl.includes(':5001'))) {
     finalUrl += '/api';
   }
 
@@ -49,7 +49,7 @@ const getBackendUrl = () => {
   if (envUrl && (!isEnvLocal || isLocalhost)) {
     baseBackendUrl = envUrl;
   } else if (isLocalhost && isDevMode) {
-    baseBackendUrl = `${window.location.protocol}//${window.location.hostname}:5000`;
+    baseBackendUrl = `${window.location.protocol}//${window.location.hostname}:5001`;
   } else {
     baseBackendUrl = 'https://acharya-ji-backend.onrender.com';
   }

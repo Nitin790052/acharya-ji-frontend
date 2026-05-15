@@ -3,7 +3,16 @@ import { API_URL } from '../config/apiConfig';
 
 export const bookingApi = createApi({
     reducerPath: 'bookingApi',
-    baseQuery: fetchBaseQuery({ baseUrl: API_URL }),
+    baseQuery: fetchBaseQuery({ 
+        baseUrl: API_URL,
+        prepareHeaders: (headers) => {
+            const token = localStorage.getItem('aji_user_token');
+            if (token) {
+                headers.set('authorization', `Bearer ${token}`);
+            }
+            return headers;
+        }
+    }),
     tagTypes: ['Bookings', 'User'],
     endpoints: (builder) => ({
         getAllBookings: builder.query({

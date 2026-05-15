@@ -24,7 +24,7 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
     const { setIsCartOpen } = useCart();
     const { data: offerings = [] } = useGetAllOfferingsQuery();
     const [registerUser, { isLoading: isRegistering }] = useRegisterUserMutation();
-    
+
     // Get user from AuthContext as primary source
     const { user: contextUser, login: contextLogin } = useUserAuth();
 
@@ -49,31 +49,56 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
         mode: 'Home Visit'
     };
     const [formData, setFormData] = useState(defaultFormData);
-    
+
     // Auth Flow State
     const [authStep, setAuthStep] = useState('phone'); // 'phone', 'otp', 'verified'
     const [otp, setOtp] = useState('');
     const [isSendingOtp, setIsSendingOtp] = useState(false);
     const [isVerifying, setIsVerifying] = useState(false);
-    
+    const [isNewUser, setIsNewUser] = useState(false);
+    const [emailOtp, setEmailOtp] = useState('');
+    const [isEmailVerified, setIsEmailVerified] = useState(false);
+    const [isSendingEmailOtp, setIsSendingEmailOtp] = useState(false);
+    const [emailOtpSent, setEmailOtpSent] = useState(false);
+
     const [sendOtp] = useSendOtpMutation();
     const [verifyOtp] = useVerifyOtpMutation();
     const [loginUserApi] = useLoginUserMutation();
 
     const handleSendOtp = async () => {
-        if (!formData.mobile && !formData.email) {
+        const identifier = formData.mobile || formData.email;
+
+        if (!identifier) {
             toast.error("Please enter your mobile number or email");
             return;
         }
-        const identifier = formData.mobile || formData.email;
+
+        const isEmail = identifier.includes('@');
+
+        // Strict Validation
+        if (!isEmail) {
+            // Mobile: 10 digits starting with 6-9
+            const mobileRegex = /^[6-9]\d{9}$/;
+            if (!mobileRegex.test(identifier)) {
+                toast.error("Please enter a valid 10-digit mobile number starting with 6-9");
+                return;
+            }
+        } else {
+            // Email: basic regex
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(identifier)) {
+                toast.error("Please enter a valid email address");
+                return;
+            }
+        }
+
         try {
             setIsSendingOtp(true);
-            const isEmail = identifier.includes('@');
-            const res = await sendOtp({ 
-                identifier, 
-                type: isEmail ? 'email' : 'mobile' 
+            const res = await sendOtp({
+                identifier,
+                type: isEmail ? 'email' : 'mobile'
             }).unwrap();
-            
+
             if (!isEmail && res.debugOtp) {
                 // Mobile OTP → show in browser console for testing
                 console.log(`%c📱 OTP for ${identifier}: ${res.debugOtp}`, 'color: #E8453C; font-size: 18px; font-weight: bold; background: #FFF3E0; padding: 8px 16px; border-radius: 8px;');
@@ -82,6 +107,7 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                 // Email OTP → sent to actual email
                 toast.success(`OTP sent to your email ${identifier}`);
             }
+            setIsNewUser(!!res.isNewUser);
             setAuthStep('otp');
         } catch (err) {
             toast.error(err?.data?.message || "Failed to send OTP");
@@ -92,15 +118,30 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
 
     const handleVerifyOtp = async () => {
         if (!otp) {
-            toast.error("Please enter the OTP");
+            toast.error("Please enter the mobile OTP");
             return;
         }
+
+        if (isNewUser && !isEmailVerified) {
+            toast.error("Please verify your email with OTP first");
+            return;
+        }
+
+        if (isNewUser && !formData.name) {
+            toast.error("Please enter your full name");
+            return;
+        }
+
         const identifier = formData.mobile || formData.email;
         try {
             setIsVerifying(true);
             const res = await verifyOtp({ identifier, otp }).unwrap();
             if (res.success) {
+                if (identifier.includes('@')) {
+                    setIsEmailVerified(true);
+                }
                 try {
+                    // For new users, we might need to register first or login will fail
                     const loginRes = await loginUserApi({ identifier }).unwrap();
                     if (loginRes.success) {
                         contextLogin(loginRes.data, loginRes.token);
@@ -112,7 +153,11 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                             email: loginRes.data.email || prev.email,
                             location: loginRes.data.address || loginRes.data.location || prev.location
                         }));
-                        toast.success("Welcome back! Verified successfully.");
+                        if (isNewUser) {
+                            toast.success("Your profile has been created successfully!");
+                        } else {
+                            toast.success("Welcome back! Verified successfully.");
+                        }
                     }
                 } catch (loginErr) {
                     toast.info("Verified! Please complete your registration details.");
@@ -120,7 +165,52 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                 setAuthStep('verified');
             }
         } catch (err) {
-            toast.error(err?.data?.message || "Invalid OTP");
+            toast.error(err?.data?.message || "Invalid Mobile OTP");
+        } finally {
+            setIsVerifying(false);
+        }
+    };
+
+    const handleSendEmailOtp = async () => {
+        if (!formData.email) {
+            toast.error("Please enter your email address");
+            return;
+        }
+        // Basic email regex
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+            toast.error("Please enter a valid email address");
+            return;
+        }
+
+        try {
+            setIsSendingEmailOtp(true);
+            await sendOtp({
+                identifier: formData.email,
+                type: 'email'
+            }).unwrap();
+            setEmailOtpSent(true);
+            toast.success("Verification OTP sent to your email");
+        } catch (err) {
+            toast.error(err?.data?.message || "Failed to send email OTP");
+        } finally {
+            setIsSendingEmailOtp(false);
+        }
+    };
+
+    const handleVerifyEmailOtp = async () => {
+        if (!emailOtp) {
+            toast.error("Please enter the email OTP");
+            return;
+        }
+        try {
+            setIsVerifying(true);
+            const res = await verifyOtp({ identifier: formData.email, otp: emailOtp }).unwrap();
+            if (res.success) {
+                setIsEmailVerified(true);
+                toast.success("Email verified successfully!");
+            }
+        } catch (err) {
+            toast.error(err?.data?.message || "Invalid Email OTP");
         } finally {
             setIsVerifying(false);
         }
@@ -129,7 +219,7 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
     // Helper to get user data from all possible sources (ONLY real users, never vendors)
     const getFreshUserData = useCallback(() => {
         console.log('[DRAWER AUTH] Checking for user data...');
-        
+
         // Helper to extract fields from any object
         const extract = (obj) => {
             if (!obj || typeof obj !== 'object') return null;
@@ -153,7 +243,7 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
             console.log('[DRAWER AUTH] ✅ Got user from AuthContext:', fromContext);
             return fromContext;
         }
-        
+
         // Source 2: localStorage - ONLY check user-specific key
         try {
             const data = localStorage.getItem('aji_user_data');
@@ -165,17 +255,17 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                     return fromStorage;
                 }
             }
-        } catch(e) {
+        } catch (e) {
             console.error("[DRAWER AUTH] localStorage check error:", e);
         }
-        
+
         return null;
     }, [contextUser]);
 
     useEffect(() => {
         if (open) {
             const freshUser = getFreshUserData();
-            
+
             // Dashboard fallback - but ONLY if it's a real user, not a vendor
             let dashUserObj = null;
             if (dashUser && dashUser.membershipType) {
@@ -192,12 +282,12 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                             _id: dashUser._id
                         };
                     }
-                } catch(e) { /* skip */ }
+                } catch (e) { /* skip */ }
             }
 
             const effectiveUser = freshUser || dashUserObj;
             setLocalUser(effectiveUser);
-            
+
             if (effectiveUser) {
                 setAuthStep('verified');
                 setFormData(prev => ({
@@ -217,7 +307,7 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                     setSelectedService(initialService);
                     setFormData(prev => ({ ...prev, pujaType: initialService.title }));
                 } else if (typeof initialService === 'string') {
-                    const matched = offerings.find(o => 
+                    const matched = offerings.find(o =>
                         (o.title || '').toLowerCase() === initialService.toLowerCase() ||
                         (o.name || '').toLowerCase() === initialService.toLowerCase()
                     );
@@ -256,7 +346,7 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         try {
             let userId = localUser?._id || localUser?.id;
 
@@ -272,7 +362,7 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                         location: formData.location
                     };
                     const regRes = await registerUser(regPayload).unwrap();
-                    
+
                     if (regRes.token && regRes.data) {
                         contextLogin(regRes.data, regRes.token);
                         userId = regRes.data._id;
@@ -282,7 +372,7 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                     if (err.status === 400 && err.data?.message?.toLowerCase().includes('exists')) {
                         toast.info("Account already exists. Please login to continue to cart.");
                         onClose();
-                        
+
                         const cartItemObj = {
                             id: selectedService._id,
                             title: selectedService.title,
@@ -294,7 +384,7 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                             mode: formData.mode || 'Home Visit',
                             location: formData.location || '',
                         };
-                        
+
                         navigate('/user_login', { state: { returnTo: '/cart', addPujaToCart: cartItemObj } });
                         return;
                     } else {
@@ -305,17 +395,17 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
             }
 
             const cartItem = {
-               id: selectedService._id,
-               title: selectedService.title,
-               price: selectedService.price || 1100,
-               description: selectedService.shortDescription,
-               imageUrl: selectedService.imageUrl,
-               date: formData.date,
-               time: formData.time || 'Morning',
-               mode: formData.mode || 'Home Visit',
-               location: formData.location || '',
+                id: selectedService._id,
+                title: selectedService.title,
+                price: selectedService.price || 1100,
+                description: selectedService.shortDescription,
+                imageUrl: selectedService.imageUrl,
+                date: formData.date,
+                time: formData.time || 'Morning',
+                mode: formData.mode || 'Home Visit',
+                location: formData.location || '',
             };
-            
+
             dispatch(addToCart(cartItem));
             onClose();
             // Open the Cart Drawer instead of navigating to a new page
@@ -489,9 +579,9 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                                                         <span className="text-slate-300">|</span>
                                                         <MailIcon className="w-3.5 h-3.5" />
                                                     </div>
-                                                    <Input 
+                                                    <Input
                                                         name="mobile"
-                                                        placeholder="Enter Phone or Email" 
+                                                        placeholder="Enter Phone or Email"
                                                         className={`${inputClasses} pl-16`}
                                                         value={formData.mobile || formData.email}
                                                         onChange={(e) => {
@@ -499,13 +589,21 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                                                             if (val.includes('@')) {
                                                                 setFormData(prev => ({ ...prev, email: val, mobile: '' }));
                                                             } else {
-                                                                setFormData(prev => ({ ...prev, mobile: val, email: '' }));
+                                                                // If it's a potential mobile number (only digits), limit to 10
+                                                                if (/^\d*$/.test(val)) {
+                                                                    if (val.length <= 10) {
+                                                                        setFormData(prev => ({ ...prev, mobile: val, email: '' }));
+                                                                    }
+                                                                } else {
+                                                                    // If they type non-digits (like starting an email), allow it but it will eventually fail validation or become an email
+                                                                    setFormData(prev => ({ ...prev, mobile: val, email: '' }));
+                                                                }
                                                             }
                                                         }}
                                                     />
                                                 </div>
                                             </div>
-                                            <Button 
+                                            <Button
                                                 type="button"
                                                 onClick={handleSendOtp}
                                                 disabled={isSendingOtp}
@@ -527,8 +625,8 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                                                 <Label className={labelClasses}>Enter 6-Digit OTP</Label>
                                                 <div className="relative">
                                                     <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                                    <Input 
-                                                        placeholder="••••••" 
+                                                    <Input
+                                                        placeholder="••••••"
                                                         maxLength={6}
                                                         className={`${inputClasses} pl-10 text-center tracking-[0.5em] font-bold text-lg`}
                                                         value={otp}
@@ -536,8 +634,96 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                                                     />
                                                 </div>
                                             </div>
+
+                                            {isNewUser && (
+                                                <div className="space-y-4 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-top-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <User className="w-3.5 h-3.5 text-[#E8453C]" />
+                                                        <h5 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Complete Registration</h5>
+                                                    </div>
+                                                    <div>
+                                                        <Label className={labelClasses}>Full Name</Label>
+                                                        <Input
+                                                            name="name"
+                                                            placeholder="Enter Your Name"
+                                                            className={inputClasses}
+                                                            value={formData.name}
+                                                            onChange={handleChange}
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <div>
+                                                            <Label className={labelClasses}>Phone</Label>
+                                                            <Input
+                                                                name="mobile"
+                                                                type="number"
+                                                                className={inputClasses}
+                                                                value={formData.mobile}
+                                                                disabled={!formData.email.includes('@')} // Disabled if it's the identifier being verified
+                                                                onChange={(e) => {
+                                                                    const value = e.target.value;
+                                                                    if (!isNaN(value) && value.length <= 10) {
+                                                                        setFormData({ ...formData, mobile: value });
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <Label className={labelClasses}>Email Address</Label>
+                                                            <div className="relative flex gap-1.5">
+                                                                <Input
+                                                                    name="email"
+                                                                    placeholder="Email"
+                                                                    className={`${inputClasses} flex-1`}
+                                                                    value={formData.email}
+                                                                    onChange={handleChange}
+                                                                    disabled={isEmailVerified || formData.mobile === ''} // Disabled if it's the identifier being verified
+                                                                />
+                                                                {!isEmailVerified && (
+                                                                    <Button
+                                                                        type="button"
+                                                                        onClick={handleSendEmailOtp}
+                                                                        disabled={isSendingEmailOtp || !formData.email}
+                                                                        className="h-10 px-3 rounded-none bg-[#E8453C]/10 text-[#E8453C] hover:bg-[#E8453C] hover:text-white font-bold text-[9px] uppercase tracking-tighter"
+                                                                    >
+                                                                        {isSendingEmailOtp ? "..." : (emailOtpSent ? "Resend" : "Verify")}
+                                                                    </Button>
+                                                                )}
+                                                                {isEmailVerified && (
+                                                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 text-green-500">
+                                                                        <CheckCircle className="w-4 h-4" />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {emailOtpSent && !isEmailVerified && (
+                                                        <div className="bg-white border border-[#E8453C]/20 p-3 flex flex-col gap-2 animate-in fade-in slide-in-from-top-2">
+                                                            <Label className="text-[9px] font-bold text-slate-500 uppercase">Enter Email OTP</Label>
+                                                            <div className="flex gap-2">
+                                                                <Input
+                                                                    placeholder="6-digit OTP"
+                                                                    maxLength={6}
+                                                                    className={`${inputClasses} flex-1 text-center font-bold tracking-widest`}
+                                                                    value={emailOtp}
+                                                                    onChange={(e) => setEmailOtp(e.target.value)}
+                                                                />
+                                                                <Button
+                                                                    type="button"
+                                                                    onClick={handleVerifyEmailOtp}
+                                                                    className="h-10 px-4 rounded-none bg-green-600 hover:bg-green-700 text-white font-bold text-[9px] uppercase"
+                                                                >
+                                                                    Check
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
                                             <div className="flex gap-2">
-                                                <Button 
+                                                <Button
                                                     type="button"
                                                     variant="outline"
                                                     onClick={() => setAuthStep('phone')}
@@ -545,7 +731,7 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                                                 >
                                                     Back
                                                 </Button>
-                                                <Button 
+                                                <Button
                                                     type="button"
                                                     onClick={handleVerifyOtp}
                                                     disabled={isVerifying}
@@ -560,53 +746,95 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
 
                                 {authStep === 'verified' && (
                                     <div className="grid grid-cols-1 gap-5 animate-in fade-in zoom-in-95">
-                                        <div className="flex items-center justify-between bg-green-50 border border-green-100 p-2.5 mb-2">
+                                        <div className="flex items-center justify-between bg-green-50 border border-green-100 p-2.5 mb-2 rounded-lg">
                                             <div className="flex items-center gap-2">
-                                                <CheckCircle className="w-3.5 h-3.5 text-green-600" />
-                                                <span className="text-[10px] text-green-700 font-bold uppercase tracking-wider">Verified Identity</span>
+                                                <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                                                    <CheckCircle className="w-3 h-3 text-white" />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] text-green-700 font-black uppercase tracking-wider">Identity Verified</span>
+                                                    <span className="text-[9px] text-green-600/70 font-medium">{formData.mobile || formData.email}</span>
+                                                </div>
                                             </div>
                                             {!localUser && (
-                                                <button type="button" onClick={() => setAuthStep('phone')} className="text-[9px] text-slate-400 font-bold uppercase underline hover:text-[#E8453C]">Change</button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setAuthStep('phone');
+                                                        setOtp('');
+                                                    }}
+                                                    className="text-[9px] text-slate-400 font-bold uppercase underline hover:text-[#E8453C] px-2"
+                                                >
+                                                    Change
+                                                </button>
                                             )}
                                         </div>
 
+                                        {isNewUser && authStep === 'verified' && (
+                                            <div className="bg-green-100 border border-green-200 p-3 rounded-lg flex items-center gap-3 mb-4 animate-in fade-in slide-in-from-top-4">
+                                                <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center shrink-0 shadow-sm">
+                                                    <CheckCircle className="w-5 h-5 text-white" />
+                                                </div>
+                                                <div>
+                                                    <h5 className="text-[11px] font-black text-green-800 uppercase tracking-widest">Success!</h5>
+                                                    <p className="text-[10px] text-green-700 font-medium">Your profile has been created successfully.</p>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {!localUser && authStep !== 'verified' && (
+                                            <div className="py-2">
+                                                <h5 className="text-[11px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-[#E8453C]"></span>
+                                                    Complete Quick Registration
+                                                </h5>
+                                                <p className="text-[10px] text-slate-500 mt-1">Just a few more details to secure your booking.</p>
+                                            </div>
+                                        )}
+
                                         <div>
                                             <Label className={labelClasses}>Full Name</Label>
-                                            <Input 
+                                            <Input
                                                 name="name"
-                                                required 
-                                                placeholder="Your Name" 
-                                                className={inputClasses} 
+                                                required
+                                                placeholder="Your Name"
+                                                className={inputClasses}
                                                 value={formData.name}
                                                 onChange={handleChange}
-                                                disabled={!!localUser && formData.name !== ''}
+                                                disabled={authStep === 'verified'}
                                             />
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-5">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <Label className={labelClasses}>Phone Number</Label>
-                                                <Input 
-                                                    name="mobile"
-                                                    required 
-                                                    placeholder="+91 XXXX XXXX" 
-                                                    className={inputClasses} 
-                                                    value={formData.mobile}
-                                                    onChange={handleChange}
-                                                    disabled={!!(localUser || authStep === 'verified')}
-                                                />
+                                                <div className="relative">
+                                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                                                    <Input
+                                                        name="mobile"
+                                                        required
+                                                        placeholder="+91 XXXX XXXX"
+                                                        className={`${inputClasses} pl-9`}
+                                                        value={formData.mobile}
+                                                        onChange={handleChange}
+                                                        disabled={!!(localUser || authStep === 'verified')}
+                                                    />
+                                                </div>
                                             </div>
                                             <div>
                                                 <Label className={labelClasses}>Email Address</Label>
-                                                <Input 
-                                                    name="email"
-                                                    type="email" 
-                                                    placeholder="Email" 
-                                                    className={inputClasses} 
-                                                    value={formData.email}
-                                                    onChange={handleChange}
-                                                    disabled={!!(localUser || (authStep === 'verified' && formData.email !== ''))}
-                                                />
+                                                <div className="relative">
+                                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                                                    <Input
+                                                        name="email"
+                                                        type="email"
+                                                        placeholder="Email"
+                                                        className={`${inputClasses} pl-9`}
+                                                        value={formData.email}
+                                                        onChange={handleChange}
+                                                        disabled={!!(localUser || (authStep === 'verified' && formData.email !== ''))}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -640,11 +868,11 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                                 <div className="grid grid-cols-2 gap-5">
                                     <div>
                                         <Label className={labelClasses}>Preferred Date</Label>
-                                        <Input 
+                                        <Input
                                             name="date"
-                                            type="date" 
-                                            required 
-                                            className={inputClasses} 
+                                            type="date"
+                                            required
+                                            className={inputClasses}
                                             value={formData.date}
                                             onChange={handleChange}
                                             min={new Date().toISOString().split('T')[0]}
@@ -652,8 +880,8 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                                     </div>
                                     <div>
                                         <Label className={labelClasses}>Preferred Time</Label>
-                                        <Select 
-                                            value={formData.time} 
+                                        <Select
+                                            value={formData.time}
                                             onValueChange={(val) => setFormData(prev => ({ ...prev, time: val }))}
                                         >
                                             <SelectTrigger className={inputClasses}>
@@ -670,12 +898,12 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
 
                                 <div>
                                     <Label className={labelClasses}>Location / Full Address</Label>
-                                    <Textarea 
+                                    <Textarea
                                         name="location"
-                                        required 
-                                        placeholder="Enter the location for the ceremony..." 
-                                        rows={2} 
-                                        className="rounded-lg border-slate-200 focus:border-[#E8453C] focus:ring-[#E8453C]/10 transition-all font-inter text-sm bg-white" 
+                                        required
+                                        placeholder="Enter the location for the ceremony..."
+                                        rows={2}
+                                        className="rounded-lg border-slate-200 focus:border-[#E8453C] focus:ring-[#E8453C]/10 transition-all font-inter text-sm bg-white"
                                         value={formData.location}
                                         onChange={handleChange}
                                     />
@@ -690,11 +918,11 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                                 </div>
 
                                 <div>
-                                    <Textarea 
+                                    <Textarea
                                         name="message"
-                                        placeholder="Any specific requirements or questions..." 
-                                        rows={3} 
-                                        className="rounded-lg border-slate-200 focus:border-[#E8453C] focus:ring-[#E8453C]/10 transition-all font-inter text-sm bg-white" 
+                                        placeholder="Any specific requirements or questions..."
+                                        rows={3}
+                                        className="rounded-lg border-slate-200 focus:border-[#E8453C] focus:ring-[#E8453C]/10 transition-all font-inter text-sm bg-white"
                                         value={formData.message}
                                         onChange={handleChange}
                                     />
@@ -715,7 +943,7 @@ const BookPoojaDrawer = ({ open, onClose, initialService }) => {
                                 disabled={isRegistering || (!localUser && authStep !== 'verified')}
                                 className={`h-12 rounded-none bg-[#E8453C] hover:bg-[#D43F37] text-white font-bold text-sm uppercase tracking-widest transition-all shadow-xl shadow-[#E8453C]/20 flex items-center justify-center gap-3 mb-6 group ${(!localUser && authStep !== 'verified') ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
                             >
-                                {isRegistering ? "Processing Ritual..." : "Proceed to Cart"} 
+                                {isRegistering ? "Creating Your Account..." : (!localUser ? "Register & Proceed to Cart" : "Proceed to Cart")}
                                 {!isRegistering && <Send className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />}
                             </Button>
                         </form>
